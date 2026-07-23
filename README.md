@@ -92,7 +92,8 @@ node run.mjs --arm baseline=../allium-plugin --arm candidate=../allium-candidate
 node compare.mjs baseline candidate
 ```
 
-Each run is a full distill session, so it consumes real usage — your
+Each run is a full headless session of the skill under trial (today that
+means a distill session), so it consumes real usage — your
 subscription's usage allowance when the `claude` CLI is logged in via
 claude.ai (the common case), or API billing when an `ANTHROPIC_API_KEY` is
 set. On subscription, a multi-run comparison on a large fixture can eat a
