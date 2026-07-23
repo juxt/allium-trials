@@ -1,0 +1,11 @@
+{
+  "entities": {
+    "Order": {
+      "states": ["draft"],
+      "transitions": [["draft", "gone"]]
+    }
+  },
+  "rules": [
+    { "id": "R1", "requires_any": [], "ensures_all": ["something"] }
+  ]
+}

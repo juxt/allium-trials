@@ -1,0 +1,168 @@
+{
+  "description": "Golden manifest for the courier fixture. Defines what a faithful distillation of harness/fixtures/courier/codebase must capture (entities, states, transitions, rules, config) and what it must NOT contain (exclusions: implementation details and dead code planted as traps).",
+  "spec_version": 3,
+  "allowed_extra_entities_note": "Entities a faithful spec may legitimately introduce beyond the manifest's domain entities: the driver actor, and cross-cutting communication entities the patterns docs say to model as external/shared. Any model entity NOT here and NOT an expected entity is flagged as a possible confabulation (review signal, not auto-fail). The scorer treats each manifest entity's state and transition lists as EXHAUSTIVE, so an extra state or edge on a matched entity is auto-failed.",
+  "allowed_extra_entities": ["Driver", "Email", "Notification", "Message", "EmailNotification", "AuditLog"],
+  "entities": {
+    "Parcel": {
+      "aliases": ["Package", "Shipment"],
+      "states": ["registered", "collected", "in_depot", "out_for_delivery", "delivered", "returned"],
+      "transitions": [
+        ["registered", "collected"],
+        ["collected", "in_depot"],
+        ["in_depot", "out_for_delivery"],
+        ["out_for_delivery", "delivered"],
+        ["out_for_delivery", "in_depot"],
+        ["in_depot", "returned"]
+      ],
+      "terminal": ["delivered", "returned"]
+    },
+    "PickupRequest": {
+      "aliases": ["Pickup", "CollectionRequest"],
+      "note": "Implicit state machine in code: derived from nullable timestamps (assigned_at, collected_at, cancelled_at, expired_at). Spec must make it explicit. The code defines NO state-name strings, so the distiller must invent names; state_aliases lists accepted synonyms. Grow this list only for genuinely equivalent names, never to excuse a missing state.",
+      "state_aliases": {
+        "pending": ["awaiting_driver", "requested", "open", "unassigned"],
+        "collected": ["picked_up", "fulfilled"]
+      },
+      "states": ["pending", "assigned", "collected", "cancelled", "expired"],
+      "transitions": [
+        ["pending", "assigned"],
+        ["assigned", "collected"],
+        ["pending", "cancelled"],
+        ["assigned", "cancelled"],
+        ["pending", "expired"]
+      ],
+      "terminal": ["collected", "cancelled", "expired"]
+    },
+    "DeliveryAttempt": {
+      "aliases": ["Attempt", "Delivery"],
+      "note": "Code has an explicit 'pending' status string, but renaming the in-flight state is semantically faithful; accepted synonyms below.",
+      "state_aliases": {
+        "pending": ["in_progress", "scheduled", "dispatched"]
+      },
+      "states": ["pending", "succeeded", "failed"],
+      "transitions": [
+        ["pending", "succeeded"],
+        ["pending", "failed"]
+      ],
+      "terminal": ["succeeded", "failed"]
+    },
+    "CustomsHold": {
+      "aliases": ["CustomsCheck", "Hold"],
+      "states": ["held", "released"],
+      "transitions": [["held", "released"]],
+      "terminal": ["released"]
+    }
+  },
+  "external_entities": {
+    "Customer": {
+      "aliases": ["Sender", "Recipient"],
+      "note": "Synced from CRM via webhook; the system reads but never originates customer records."
+    }
+  },
+  "rules": [
+    {
+      "id": "register-parcel",
+      "description": "Ops registers a new shipment (admin POST /parcels): creates a Parcel in 'registered' and opens a PickupRequest in 'pending' for it.",
+      "requires_any": [],
+      "ensures_all": ["registered"]
+    },
+    {
+      "id": "cancel-pickup",
+      "description": "An open pickup request (pending or assigned) is cancelled (admin cancel_pickup / sets cancelled_at).",
+      "requires_any": ["pending", "assigned", "open"],
+      "ensures_all": ["cancelled"]
+    },
+    {
+      "id": "driver-accepts-pickup",
+      "description": "Driver accepts a pending pickup request",
+      "requires_any": ["pending"],
+      "ensures_all": ["assigned"]
+    },
+    {
+      "id": "driver-collects-pickup",
+      "description": "Driver collects: pickup request -> collected, parcel registered -> collected",
+      "requires_any": ["assigned"],
+      "ensures_all": ["collected"]
+    },
+    {
+      "id": "parcel-arrives-at-depot",
+      "description": "Parcel scanned at depot: collected -> in_depot",
+      "requires_any": ["collected"],
+      "ensures_all": ["in_depot"]
+    },
+    {
+      "id": "dispatch-for-delivery",
+      "description": "Dispatch requires no active customs hold (cross-entity precondition scattered across route/service/model in code) and creates a DeliveryAttempt. 'hold' covers derived-field phrasings like has_active_hold.",
+      "requires_any": ["held", "customs", "hold"],
+      "ensures_all": ["out_for_delivery"]
+    },
+    {
+      "id": "delivery-succeeds",
+      "description": "Successful delivery outcome: parcel -> delivered, attempt -> succeeded, recipient notified",
+      "requires_any": ["out_for_delivery", "pending"],
+      "ensures_all": ["delivered"]
+    },
+    {
+      "id": "delivery-fails",
+      "description": "Failed delivery outcome: attempt -> failed, parcel back to in_depot",
+      "requires_any": ["out_for_delivery", "pending"],
+      "ensures_all": ["failed", "in_depot"]
+    },
+    {
+      "id": "return-to-sender",
+      "description": "Temporal/job rule: parcels in depot with >= max failed attempts are returned, sender notified",
+      "requires_any": ["in_depot", "failed"],
+      "ensures_all": ["returned"]
+    },
+    {
+      "id": "pickup-request-expires",
+      "description": "Temporal/job rule: pending pickup requests older than the expiry window expire, customer notified",
+      "requires_any": ["pending"],
+      "ensures_all": ["expired"]
+    },
+    {
+      "id": "customs-hold-received",
+      "description": "Webhook from customs broker creates a hold on an international parcel. Fingerprinted on CustomsHold+held so it is not confused with other .created rules.",
+      "requires_any": [],
+      "ensures_all": ["CustomsHold", "held"]
+    },
+    {
+      "id": "customs-released",
+      "description": "Webhook from customs broker releases the hold",
+      "requires_any": ["held"],
+      "ensures_all": ["released"]
+    }
+  ],
+  "boundaries_note": "System boundaries that a faithful distillation should expose as surfaces / actors (skill step 5.5: actors from auth patterns). Matched fuzzily against the spec's `surface`, `facing`, `actor` and `external entity` declarations by alias substring, since surface naming and granularity vary across runs. Reported as boundary_recall; informational, not gated.",
+  "boundaries": {
+    "public-tracking": ["public", "visitor", "tracking", "anonymous", "track"],
+    "driver": ["driver"],
+    "ops-admin": ["ops", "admin", "staff", "operator", "dispatch", "depot"],
+    "customs-webhook": ["customs", "broker"],
+    "crm-webhook": ["crm"]
+  },
+  "config": [
+    {
+      "name_any": ["max_delivery_attempts", "max_attempts", "delivery_attempt_limit"],
+      "value": "3"
+    },
+    {
+      "name_any": ["pickup_expiry", "pickup_request_expiry", "pickup_expiry_hours"],
+      "value_any": ["48", "2.days", "48.hours"]
+    }
+  ],
+  "exclusions": {
+    "description": "Terms that must NOT appear in a faithful spec. Dead-code traps planted in the fixture and implementation details the skill instructs to abstract away.",
+    "dead_code": ["loyalty", "sms"],
+    "implementation": [
+      "token_urlsafe",
+      "redis",
+      "celery",
+      "sendgrid",
+      "jsonb",
+      "sqlalchemy",
+      "postgresql"
+    ]
+  }
+}

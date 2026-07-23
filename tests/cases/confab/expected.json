@@ -1,0 +1,12 @@
+{
+  "structural.check_passed": true,
+  "summary.entity_recall": 1,
+  "summary.state_recall": 1,
+  "summary.transition_recall": 1,
+  "summary.confabulation_free": false,
+  "summary.quality_pass": false,
+  "precision.spurious_states.length": 1,
+  "precision.spurious_states.0": "Order.archived",
+  "precision.spurious_transitions.length": 1,
+  "precision.spurious_transitions.0": "Order: draft -> shipped"
+}

@@ -1,0 +1,24 @@
+-- allium: 3
+
+external entity Customer {
+  name: String
+}
+
+entity Order {
+  status: draft | placed | shipped
+  shipped_at: Timestamp?
+}
+
+config {
+  max_retries: Integer = 3
+}
+
+rule ShipOrder {
+  when: order.status becomes placed
+  requires: order.status = placed
+  ensures: order.status = shipped, order.shipped_at = now
+}
+
+surface CustomerPortal {
+  facing Customer
+}

@@ -1,0 +1,142 @@
+# allium-trials
+
+Shared evaluation harness for the Allium plugin skills. Like a horticultural
+trial garden: candidate plugin versions are grown side-by-side under identical
+conditions and judged against a published standard — so efficiency and quality
+changes to the skills can be proven rather than asserted.
+
+The harness lives here, separate from the plugin, on purpose:
+
+- **One referee, many contestants.** A comparison is only meaningful when one
+  fixed harness version scores both plugin versions. Results should cite the
+  harness version and fixture hash they were produced with (both are recorded
+  in every `summary.json`).
+- **The answer keys stay out of the system under test.** Fixtures ship with
+  golden manifests; keeping them outside the plugin repo means the agent under
+  test cannot stumble into them.
+- **Anyone can point it at any checkout.** The plugin under test is a
+  parameter (`--plugin-dir`), so any member can trial their own fork or branch.
+
+Today it contains one trial: **distill token usage**. The runner/scorer/
+manifest split is designed so other skills (tend, weed, propagate) can gain
+their own trials without restructuring.
+
+## The distill trial
+
+Measures the token cost **and** output quality of the `distill` skill. Any
+change must show lower token usage at equal-or-better quality; a token
+reduction that costs quality is a regression, not an improvement.
+
+### How it works
+
+1. **Fixture** (`fixtures/courier/codebase/`) — a small Flask/SQLAlchemy
+   courier service, written for this harness in a domain that appears nowhere
+   in the skill documentation (so the guide material cannot leak answers into
+   the output). It plants specific probes:
+   - explicit status enums with a defined transition graph (`Parcel`)
+   - an implicit state machine derived from nullable timestamps (`PickupRequest`)
+   - temporal/scheduled-job rules, webhook boundaries, an external entity
+     (`Customer`, CRM-owned), cross-entity preconditions deliberately
+     scattered across route/service/model
+   - implementation noise a faithful spec must abstract away (Redis, Celery,
+     SendGrid, token generation, JSONB columns)
+   - dead-code traps that must **not** appear in the spec (a feature-flagged-off
+     SMS module, an orphaned `LoyaltyPoints` model)
+
+2. **Golden manifest** (`fixtures/courier/golden.json`) — the expected
+   entities, states, transitions, rules, config values and forbidden terms.
+
+3. **Runner** (`run.mjs`) — copies the fixture into a clean workspace, runs
+   `claude -p` headlessly with the plugin-under-test via `--plugin-dir`, and
+   records token usage, cost, turn count and wall time from the JSON result.
+
+4. **Scorer** (`score.mjs`) — fully deterministic, no LLM judging:
+   - structural validity: `allium check` must pass (errors fail; warnings advisory)
+   - **recall** (did the spec find the golden items?): entity/state/transition
+     via `allium model` JSON; rule recall via one-to-one block matching
+     (requires/ensures term matching); boundary/actor coverage fuzzily against
+     surface/facing/actor declarations
+   - **precision** (did the spec invent items the code doesn't support?):
+     spurious states/transitions on matched entities fail the gate (the
+     manifest is exhaustive per entity, so extras are confabulation); invented
+     internal entities and unmatched rules are surfaced for review, not gated
+   - exclusion violations: prefix search for forbidden terms in normative
+     content (comments and open-questions exempt)
+
+   The quality gate (`summary.quality_pass`) requires: check passes, entity
+   recall 1.0, state/transition recall ≥0.9, rule recall ≥0.8, no exclusion
+   leaks, and no confabulated states/transitions. Recall guards against the
+   spec being incomplete; precision guards against the failure mode that
+   aggressive token-cutting causes — an agent reading less code and guessing.
+
+## Running
+
+Requires the `allium` CLI on PATH and the `claude` CLI authenticated (both
+are pre-flighted before any budget is spent). If the `claude` CLI is logged
+in via a claude.ai subscription, runs consume subscription usage rather than
+API billing; `cost_usd` is still reported as the notional API-equivalent
+price, so comparisons work the same either way.
+
+```bash
+# Baseline on a plugin checkout
+node run.mjs --label baseline --plugin-dir ../allium-plugin --runs 3
+
+# Candidate from another checkout/branch
+node run.mjs --label candidate --plugin-dir ../allium-candidate --runs 3
+
+# Preferred for comparisons: both arms in one invocation, interleaved
+# (baseline, candidate, baseline, …) so temporal model drift hits both equally
+node run.mjs --arm baseline=../allium-plugin --arm candidate=../allium-candidate --runs 3
+
+# Then compare (also evaluates the quality guardrail; exits 1 if broken)
+node compare.mjs baseline candidate
+```
+
+Each run costs real API usage (it is a full distill session). Results land in
+`results/<label>/`, with per-run raw output, the produced spec, the quality
+report, and a `summary.json` with per-metric median/min/max plus environment
+provenance (claude/allium CLI versions, plugin and harness git SHAs with
+dirty flags, a content hash of the fixture) — always quote the provenance
+when sharing numbers, so others can tell whether their setup is comparable.
+`results/` is gitignored: results are experiment data, machine- and
+version-specific, and do not belong in the shared repo.
+
+## Reading the numbers
+
+- `tokens.input` + `tokens.cache_creation` + `tokens.cache_read` together are
+  the total input volume processed; `cost_usd` weights them by price.
+- `quality.*_recall` are against the golden manifest; `quality.confabulation_free`
+  and the `precision` block flag invented content; `exclusion_violations` lists
+  forbidden terms that leaked into the spec.
+- Compare **medians across ≥3 runs** — single runs vary. The guardrail is the
+  *floor*, not the median: a token win is only valid if no valid run drops
+  below the baseline's quality (recall held, no new confabulation).
+  `compare.mjs` prints the median (min–max) table and evaluates this floor
+  rule mechanically — use it rather than eyeballing summaries.
+
+## Manifest authoring notes
+
+Term matching in the scorer normalises away `_`, `-` and spaces and then does
+substring matching, so short or generic terms over-match (`active` matches
+`inactive`). Pick distinctive fingerprint terms for `ensures_all` /
+`requires_any`; `validate-manifest.mjs` warns on generic-only fingerprints
+and cross-checks every manifest state against the fixture code. State
+aliases are scoped per entity — two entities may map the same synonym to
+different canonical states.
+
+## Fixtures
+
+- `courier/` — Python/Flask, ~1k lines. The reference fixture.
+- `claims/` — Python/Flask, ~5-8k lines. Tests how the token saving scales
+  (the token pain is worst on large codebases).
+- `ticketing/` — TypeScript. Tests generalization beyond Python idioms.
+
+Run a specific fixture with `--fixture <name>` (default `courier`).
+
+## Tests
+
+`node tests/run-tests.mjs` runs regression tests for the scorer and manifest
+validator. They are hermetic and free: a stub `allium` (`tests/stub-bin/`)
+serves canned check/model JSON, so no real CLI or API calls are made. Run
+them after any change to `score.mjs` or `validate-manifest.mjs` — a shared
+benchmark whose scorer drifts silently loses its authority.

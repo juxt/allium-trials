@@ -1,0 +1,15 @@
+{
+  "structural.check_passed": true,
+  "summary.entity_recall": 1,
+  "summary.state_recall": 1,
+  "summary.transition_recall": 1,
+  "summary.rule_recall": 1,
+  "summary.config_recall": 1,
+  "summary.boundary_recall": 1,
+  "summary.confabulation_free": true,
+  "summary.spurious_entity_count": 0,
+  "summary.quality_pass": true,
+  "external_entities.Customer.found": true,
+  "external_entities.Customer.declared_external": true,
+  "exclusions.violations.length": 0
+}

@@ -1,0 +1,150 @@
+{
+  "description": "Golden manifest for the claims fixture (claimflow, insurance claims processing, ~3.1k lines Python/Flask). Larger than courier (~3x) to test how the token saving scales. Derived directly from the codebase. Scheduled-job rules whose effect duplicates a stimulus rule (e.g. SLA escalation calls the same escalate path) are covered by-effect, not separately gated; notification-only jobs (stale-doc reminder, appeal-window-closed notice) make no state change and are not gated. Temporal trigger-type verification is a known gap for the (future) LLM-judge pass.",
+  "spec_version": 3,
+  "allowed_extra_entities_note": "Supporting/cross-cutting entities a faithful spec may add beyond the domain entities: the adjuster actor and communication/audit entities. Any internal model entity not here and not an expected entity is flagged as a possible confabulation (review signal, not auto-fail).",
+  "allowed_extra_entities": ["Adjuster", "Email", "Notification", "AuditLog", "Document", "Disbursement"],
+  "entities": {
+    "Claim": {
+      "aliases": ["InsuranceClaim", "Case"],
+      "states": ["submitted", "triaged", "investigating", "escalated", "approved", "denied", "settling", "settled", "withdrawn"],
+      "transitions": [
+        ["submitted", "triaged"],
+        ["triaged", "investigating"],
+        ["investigating", "escalated"],
+        ["investigating", "approved"],
+        ["escalated", "approved"],
+        ["investigating", "denied"],
+        ["escalated", "denied"],
+        ["approved", "settling"],
+        ["settling", "settled"]
+      ],
+      "optional_transitions": [
+        ["denied", "investigating"],
+        ["submitted", "withdrawn"],
+        ["triaged", "withdrawn"],
+        ["investigating", "withdrawn"],
+        ["escalated", "withdrawn"],
+        ["approved", "withdrawn"],
+        ["settling", "withdrawn"]
+      ],
+      "terminal": ["settled", "denied", "withdrawn"]
+    },
+    "Payment": {
+      "aliases": ["Disbursement", "Settlement"],
+      "states": ["pending", "issued", "cleared", "failed", "reversed"],
+      "transitions": [
+        ["pending", "issued"],
+        ["issued", "cleared"],
+        ["pending", "failed"],
+        ["issued", "reversed"]
+      ],
+      "terminal": ["cleared", "failed", "reversed"]
+    },
+    "FraudCheck": {
+      "aliases": ["FraudScreen", "FraudScreening"],
+      "states": ["pending", "clear", "flagged"],
+      "transitions": [
+        ["pending", "clear"],
+        ["pending", "flagged"]
+      ],
+      "terminal": ["clear", "flagged"]
+    },
+    "ReviewTask": {
+      "aliases": ["Review", "Task"],
+      "states": ["open", "in_review", "resolved", "cancelled"],
+      "transitions": [
+        ["open", "in_review"],
+        ["in_review", "resolved"],
+        ["open", "cancelled"],
+        ["in_review", "cancelled"]
+      ],
+      "terminal": ["resolved", "cancelled"]
+    },
+    "Appeal": {
+      "aliases": ["ClaimAppeal"],
+      "states": ["filed", "reviewing", "upheld", "overturned"],
+      "transitions": [
+        ["filed", "reviewing"],
+        ["reviewing", "upheld"],
+        ["reviewing", "overturned"]
+      ],
+      "terminal": ["upheld", "overturned"]
+    },
+    "ClaimDocument": {
+      "aliases": ["Document", "Evidence", "SupportingDocument"],
+      "note": "Implicit state machine: no status column; state is derived from nullable timestamps requested_at/uploaded_at/verified_at/rejected_at. A distiller must invent the status enum; state_aliases lists accepted synonyms.",
+      "state_aliases": {
+        "requested": ["awaiting", "outstanding", "pending", "needed"],
+        "uploaded": ["submitted", "received", "provided"],
+        "verified": ["accepted", "approved", "confirmed"],
+        "rejected": ["declined", "invalid"]
+      },
+      "states": ["requested", "uploaded", "verified", "rejected"],
+      "transitions": [
+        ["requested", "uploaded"],
+        ["uploaded", "verified"],
+        ["uploaded", "rejected"]
+      ],
+      "terminal": ["verified", "rejected"]
+    }
+  },
+  "external_entities": {
+    "Policy": {
+      "aliases": ["InsurancePolicy"],
+      "note": "Mastered by a policy-admin system via webhook; read locally, never created by core flows."
+    },
+    "Claimant": {
+      "aliases": ["Customer", "Policyholder"],
+      "note": "Synced from CRM via webhook."
+    }
+  },
+  "rules": [
+    { "id": "submit-claim", "description": "Claimant submits a claim (requires policy in force on incident date); Claim created in submitted.", "requires_any": [], "ensures_all": ["submitted"] },
+    { "id": "triage-claim", "description": "Automated/manager triage: submitted -> triaged.", "requires_any": ["submitted"], "ensures_all": ["triaged"] },
+    { "id": "assign-claim", "description": "Assign to an adjuster: triaged -> investigating; creates a ReviewTask.", "requires_any": ["triaged"], "ensures_all": ["investigating"] },
+    { "id": "escalate-claim", "description": "Escalate (manual or SLA-breach job, same effect): investigating -> escalated.", "requires_any": ["investigating"], "ensures_all": ["escalated"] },
+    { "id": "approve-claim", "description": "Approve a decidable claim. Cross-entity precondition (fraud clear + all documents verified + within policy coverage) is deliberately scattered across route/service/model.", "requires_any": ["clear", "investigating", "escalated", "decidable", "coverage", "verified"], "ensures_all": ["approved"] },
+    { "id": "deny-claim", "description": "Deny a decidable claim.", "requires_any": ["investigating", "escalated", "decidable"], "ensures_all": ["denied"] },
+    { "id": "begin-settlement", "description": "Approved claim -> settling; creates a pending Payment.", "requires_any": ["approved"], "ensures_all": ["settling"] },
+    { "id": "issue-payment", "description": "Pending payment -> issued (disbursement requested).", "requires_any": ["pending"], "ensures_all": ["issued"] },
+    { "id": "clear-payment", "description": "Issued payment clears -> cleared, and the claim becomes settled.", "requires_any": ["issued"], "ensures_all": ["cleared", "settled"] },
+    { "id": "fail-payment", "description": "Pending payment fails -> failed (retried by sweep job, which creates a replacement payment).", "requires_any": ["pending"], "ensures_all": ["failed"] },
+    { "id": "reverse-payment", "description": "Issued payment reversed -> reversed.", "requires_any": ["issued"], "ensures_all": ["reversed"] },
+    { "id": "withdraw-claim", "description": "Claimant withdraws a non-terminal claim -> withdrawn.", "requires_any": [], "ensures_all": ["withdrawn"] },
+    { "id": "file-appeal", "description": "Denied claim within the appeal window -> Appeal filed.", "requires_any": ["denied"], "ensures_all": ["filed"] },
+    { "id": "start-appeal-review", "description": "Filed appeal -> reviewing.", "requires_any": ["filed"], "ensures_all": ["reviewing"] },
+    { "id": "uphold-appeal", "description": "Appeal under review -> upheld (denial stands).", "requires_any": ["reviewing"], "ensures_all": ["upheld"] },
+    { "id": "overturn-appeal", "description": "Appeal under review -> overturned; the claim reopens to investigating.", "requires_any": ["reviewing"], "ensures_all": ["overturned", "investigating"] },
+    { "id": "upload-document", "description": "Requested document is uploaded.", "requires_any": ["requested", "awaiting", "outstanding"], "ensures_all": ["uploaded"] },
+    { "id": "verify-document", "description": "Adjuster verifies an uploaded document.", "requires_any": ["uploaded"], "ensures_all": ["verified"] },
+    { "id": "reject-document", "description": "Adjuster rejects an uploaded document.", "requires_any": ["uploaded"], "ensures_all": ["rejected"] },
+    { "id": "request-fraud-check", "description": "A fraud check is requested for a claim; FraudCheck created pending.", "requires_any": [], "ensures_all": ["FraudCheck", "pending"] },
+    { "id": "resolve-fraud-check", "description": "Fraud-scoring webhook returns a verdict: pending -> clear or flagged. Fingerprinted on 'flagged' to avoid the cleared/clear substring clash; a clear verdict is what unblocks approval.", "requires_any": ["pending"], "ensures_all": ["flagged"] },
+    { "id": "start-review-task", "description": "Open review task -> in_review.", "requires_any": ["open"], "ensures_all": ["in_review"] },
+    { "id": "resolve-review-task", "description": "In-review task -> resolved.", "requires_any": ["in_review"], "ensures_all": ["resolved"] },
+    { "id": "cancel-review-task", "description": "Active review task (open or in_review) -> cancelled.", "requires_any": ["open", "in_review", "active"], "ensures_all": ["cancelled"] },
+    { "id": "request-document", "description": "A supporting document is requested from the claimant; ClaimDocument created in 'requested'.", "requires_any": [], "ensures_all": ["ClaimDocument", "requested"] }
+  ],
+  "boundaries_note": "System boundaries a faithful distillation should expose as surfaces/actors. Matched fuzzily; informational, not gated.",
+  "boundaries": {
+    "public-status": ["public", "status", "token", "track", "lookup"],
+    "claimant-portal": ["claimant", "portal", "policyholder"],
+    "adjuster": ["adjuster"],
+    "manager": ["manager", "ops", "supervisor"],
+    "policy-webhook": ["policy"],
+    "crm-webhook": ["crm", "claimant"],
+    "fraud-webhook": ["fraud"],
+    "payment-webhook": ["payment", "disbursement"]
+  },
+  "config": [
+    { "name_any": ["sla_days", "sla", "investigation_sla"], "value_any": ["14", "14.days"] },
+    { "name_any": ["max_payment_retries", "max_retries", "payment_retry_limit"], "value": "3" },
+    { "name_any": ["appeal_window_days", "appeal_window"], "value_any": ["30", "30.days"] },
+    { "name_any": ["auto_approve_threshold", "auto_approval_threshold"], "value": "2500" }
+  ],
+  "exclusions": {
+    "description": "Dead-code traps and implementation details a faithful spec must omit.",
+    "dead_code": ["coinsurance", "salvage"],
+    "implementation": ["redis", "sendgrid", "celery", "sqlalchemy", "jsonb", "postgresql", "token_urlsafe", "boto3"]
+  }
+}

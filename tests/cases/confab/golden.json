@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "Order": {
+      "states": ["draft", "placed", "shipped"],
+      "transitions": [["draft", "placed"], ["placed", "shipped"]],
+      "terminal": ["shipped"]
+    }
+  },
+  "external_entities": {
+    "Customer": {}
+  },
+  "allowed_extra_entities": [],
+  "rules": [
+    { "id": "R1_ship_order", "requires_any": ["placed"], "ensures_all": ["shipped", "shipped_at"] }
+  ],
+  "config": [
+    { "name_any": ["max_retries"], "value": "3" }
+  ],
+  "exclusions": {
+    "dead_code": ["LoyaltyPoints"],
+    "implementation": ["redis"]
+  },
+  "boundaries": {
+    "customer_portal": ["portal", "customer"]
+  }
+}

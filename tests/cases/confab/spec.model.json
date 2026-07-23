@@ -1,0 +1,21 @@
+{
+  "entities": [
+    { "name": "Customer", "kind": "external", "fields": [{ "name": "name", "type_expr": "String" }] },
+    {
+      "name": "Order",
+      "kind": "entity",
+      "fields": [{ "name": "status", "enum_values": ["draft", "placed", "shipped", "archived"] }],
+      "transition_graphs": [
+        {
+          "field": "status",
+          "states": ["draft", "placed", "shipped", "archived"],
+          "edges": [
+            { "from": "draft", "to": "placed" },
+            { "from": "placed", "to": "shipped" },
+            { "from": "draft", "to": "shipped" }
+          ]
+        }
+      ]
+    }
+  ]
+}

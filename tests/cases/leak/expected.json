@@ -1,0 +1,9 @@
+{
+  "structural.check_passed": true,
+  "summary.entity_recall": 1,
+  "summary.confabulation_free": true,
+  "summary.quality_pass": false,
+  "exclusions.violations.length": 1,
+  "exclusions.violations.0.term": "redis",
+  "exclusions.violations.0.kind": "implementation"
+}

@@ -1,0 +1,29 @@
+{
+  "entities": {
+    "Pickup": {
+      "states": ["requested", "collected"],
+      "transitions": [["requested", "collected"]],
+      "terminal": ["collected"],
+      "state_aliases": {
+        "requested": ["pending"],
+        "collected": ["done"]
+      }
+    },
+    "Refund": {
+      "states": ["open", "settled"],
+      "transitions": [["open", "settled"]],
+      "terminal": ["settled"],
+      "state_aliases": {
+        "settled": ["done"]
+      }
+    }
+  },
+  "external_entities": {},
+  "allowed_extra_entities": [],
+  "rules": [
+    { "id": "R1_collect", "requires_any": ["pending"], "ensures_all": ["done", "collected_at"] }
+  ],
+  "config": [],
+  "exclusions": {},
+  "boundaries": {}
+}

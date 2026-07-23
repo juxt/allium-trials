@@ -1,0 +1,13 @@
+#!/bin/sh
+# Stub `allium` for hermetic scorer tests. Emits canned JSON stored as
+# sidecar files next to the spec: <spec>.check.json / <spec>.model.json.
+# Keeps scorer regression tests free, fast, and independent of the real CLI.
+cmd="$1"
+spec="$2"
+base="${spec%.allium}"
+case "$cmd" in
+  check) cat "$base.check.json" ;;
+  model) cat "$base.model.json" ;;
+  --version) echo "allium stub (tests)" ;;
+  *) echo "stub allium: unknown command $cmd" >&2; exit 2 ;;
+esac

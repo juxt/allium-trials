@@ -1,0 +1,15 @@
+-- allium: 3
+
+entity Pickup {
+  status: pending | done
+  collected_at: Timestamp?
+}
+
+entity Refund {
+  status: open | done
+}
+
+rule CollectPickup {
+  requires: pickup.status = pending
+  ensures: pickup.status = done, pickup.collected_at = now
+}

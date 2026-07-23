@@ -1,0 +1,222 @@
+{
+  "description": "Golden manifest for the ticketing fixture (the 'gatekeep' event-ticketing service, written in TypeScript / NestJS + TypeORM). Defines what a faithful distillation of harness/fixtures/ticketing/codebase must capture (entities, states, transitions, rules, config) and what it must NOT contain (exclusions: implementation details and dead code planted as traps). This fixture exists to prove the distiller generalizes beyond Python.",
+  "spec_version": 3,
+  "allowed_extra_entities_note": "Entities a faithful spec may legitimately introduce beyond the manifest's domain entities: the organizer/scanner actors, and cross-cutting communication entities the patterns docs say to model as external/shared. Any model entity NOT here and NOT an expected entity is flagged as a possible confabulation (review signal, not auto-fail). The scorer treats each manifest entity's state and transition lists as EXHAUSTIVE, so an extra state or edge on a matched entity is auto-failed.",
+  "allowed_extra_entities": ["Organizer", "Scanner", "Email", "Notification", "Message", "EmailNotification", "QrToken"],
+  "entities": {
+    "Ticket": {
+      "aliases": ["Admission", "Seat"],
+      "states": ["reserved", "paid", "issued", "expired", "refunded", "checked_in"],
+      "transitions": [
+        ["reserved", "paid"],
+        ["paid", "issued"],
+        ["reserved", "expired"],
+        ["paid", "refunded"],
+        ["issued", "checked_in"],
+        ["issued", "refunded"]
+      ],
+      "terminal": ["expired", "refunded", "checked_in"]
+    },
+    "Order": {
+      "aliases": ["Basket", "Purchase"],
+      "states": ["pending", "confirmed", "fulfilled", "cancelled"],
+      "transitions": [
+        ["pending", "confirmed"],
+        ["confirmed", "fulfilled"],
+        ["pending", "cancelled"]
+      ],
+      "terminal": ["fulfilled", "cancelled"]
+    },
+    "Event": {
+      "aliases": ["Show", "Performance"],
+      "states": ["draft", "on_sale", "sold_out", "closed", "cancelled"],
+      "transitions": [
+        ["draft", "on_sale"],
+        ["on_sale", "sold_out"],
+        ["sold_out", "closed"],
+        ["on_sale", "cancelled"],
+        ["sold_out", "on_sale"]
+      ],
+      "optional_transitions": [
+        ["draft", "cancelled"],
+        ["sold_out", "cancelled"]
+      ],
+      "terminal": ["closed", "cancelled"],
+      "note": "sold_out -> on_sale is the capacity-release reopen (EventsService.releaseCapacity). Event.markCancelled() blocks only closed/cancelled, so cancel is reachable from draft, on_sale AND sold_out — a cancel-from-any-non-terminal wildcard. on_sale -> cancelled is the common path (required); draft/sold_out -> cancelled are allowed (optional) so a distiller that reads the markCancelled guard is not flagged for confabulation."
+    },
+    "WaitlistEntry": {
+      "aliases": ["WaitlistMember", "QueueEntry", "Waitlister"],
+      "note": "Implicit state machine in code: derived from nullable timestamps (joined_at, offered_at, claimed_at, expired_at) on WaitlistEntry, exposed via isPending/isOffered/isClaimed/isExpired getters. The code defines NO state-name strings, so the distiller must invent names; state_aliases lists accepted synonyms. Grow this list only for genuinely equivalent names, never to excuse a missing state.",
+      "state_aliases": {
+        "pending": ["waiting", "queued", "joined", "in_line", "open"],
+        "offered": ["notified", "invited"],
+        "claimed": ["accepted", "converted"]
+      },
+      "states": ["pending", "offered", "claimed", "expired"],
+      "transitions": [
+        ["pending", "offered"],
+        ["offered", "claimed"],
+        ["offered", "expired"]
+      ],
+      "terminal": ["claimed", "expired"]
+    }
+  },
+  "external_entities": {
+    "Attendee": {
+      "aliases": ["User", "TicketHolder", "Customer"],
+      "note": "Synced from an external identity provider via webhook (IdentityWebhookController); the system reads but never originates attendee records."
+    },
+    "PaymentIntent": {
+      "aliases": ["Charge", "Payment"],
+      "note": "Mirror of a charge at the external payment provider. gatekeep originates it only in 'created'; the provider drives it to succeeded/failed via webhook. created -> succeeded ; created -> failed. Terminal: succeeded, failed.",
+      "states": ["created", "succeeded", "failed"],
+      "transitions": [
+        ["created", "succeeded"],
+        ["created", "failed"]
+      ],
+      "terminal": ["succeeded", "failed"]
+    }
+  },
+  "rules": [
+    {
+      "id": "place-order",
+      "description": "Attendee places an order (OrdersService.createOrder): Order created in 'pending'.",
+      "requires_any": [],
+      "ensures_all": ["Order", "pending"]
+    },
+    {
+      "id": "join-waitlist",
+      "description": "Attendee joins an event's waitlist (WaitlistService.join): WaitlistEntry created in 'pending'.",
+      "requires_any": [],
+      "ensures_all": ["WaitlistEntry", "pending"]
+    },
+    {
+      "id": "reserve-ticket",
+      "description": "Reserve a ticket against an event for an order: requires the event on_sale with remaining capacity, holds one unit of inventory and creates a Ticket in 'reserved' (TicketsService.reserve).",
+      "requires_any": ["on_sale", "capacity"],
+      "ensures_all": ["reserved"]
+    },
+    {
+      "id": "pay-order",
+      "description": "Payment intent succeeds: the backing order is confirmed and its reserved tickets move to paid (OrdersService.confirmFromPayment, driven by the payment webhook). 'succeeded' fingerprints the payment-provider trigger.",
+      "requires_any": ["succeeded", "pending", "reserved"],
+      "ensures_all": ["confirmed", "paid"]
+    },
+    {
+      "id": "issue-tickets",
+      "description": "Fulfil a confirmed order: its paid tickets are issued and emailed to the attendee, and the order moves to fulfilled (OrdersService.fulfil + TicketsService.issueOrderTickets).",
+      "requires_any": ["confirmed", "paid"],
+      "ensures_all": ["issued", "fulfilled"]
+    },
+    {
+      "id": "check-in",
+      "description": "Scanner checks a ticket in at the gate: requires an issued ticket whose event is not cancelled; issued -> checked_in (GateService.checkIn).",
+      "requires_any": ["issued", "cancelled"],
+      "ensures_all": ["checked_in"]
+    },
+    {
+      "id": "refund-ticket",
+      "description": "Refund a paid or issued ticket: ticket -> refunded, the payment intent is reversed at the provider, the held seat is released and the attendee notified (TicketsService.refund).",
+      "requires_any": ["paid", "issued"],
+      "ensures_all": ["refunded"]
+    },
+    {
+      "id": "cancel-order",
+      "description": "Cancel a still-pending order: its reserved tickets expire, their held capacity is released, order -> cancelled (OrdersService.cancel).",
+      "requires_any": ["pending", "reserved"],
+      "ensures_all": ["cancelled"]
+    },
+    {
+      "id": "cancel-event",
+      "description": "Organizer cancels an event: event -> cancelled and EVERY paid/issued ticket is refunded with its payment intent reversed. The cascade is deliberately scattered across the controller (orchestration), the entity (Event.markCancelled flips status) and the service (EventsService.refundAllTicketsForCancelledEvent does the refunds).",
+      "requires_any": ["on_sale", "sold_out"],
+      "ensures_all": ["cancelled", "refunded"]
+    },
+    {
+      "id": "offer-waitlist",
+      "description": "When capacity frees up on an event, the oldest pending waitlist entry is offered the seat (offered_at + offer_expires_at stamped) and emailed: pending -> offered (WaitlistService.offerNextForEvent).",
+      "requires_any": ["pending", "capacity"],
+      "ensures_all": ["offered"]
+    },
+    {
+      "id": "claim-waitlist-offer",
+      "description": "Attendee claims an outstanding waitlist offer: the entry is marked claimed and a ticket is reserved for them via a fresh order: offered -> claimed plus a Ticket in 'reserved' (WaitlistService.claim).",
+      "requires_any": ["offered"],
+      "ensures_all": ["claimed", "reserved"]
+    },
+    {
+      "id": "expire-reservations",
+      "description": "Scheduled job: unpaid reservations whose hold window has elapsed expire and their seats are released. Re-fire guard: only tickets still 'reserved' with an elapsed hold. reserved -> expired (ScheduledService.expireUnpaidReservations).",
+      "requires_any": ["reserved"],
+      "ensures_all": ["expired"]
+    },
+    {
+      "id": "expire-waitlist-offers",
+      "description": "Scheduled job: waitlist offers unclaimed past their offer window expire. Re-fire guard: only entries still offered (offered_at set, claimed/expired null). offered -> expired (ScheduledService.expireUnclaimedOffers).",
+      "requires_any": ["offered"],
+      "ensures_all": ["expired"]
+    },
+    {
+      "id": "mark-sold-out",
+      "description": "Scheduled job: on_sale events whose remaining capacity has reached zero are marked sold_out. Re-fire guard in markSoldOutIfFull no-ops unless still on_sale with zero capacity. on_sale -> sold_out (ScheduledService.markSoldOutEvents).",
+      "requires_any": ["on_sale", "capacity"],
+      "ensures_all": ["sold_out"]
+    },
+    {
+      "id": "close-ended-event",
+      "description": "Scheduled job: sold-out events whose end time has passed are closed. Re-fire guard: only events still 'sold_out' with ends_at in the past. sold_out -> closed (ScheduledService.closeEndedEvents).",
+      "requires_any": ["sold_out"],
+      "ensures_all": ["closed"]
+    },
+    {
+      "id": "sync-attendee",
+      "description": "Identity-provider webhook upserts the local attendee mirror. Fingerprinted on the attendee external entity so it is not confused with other inbound webhooks (IdentityWebhookController.sync).",
+      "requires_any": [],
+      "ensures_all": ["attendee"]
+    },
+    {
+      "id": "payment-failed",
+      "description": "Payment-provider webhook reports a failed charge: the payment intent moves created -> failed and the order stays pending (PaymentWebhookController, failure branch).",
+      "requires_any": ["created", "pending"],
+      "ensures_all": ["failed"]
+    }
+  ],
+  "boundaries_note": "System boundaries that a faithful distillation should expose as surfaces / actors (skill step 5.5: actors from auth patterns). Matched fuzzily against the spec's `surface`, `facing`, `actor` and `external entity` declarations by alias substring, since surface naming and granularity vary across runs. Reported as boundary_recall; informational, not gated.",
+  "boundaries": {
+    "public-browse": ["public", "visitor", "anonymous", "browse", "qr", "lookup"],
+    "attendee": ["attendee", "buyer", "ticket holder"],
+    "organizer": ["organizer", "promoter", "host"],
+    "scanner-gate": ["scanner", "gate", "device", "door", "turnstile"],
+    "payment-webhook": ["payment", "provider", "stripe", "charge"],
+    "identity-webhook": ["identity", "idp"]
+  },
+  "config": [
+    {
+      "name_any": ["hold_minutes", "hold_window", "reservation_hold"],
+      "value": "15"
+    },
+    {
+      "name_any": ["offer_hours", "offer_window", "waitlist_offer_hours"],
+      "value": "6"
+    },
+    {
+      "name_any": ["max_tickets_per_order", "max_tickets", "order_ticket_limit"],
+      "value": "8"
+    }
+  ],
+  "exclusions": {
+    "description": "Terms that must NOT appear in a faithful spec. Dead-code traps planted in the fixture and implementation details the skill instructs to abstract away.",
+    "dead_code": ["turnstile", "kiosk", "merchandise"],
+    "implementation": [
+      "nanoid",
+      "ioredis",
+      "redis",
+      "bullmq",
+      "stripe",
+      "typeorm",
+      "postgres",
+      "timingsafeequal",
+      "hmac"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "entities": [
+    {
+      "name": "Pickup",
+      "kind": "entity",
+      "fields": [{ "name": "status", "enum_values": ["pending", "done"] }],
+      "transition_graphs": [
+        { "field": "status", "states": ["pending", "done"], "edges": [{ "from": "pending", "to": "done" }] }
+      ]
+    },
+    {
+      "name": "Refund",
+      "kind": "entity",
+      "fields": [{ "name": "status", "enum_values": ["open", "done"] }],
+      "transition_graphs": [
+        { "field": "status", "states": ["open", "done"], "edges": [{ "from": "open", "to": "done" }] }
+      ]
+    }
+  ]
+}
