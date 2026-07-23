@@ -1,35 +1,36 @@
 #!/usr/bin/env node
-// Distill token-usage harness runner.
+// Trial runner.
 //
-// Runs the distill skill headlessly against a fixture codebase N times,
+// Runs a trial's skill session headlessly against a fixture N times,
 // capturing token usage / cost from `claude -p --output-format json` and
-// scoring the produced spec against the fixture's golden manifest.
+// scoring the produced artifact with the trial's deterministic scorer.
+// Trial definitions live in trials/<name>/trial.mjs.
 //
 // Usage:
 //   node run.mjs --label baseline --plugin-dir /path/to/plugin [--runs 3]
-//                [--fixture courier] [--model claude-opus-4-8]
+//                [--trial distill] [--fixture courier] [--model claude-opus-4-8]
 //
 //   # interleaved A/B comparison (runs alternate baseline,candidate,baseline,…
 //   # so time-of-day model drift affects both arms equally):
 //   node run.mjs --arm baseline=/path/to/plugin --arm candidate=/path/to/other [--runs 3]
 //
-// Results land in harness/results/<label>/run-N/:
-//   workspace/   copy of the fixture the session worked in (incl. the spec)
+// Results land in results/<label>/run-N/:
+//   workspace/   copy of the fixture the session worked in (incl. the artifact)
 //   result.json  raw claude JSON result (usage, cost, turns, duration)
-//   score.json   quality report from score.mjs
-// and harness/results/<label>/summary.json aggregates all runs, with
-// environment provenance (CLI versions, git SHAs, fixture hash) so results
-// from different machines/checkouts are comparable.
+//   score.json   quality report from the trial's scorer
+// and results/<label>/summary.json aggregates all runs, with environment
+// provenance (CLI versions, git SHAs, fixture hash) so results from
+// different machines/checkouts are comparable.
 //
 // Compare two labels with: node compare.mjs <baseline-label> <candidate-label>
 
 import { execFileSync, spawnSync } from "child_process";
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync, statSync } from "fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync, statSync } from "fs";
 import { createHash } from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const HARNESS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const REPO_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const args = process.argv.slice(2);
 const opt = (name, dflt) => {
@@ -37,9 +38,22 @@ const opt = (name, dflt) => {
   return i !== -1 ? args[i + 1] : dflt;
 };
 const runs = parseInt(opt("runs", "3"), 10);
-const fixture = opt("fixture", "courier");
 const model = opt("model", "claude-opus-4-8");
 const maxTurns = opt("max-turns", "150");
+const trialName = opt("trial", "distill");
+
+const trialPath = path.join(REPO_DIR, "trials", trialName, "trial.mjs");
+if (!existsSync(trialPath)) {
+  const known = readdirSync(path.join(REPO_DIR, "trials")).sort().join(", ");
+  console.error(`unknown trial '${trialName}' — available: ${known}`);
+  process.exit(2);
+}
+const trial = await import(trialPath);
+const fixture = opt("fixture", trial.defaultFixture);
+if (!trial.fixtures().includes(fixture)) {
+  console.error(`unknown fixture '${fixture}' for trial '${trialName}' — available: ${trial.fixtures().join(", ")}`);
+  process.exit(2);
+}
 
 // arms: either repeated --arm label=plugin-dir, or the single --label/--plugin-dir form
 const arms = [];
@@ -60,7 +74,7 @@ if (!arms.length) {
 }
 if (!arms.length) {
   console.error(
-    "usage: node run.mjs --label <name> --plugin-dir <path> [--runs N] [--fixture courier] [--model id]\n" +
+    "usage: node run.mjs --label <name> --plugin-dir <path> [--runs N] [--trial distill] [--fixture courier] [--model id]\n" +
     "       node run.mjs --arm <label>=<plugin-dir> --arm <label>=<plugin-dir> ... [--runs N]"
   );
   process.exit(2);
@@ -77,8 +91,7 @@ for (const arm of arms) {
 }
 
 // pre-flight: both CLIs must exist BEFORE spending any API budget. A missing
-// `allium` would otherwise surface only at scoring time, after a paid run
-// (and historically mis-scored as check_passed=true).
+// `allium` would otherwise surface only at scoring time, after a paid run.
 const cliVersion = (bin) => {
   try {
     return execFileSync(bin, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim().split("\n")[0];
@@ -99,67 +112,43 @@ const gitInfo = (dir) => {
   }
 };
 
-const fixtureDir = path.join(HARNESS_DIR, "fixtures", fixture);
-const codebaseDir = path.join(fixtureDir, "codebase");
-const goldenPath = path.join(fixtureDir, "golden.json");
-
-// content hash of the fixture (codebase + manifest) so a result is tied to
-// the exact fixture revision it was scored against
-const hashFixture = (dir) => {
+// content hash over the trial's fixture inputs so a result is tied to the
+// exact fixture revision it was scored against
+const hashFixture = (paths) => {
   const h = createHash("sha256");
-  (function walk(d) {
-    for (const entry of readdirSync(d).sort()) {
-      const p = path.join(d, entry);
-      if (statSync(p).isDirectory()) walk(p);
-      else {
-        h.update(path.relative(dir, p));
-        h.update("\0");
-        h.update(readFileSync(p));
-      }
+  const feed = (p, base) => {
+    if (statSync(p).isDirectory()) {
+      for (const entry of readdirSync(p).sort()) feed(path.join(p, entry), base);
+    } else {
+      h.update(path.relative(base, p));
+      h.update("\0");
+      h.update(readFileSync(p));
     }
-  })(dir);
+  };
+  for (const p of paths) feed(p, path.dirname(p));
   return h.digest("hex").slice(0, 16);
 };
 
-// pre-flight: a broken manifest would silently corrupt every run's score, so
-// validate it before spending any API budget.
-try {
-  execFileSync("node", [path.join(HARNESS_DIR, "validate-manifest.mjs"), fixtureDir], { stdio: "inherit" });
-} catch {
-  console.error(`\nmanifest validation failed for fixture '${fixture}' — fix golden.json before running. Aborting.`);
-  process.exit(2);
+// pre-flight: broken fixture data would silently corrupt every run's score
+if (trial.validateArgs) {
+  try {
+    execFileSync("node", trial.validateArgs(fixture), { stdio: "inherit" });
+  } catch {
+    console.error(`\nfixture validation failed for '${fixture}' — fix the trial data before running. Aborting.`);
+    process.exit(2);
+  }
 }
 
-const SPEC_REL = path.join("spec", `${fixture}.allium`);
-const PROMPT = [
-  "Use the distill skill to extract an Allium specification from the codebase in the current directory.",
-  `Write the finished specification to a single file: ${SPEC_REL}.`,
-  "Work fully autonomously: do not ask questions; where the skill says to ask the user or validate with stakeholders, make the best-supported choice from the code instead and move on.",
-].join(" ");
-
-function findSpec(workspace) {
-  const preferred = path.join(workspace, SPEC_REL);
-  if (existsSync(preferred)) return preferred;
-  const found = [];
-  (function walk(dir) {
-    for (const entry of readdirSync(dir)) {
-      const p = path.join(dir, entry);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (entry.endsWith(".allium")) found.push(p);
-    }
-  })(workspace);
-  // largest .allium file is the best guess at the main spec
-  return found.sort((a, b) => statSync(b).size - statSync(a).size)[0] ?? null;
-}
-
+const PROMPT = trial.prompt(fixture);
 const TIMEOUT_MS = 45 * 60 * 1000;
-const fixtureSha = hashFixture(fixtureDir);
-const harnessGit = gitInfo(HARNESS_DIR);
+const fixtureSha = hashFixture(trial.hashPaths(fixture));
+const harnessGit = gitInfo(REPO_DIR);
 
 const summaries = new Map();
 for (const arm of arms) {
   const summary = {
     label: arm.label,
+    trial: trial.name,
     plugin_dir: arm.pluginDir,
     fixture,
     model,
@@ -176,19 +165,19 @@ for (const arm of arms) {
     runs: [],
   };
   summaries.set(arm.label, summary);
-  mkdirSync(path.join(HARNESS_DIR, "results", arm.label), { recursive: true });
+  mkdirSync(path.join(REPO_DIR, "results", arm.label), { recursive: true });
 }
 
 function doRun(arm, i) {
   const summary = summaries.get(arm.label);
-  const labelDir = path.join(HARNESS_DIR, "results", arm.label);
+  const labelDir = path.join(REPO_DIR, "results", arm.label);
   const runDir = path.join(labelDir, `run-${i}`);
   const workspace = path.join(runDir, "workspace");
   rmSync(runDir, { recursive: true, force: true });
   mkdirSync(workspace, { recursive: true });
-  cpSync(codebaseDir, workspace, { recursive: true });
+  trial.setup(fixture, workspace);
 
-  console.log(`[${arm.label} run ${i}/${runs}] starting distill session...`);
+  console.log(`[${arm.label} run ${i}/${runs}] starting ${trial.name} session...`);
   const started = Date.now();
   const proc = spawnSync(
     "claude",
@@ -224,14 +213,14 @@ function doRun(arm, i) {
   }
   writeFileSync(path.join(runDir, "result.json"), JSON.stringify(result, null, 2));
 
-  const specPath = findSpec(workspace);
+  const artifactPath = trial.artifact(workspace, fixture);
   let score = null;
-  if (specPath) {
-    const scored = execFileSync("node", [path.join(HARNESS_DIR, "score.mjs"), specPath, goldenPath], { encoding: "utf8" });
+  if (artifactPath) {
+    const scored = execFileSync("node", trial.scoreArgs(artifactPath, fixture), { encoding: "utf8" });
     score = JSON.parse(scored);
     writeFileSync(path.join(runDir, "score.json"), scored);
   } else {
-    score = { summary: { entity_recall: 0, state_recall: 0, transition_recall: 0, rule_recall: 0, quality_pass: false } };
+    score = { summary: trial.emptyQuality() };
     writeFileSync(path.join(runDir, "score.json"), JSON.stringify(score, null, 2));
   }
 
@@ -252,15 +241,16 @@ function doRun(arm, i) {
       cache_read: u.cache_read_input_tokens ?? null,
       output: u.output_tokens ?? null,
     },
-    spec: specPath ? path.relative(runDir, specPath) : null,
+    artifact: artifactPath ? path.relative(runDir, artifactPath) : null,
     quality: score.summary,
     exclusion_violations: score.exclusions?.violations ?? [],
   };
   summary.runs.push(row);
   writeFileSync(path.join(labelDir, "summary.json"), JSON.stringify(summary, null, 2));
+  const qualityBrief = trial.qualityMetrics.map((m) => `${m}=${row.quality[m]}`).join(" ");
   console.log(`[${arm.label} run ${i}/${runs}] done: cost=$${row.cost_usd} turns=${row.num_turns} ` +
     `in=${row.tokens.input} cc=${row.tokens.cache_creation} cr=${row.tokens.cache_read} out=${row.tokens.output} ` +
-    `entities=${row.quality.entity_recall} rules=${row.quality.rule_recall} pass=${row.quality.quality_pass}`);
+    `${qualityBrief} pass=${row.quality.quality_pass}`);
 }
 
 // interleave arms (A,B,A,B,…) so temporal drift in model behaviour is spread
@@ -285,11 +275,8 @@ const METRICS = {
   cache_creation: (r) => r.tokens.cache_creation,
   cache_read: (r) => r.tokens.cache_read,
   output: (r) => r.tokens.output,
-  entity_recall: (r) => r.quality.entity_recall,
-  state_recall: (r) => r.quality.state_recall,
-  transition_recall: (r) => r.quality.transition_recall,
-  rule_recall: (r) => r.quality.rule_recall,
 };
+for (const m of trial.qualityMetrics) METRICS[m] = (r) => r.quality?.[m];
 for (const arm of arms) {
   const summary = summaries.get(arm.label);
   const valid = summary.runs.filter((r) => r.ok);
@@ -300,9 +287,9 @@ for (const arm of arms) {
     summary.stats[name] = stat(valid.map(get));
     summary.median[name] = summary.stats[name].median;
   }
-  writeFileSync(path.join(HARNESS_DIR, "results", arm.label, "summary.json"), JSON.stringify(summary, null, 2));
+  writeFileSync(path.join(REPO_DIR, "results", arm.label, "summary.json"), JSON.stringify(summary, null, 2));
   console.log(`\n[${arm.label}] medians: ${JSON.stringify(summary.median)}`);
 }
 if (arms.length === 2) {
-  console.log(`\ncompare with: node ${path.relative(process.cwd(), path.join(HARNESS_DIR, "compare.mjs"))} ${arms[0].label} ${arms[1].label}`);
+  console.log(`\ncompare with: node ${path.relative(process.cwd(), path.join(REPO_DIR, "compare.mjs"))} ${arms[0].label} ${arms[1].label}`);
 }

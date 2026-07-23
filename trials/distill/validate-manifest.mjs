@@ -4,20 +4,18 @@
 // transition endpoint, a terminal state that doesn't exist, a manifest state
 // that appears nowhere in the code) before they corrupt a scoring run.
 //
-// Usage: node validate-manifest.mjs <fixtureDir>   (dir containing golden.json + codebase/)
+// Usage: node validate-manifest.mjs <golden.json> [codebaseDir]
 //
 // Exits non-zero if any ERROR is found. WARN lines are advisory.
 
 import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import path from "path";
 
-const fixtureDir = process.argv[2];
-if (!fixtureDir) {
-  console.error("usage: node validate-manifest.mjs <fixtureDir>");
+const [goldenPath, codebaseDir = ""] = process.argv.slice(2);
+if (!goldenPath) {
+  console.error("usage: node validate-manifest.mjs <golden.json> [codebaseDir]");
   process.exit(2);
 }
-const goldenPath = path.join(fixtureDir, "golden.json");
-const codebaseDir = path.join(fixtureDir, "codebase");
 
 const errors = [];
 const warns = [];
@@ -34,7 +32,7 @@ try {
 
 // gather codebase text once for cross-checks
 let codeText = "";
-if (existsSync(codebaseDir)) {
+if (codebaseDir && existsSync(codebaseDir)) {
   const walk = (dir) => {
     for (const entry of readdirSync(dir)) {
       if (entry === "node_modules" || entry.startsWith(".")) continue;
@@ -45,7 +43,7 @@ if (existsSync(codebaseDir)) {
   };
   walk(codebaseDir);
 } else {
-  warn(`no codebase/ dir at ${codebaseDir} — skipping code cross-checks`);
+  warn(codebaseDir ? `no codebase dir at ${codebaseDir} — skipping code cross-checks` : "no codebase dir given — skipping code cross-checks");
 }
 const codeLower = codeText.toLowerCase();
 
@@ -124,7 +122,7 @@ for (const term of [...(golden.exclusions?.dead_code ?? []), ...(golden.exclusio
     warn(`exclusion term '${term}' appears nowhere in the codebase — is it a real plant?`);
 }
 
-const fixtureName = path.basename(fixtureDir.replace(/\/$/, ""));
+const fixtureName = path.basename(path.dirname(path.resolve(goldenPath)));
 console.log(`[${fixtureName}] ${Object.keys(golden.entities ?? {}).length} entities, ${(golden.rules ?? []).length} rules, ${Object.keys(golden.boundaries ?? {}).length} boundaries`);
 for (const w of warns) console.log(`  WARN  ${w}`);
 for (const e of errors) console.log(`  ERROR ${e}`);

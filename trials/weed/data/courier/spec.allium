@@ -1,0 +1,406 @@
+-- allium: 3
+-- courier.allium
+--
+-- SwiftShip: courier and parcel-delivery operation.
+--
+-- Scope: the end-to-end parcel lifecycle, from registration and pickup
+--   through depot handling, delivery attempts, customs holds and the
+--   scheduled housekeeping that archives delivered parcels and expires
+--   stalled pickups.
+-- Includes: Parcel, PickupRequest, DeliveryAttempt, CustomsHold,
+--   Customer (read model), Driver, Notification.
+-- Excludes:
+--   - Loyalty points (model exists in code but is never awarded, redeemed
+--     or read by any code path; not yet a real behaviour).
+--   - SMS notifications (legacy Twilio path, gated off behind a disabled
+--     feature flag pending a cost review).
+--   - Authentication, tracking-token generation and the public-tracking
+--     cache (infrastructure; not domain behaviour).
+--   - Customer mastering: customers are owned by the external CRM and only
+--     mirrored here, so they are modelled as an external entity.
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+-- Customers are mastered in the external CRM and mirrored read-only here.
+external entity Customer {
+    name: String
+    email: String
+    phone: String?
+}
+
+-- Depot and operations staff, identified by the back-office identity system.
+external entity OpsStaff {}
+
+-- The customs broker's system, which raises and releases holds by webhook.
+external entity CustomsBroker {}
+
+------------------------------------------------------------
+-- Entities and Variants
+------------------------------------------------------------
+
+entity Driver {
+    name: String
+    email: String
+
+    shift_started_at: Timestamp?
+    shift_ends_at: Timestamp?
+
+    is_on_shift:
+        shift_started_at != null
+        and shift_started_at <= now
+        and (shift_ends_at = null or now < shift_ends_at)
+
+    -- Whether this driver may be put on a delivery route right now.
+    can_take_route: is_on_shift
+}
+
+entity Parcel {
+    sender: Customer
+    recipient: Customer
+    is_international: Boolean
+    weight_grams: Integer
+
+    status: registered | collected | in_depot | out_for_delivery | delivered | archived
+
+    delivered_at: Timestamp when status = delivered
+
+    attempts: DeliveryAttempt with parcel = this
+    customs_holds: CustomsHold with parcel = this
+
+    failed_attempts: attempts where status = failed
+    active_holds: customs_holds where status = held
+
+    failed_attempt_count: failed_attempts.count
+    has_active_hold: active_holds.count > 0
+    attempts_exhausted: failed_attempt_count >= config.max_delivery_attempts
+
+    transitions status {
+        registered -> collected
+        collected -> in_depot
+        in_depot -> out_for_delivery
+        out_for_delivery -> delivered
+        out_for_delivery -> in_depot
+        delivered -> archived
+        terminal: archived
+    }
+}
+
+entity PickupRequest {
+    parcel: Parcel
+    customer: Customer
+    pickup_address: String
+
+    status: pending | assigned | collected | expired
+
+    assigned_driver: Driver?
+    requested_at: Timestamp
+
+    -- A request someone could still act on.
+    is_open: status = pending or status = assigned
+
+    transitions status {
+        pending -> assigned
+        assigned -> collected
+        pending -> expired
+        terminal: collected, expired
+    }
+}
+
+entity DeliveryAttempt {
+    parcel: Parcel
+    driver: Driver
+
+    status: pending | succeeded | failed
+    failure_reason: String when status = failed
+
+    transitions status {
+        pending -> succeeded
+        pending -> failed
+        terminal: succeeded, failed
+    }
+}
+
+entity CustomsHold {
+    parcel: Parcel
+    reason: String?
+
+    status: held | released
+
+    transitions status {
+        held -> released
+        terminal: released
+    }
+}
+
+-- A transactional message sent to a customer about their parcel.
+entity Notification {
+    recipient: Customer
+    kind: parcel_delivered | pickup_expired
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    -- Failed delivery attempts before a parcel stops being dispatchable.
+    max_delivery_attempts: Integer = 5
+    -- How long an unaccepted pickup request stays open before it expires.
+    pickup_expiry_window: Duration = 48.hours
+    -- How long a delivered parcel is kept before it is archived.
+    archive_after: Duration = 90.days
+}
+
+------------------------------------------------------------
+-- Rules
+------------------------------------------------------------
+
+-- Registration and pickup -----------------------------------------------
+
+rule RegisterParcel {
+    when: RegisterParcel(staff, sender, recipient, weight_grams, is_international, pickup_address)
+    ensures:
+        let parcel = Parcel.created(
+            sender: sender,
+            recipient: recipient,
+            weight_grams: weight_grams,
+            is_international: is_international,
+            status: registered
+        )
+        PickupRequest.created(
+            parcel: parcel,
+            customer: sender,
+            pickup_address: pickup_address,
+            status: pending,
+            requested_at: now
+        )
+}
+
+rule AcceptPickup {
+    when: AcceptPickup(driver, pickup)
+    requires: pickup.status = pending
+    ensures:
+        pickup.status = assigned
+        pickup.assigned_driver = driver
+}
+
+rule CollectPickup {
+    when: CollectPickup(driver, pickup)
+    requires: pickup.status = assigned
+    requires: pickup.assigned_driver = driver
+    ensures:
+        pickup.status = collected
+        pickup.parcel.status = collected
+}
+
+-- Depot handling and dispatch --------------------------------------------
+
+rule DepotScan {
+    when: DepotScan(staff, parcel)
+    requires: parcel.status = collected
+    ensures: parcel.status = in_depot
+}
+
+rule DispatchParcel {
+    when: DispatchParcel(staff, parcel, driver)
+    requires: parcel.status = in_depot
+    requires: not parcel.has_active_hold
+    requires: not parcel.attempts_exhausted
+    ensures:
+        parcel.status = out_for_delivery
+        DeliveryAttempt.created(parcel: parcel, driver: driver, status: pending)
+}
+
+-- Delivery outcomes ------------------------------------------------------
+
+rule RecordDeliverySuccess {
+    when: RecordDeliverySuccess(driver, attempt)
+    requires: attempt.status = pending
+    ensures:
+        attempt.status = succeeded
+        attempt.parcel.status = delivered
+        attempt.parcel.delivered_at = now
+        Notification.created(recipient: attempt.parcel.recipient, kind: parcel_delivered)
+}
+
+rule RecordDeliveryFailure {
+    when: RecordDeliveryFailure(driver, attempt, reason)
+    requires: attempt.status = pending
+    ensures:
+        attempt.status = failed
+        attempt.failure_reason = reason
+        attempt.parcel.status = in_depot
+}
+
+-- Customs holds (raised and released by the broker webhook) --------------
+
+rule RaiseCustomsHold {
+    when: CustomsHoldRaised(broker, parcel, reason?)
+    requires: parcel.is_international
+    ensures:
+        CustomsHold.created(
+            parcel: parcel,
+            reason: reason,
+            status: held
+        )
+}
+
+rule ReleaseCustomsHold {
+    when: CustomsHoldReleased(broker, hold)
+    requires: hold.status = held
+    ensures: hold.status = released
+}
+
+-- Scheduled housekeeping -------------------------------------------------
+
+-- A delivered parcel is archived once its retention window passes.
+rule ArchiveDeliveredParcel {
+    when: parcel: Parcel.delivered_at + config.archive_after <= now
+    requires: parcel.status = delivered
+    ensures: parcel.status = archived
+}
+
+-- A pickup request no driver accepted within the window expires.
+rule ExpirePickupRequest {
+    when: pickup: PickupRequest.requested_at + config.pickup_expiry_window <= now
+    requires: pickup.status = pending
+    ensures:
+        pickup.status = expired
+        Notification.created(recipient: pickup.customer, kind: pickup_expired)
+}
+
+------------------------------------------------------------
+-- Invariants
+------------------------------------------------------------
+
+invariant CustomsHoldsRequireInternationalParcels {
+    CustomsHolds.all(hold => hold.parcel.is_international)
+}
+
+------------------------------------------------------------
+-- Actor Declarations
+------------------------------------------------------------
+
+actor Operator {
+    identified_by: OpsStaff
+}
+
+actor Courier {
+    identified_by: Driver
+}
+
+actor Broker {
+    identified_by: CustomsBroker
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+-- Public, unauthenticated parcel tracking.
+surface PublicTracking {
+    context parcel: Parcel
+
+    exposes:
+        parcel.status
+        parcel.is_international
+        parcel.delivered_at when parcel.status = delivered
+}
+
+-- Ops register a shipment and open a pickup request for it.
+surface ParcelRegistration {
+    facing operator: Operator
+
+    provides:
+        RegisterParcel(operator, sender, recipient, weight_grams, is_international, pickup_address)
+}
+
+-- Driver mobile app: claim and collect pickups.
+surface DriverPickups {
+    facing courier: Courier
+
+    context pickup: PickupRequest
+
+    exposes:
+        pickup.status
+        pickup.pickup_address
+        pickup.parcel.status
+
+    provides:
+        AcceptPickup(courier, pickup) when pickup.status = pending
+        CollectPickup(courier, pickup)
+            when pickup.status = assigned and pickup.assigned_driver = courier
+
+    timeout:
+        ExpirePickupRequest
+}
+
+-- Driver mobile app: record the outcome of a delivery attempt.
+surface DriverDeliveries {
+    facing courier: Courier
+
+    context attempt: DeliveryAttempt where driver = courier and status = pending
+
+    exposes:
+        attempt.status
+        attempt.parcel.status
+
+    provides:
+        RecordDeliverySuccess(courier, attempt)
+        RecordDeliveryFailure(courier, attempt, reason)
+}
+
+-- Back-office depot and ops handling.
+surface DepotOperations {
+    facing operator: Operator
+
+    context parcel: Parcel
+
+    exposes:
+        parcel.status
+        parcel.has_active_hold
+        parcel.failed_attempt_count
+
+    provides:
+        DepotScan(operator, parcel) when parcel.status = collected
+        DispatchParcel(operator, parcel, driver)
+            when parcel.status = in_depot
+                and not parcel.has_active_hold
+                and not parcel.attempts_exhausted
+}
+
+surface PickupAdministration {
+    facing operator: Operator
+
+    context pickup: PickupRequest
+
+    exposes:
+        pickup.status
+        pickup.pickup_address
+        pickup.is_open
+}
+
+-- Inbound customs broker webhook.
+surface CustomsIntegration {
+    facing broker: Broker
+
+    provides:
+        CustomsHoldRaised(broker, parcel, reason?)
+        CustomsHoldReleased(broker, hold)
+}
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+-- Loyalty points: the codebase carries a LoyaltyPoints model (per-parcel
+-- accrual, bronze/silver/gold tiers, redemption) but nothing awards, redeems
+-- or reads it. Is sender loyalty an intended behaviour to be specified, or
+-- abandoned scaffolding to remove?
+
+-- Notification channel: delivery, return and pickup-expiry notifications are
+-- modelled as a single Notification regardless of medium. Email is the only
+-- live channel; an SMS path exists but is gated off behind a disabled flag.
+-- Should the channel (email / SMS / customer preference) be part of the spec?

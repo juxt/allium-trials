@@ -1,0 +1,6 @@
+{
+  "divergences": [
+    { "id": "D1_config_max_attempts_drift", "must_all": ["max_delivery_attempts"], "must_any": [] }
+  ],
+  "allowed_extra_findings": []
+}

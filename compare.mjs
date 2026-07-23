@@ -34,11 +34,16 @@ const load = (label) => {
 const base = load(baseLabel);
 const cand = load(candLabel);
 
+// summaries written before the trial abstraction carry no trial name
+const trialName = base.trial ?? "distill";
+const trial = await import(path.join(HARNESS_DIR, "trials", trialName, "trial.mjs"));
+
 // comparability warnings — differing setups make the numbers apples-to-oranges
 const warnIfDiffers = (what, a, b) => {
   if (a != null && b != null && JSON.stringify(a) !== JSON.stringify(b))
     console.log(`WARN  ${what} differs: baseline=${JSON.stringify(a)} candidate=${JSON.stringify(b)}`);
 };
+warnIfDiffers("trial", base.trial ?? "distill", cand.trial ?? "distill");
 warnIfDiffers("fixture", base.fixture, cand.fixture);
 warnIfDiffers("model", base.model, cand.model);
 warnIfDiffers("fixture hash", base.provenance?.fixture_sha256, cand.provenance?.fixture_sha256);
@@ -75,10 +80,7 @@ const METRICS = [
   { name: "total_input_tokens", get: totalInput, digits: 0 },
   { name: "output_tokens", get: (r) => r.tokens?.output, digits: 0 },
   { name: "num_turns", get: (r) => r.num_turns, digits: 0 },
-  { name: "entity_recall", get: (r) => r.quality?.entity_recall, digits: 3 },
-  { name: "state_recall", get: (r) => r.quality?.state_recall, digits: 3 },
-  { name: "transition_recall", get: (r) => r.quality?.transition_recall, digits: 3 },
-  { name: "rule_recall", get: (r) => r.quality?.rule_recall, digits: 3 },
+  ...trial.qualityMetrics.map((m) => ({ name: m, get: (r) => r.quality?.[m], digits: 3 })),
 ];
 
 const round = (x, digits) => (x == null ? null : +x.toFixed(digits));
@@ -101,22 +103,14 @@ for (const r of rows) console.log(r.map((cell, i) => String(cell).padEnd(widths[
 
 // --- quality guardrail (floor rule) -----------------------------------------
 const problems = [];
-const floors = ["entity_recall", "state_recall", "transition_recall", "rule_recall"];
-for (const name of floors) {
+for (const name of trial.guardrailFloors) {
   const bFloor = stat(bValid.map((r) => r.quality?.[name]))?.min;
   const cFloor = stat(cValid.map((r) => r.quality?.[name]))?.min;
   if (bFloor != null && cFloor != null && cFloor < bFloor - 1e-9) {
     problems.push(`${name} floor dropped: ${bFloor} -> ${cFloor}`);
   }
 }
-const confabFree = (runs) => runs.every((r) => r.quality?.confabulation_free !== false);
-if (confabFree(bValid) && !confabFree(cValid)) {
-  problems.push("candidate has confabulated states/transitions in a run; baseline had none");
-}
-const leakFree = (runs) => runs.every((r) => !(r.exclusion_violations ?? []).length);
-if (leakFree(bValid) && !leakFree(cValid)) {
-  problems.push("candidate leaked excluded terms in a run; baseline had none");
-}
+if (trial.extraGuardrails) problems.push(...trial.extraGuardrails(bValid, cValid));
 const passes = (runs) => runs.filter((r) => r.quality?.quality_pass).length;
 console.log(`\nquality_pass: ${baseLabel} ${passes(bValid)}/${bValid.length}, ${candLabel} ${passes(cValid)}/${cValid.length}`);
 

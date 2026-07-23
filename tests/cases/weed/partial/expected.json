@@ -1,0 +1,7 @@
+{
+  "summary.divergence_recall": 0.6,
+  "summary.false_positive_count": 2,
+  "summary.finding_count": 5,
+  "summary.quality_pass": false,
+  "divergences.missed.length": 2
+}

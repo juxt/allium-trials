@@ -1,0 +1,41 @@
+{
+  "divergences": [
+    {
+      "id": "D1_config_max_attempts_drift",
+      "note": "spec says max_delivery_attempts = 5; config.py says MAX_DELIVERY_ATTEMPTS = 3",
+      "must_all": ["max_delivery_attempts"],
+      "must_any": []
+    },
+    {
+      "id": "D2_missing_pickup_cancellation",
+      "note": "code implements pickup cancellation (admin.py cancel endpoint, cancelled status); spec has no cancellation concept",
+      "must_all": ["pickup", "cancel"],
+      "must_any": []
+    },
+    {
+      "id": "D3_phantom_archiving",
+      "note": "spec invents delivered->archived state, archive_after config and ArchiveDeliveredParcel rule; code has no archiving",
+      "must_all": ["archiv"],
+      "must_any": []
+    },
+    {
+      "id": "D4_dispatch_shift_guard_missing",
+      "note": "code's dispatch_parcel requires driver.can_take_route (on shift); spec's DispatchParcel has no driver eligibility guard",
+      "must_all": ["dispatch"],
+      "must_any": ["shift", "can_take_route", "eligib", "on-shift"]
+    },
+    {
+      "id": "D5_missing_return_to_sender",
+      "note": "code returns exhausted parcels to sender (returned status, sweep job, notification); spec has no returned state or return behaviour",
+      "must_all": ["return"],
+      "must_any": ["sender", "exhaust", "sweep"]
+    }
+  ],
+  "allowed_extra_findings": [
+    ["loyalt"],
+    ["sms"],
+    ["tracking"],
+    ["notification"],
+    ["cache"]
+  ]
+}
