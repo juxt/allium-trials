@@ -92,7 +92,11 @@ node run.mjs --arm baseline=../allium-plugin --arm candidate=../allium-candidate
 node compare.mjs baseline candidate
 ```
 
-Each run costs real API usage (it is a full distill session). Results land in
+Each run is a full distill session, so it consumes real usage — your
+subscription's usage allowance when the `claude` CLI is logged in via
+claude.ai (the common case), or API billing when an `ANTHROPIC_API_KEY` is
+set. On subscription, a multi-run comparison on a large fixture can eat a
+meaningful chunk of a 5-hour/weekly usage window. Results land in
 `results/<label>/`, with per-run raw output, the produced spec, the quality
 report, and a `summary.json` with per-metric median/min/max plus environment
 provenance (claude/allium CLI versions, plugin and harness git SHAs with
