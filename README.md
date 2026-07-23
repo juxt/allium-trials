@@ -81,8 +81,8 @@ reduction that costs quality is a regression, not an improvement.
 
 Measures how well the `weed` skill detects spec↔code divergence. The fixture
 pairs the shared courier codebase with a spec
-(`trials/weed/data/courier/spec.allium`) into which five divergences are
-deliberately planted — one of each shape weed must catch:
+(`trials/weed/data/courier/spec.allium`) carrying six known divergences —
+one of each shape weed must catch:
 
 - **config drift** — spec says `max_delivery_attempts = 5`, code says 3
 - **missing behaviour (command)** — code implements pickup cancellation; the
@@ -93,6 +93,10 @@ deliberately planted — one of each shape weed must catch:
   spec's DispatchParcel rule has no driver eligibility guard
 - **missing behaviour (scheduled)** — code returns exhausted parcels to the
   sender via a sweep job; the spec has no returned state or return rule
+- **aspirational guard** — the spec's DispatchParcel requires
+  `not attempts_exhausted`, but the code never checks attempts at dispatch;
+  only the sweep job enforces the limit (inherited from the base spec and
+  confirmed real — found by the first live smoke run)
 
 The planted spec still passes `allium check` with zero errors — divergences
 are semantic drift against the code, never syntax errors. The session writes

@@ -29,6 +29,12 @@
       "note": "code returns exhausted parcels to sender (returned status, sweep job, notification); spec has no returned state or return behaviour",
       "must_all": ["return"],
       "must_any": ["sender", "exhaust", "sweep"]
+    },
+    {
+      "id": "D6_dispatch_exhaustion_guard_not_in_code",
+      "note": "spec's DispatchParcel requires not attempts_exhausted; code's dispatch_parcel never checks attempts — only the jobs.py sweep enforces MAX_DELIVERY_ATTEMPTS. Inherited from the base spec (aspirational guard), confirmed real by code reading",
+      "must_all": ["dispatch"],
+      "must_any": ["exhaust", "attempts"]
     }
   ],
   "allowed_extra_findings": [
