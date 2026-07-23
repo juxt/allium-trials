@@ -17,9 +17,11 @@ The harness lives here, separate from the plugin, on purpose:
 - **Anyone can point it at any checkout.** The plugin under test is a
   parameter (`--plugin-dir`), so any member can trial their own fork or branch.
 
-Today it contains one trial: **distill token usage**. The runner/scorer/
-manifest split is designed so other skills (tend, weed, propagate) can gain
-their own trials without restructuring.
+Today it implements a single trial: **distill token usage**. Trials for the
+other skills (tend, weed, elicit, propagate) are future work — the runner
+currently hardcodes the distill prompt, and the scorer judges distilled specs
+against golden manifests, so adding a trial for another skill means adding a
+per-skill prompt and scorer alongside its fixtures.
 
 ## The distill trial
 
@@ -132,9 +134,10 @@ different canonical states.
 ## Fixtures
 
 - `courier/` — Python/Flask, ~1k lines. The reference fixture.
-- `claims/` — Python/Flask, ~5-8k lines. Tests how the token saving scales
-  (the token pain is worst on large codebases).
-- `ticketing/` — TypeScript. Tests generalization beyond Python idioms.
+- `claims/` — Python/Flask, ~3k lines. Tests how the token saving scales
+  (the token pain is worst on larger codebases).
+- `ticketing/` — TypeScript, ~2k lines. Tests generalization beyond Python
+  idioms.
 
 Run a specific fixture with `--fixture <name>` (default `courier`).
 
