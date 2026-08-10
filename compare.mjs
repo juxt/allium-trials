@@ -77,6 +77,8 @@ const totalInput = (r) => {
 };
 const METRICS = [
   { name: "cost_usd", get: (r) => r.cost_usd, digits: 2 },
+  { name: "peak_orchestrator_ctx", get: (r) => r.peak_orchestrator_ctx, digits: 0 },
+  { name: "peak_subagent_ctx", get: (r) => r.peak_subagent_ctx, digits: 0 },
   { name: "total_input_tokens", get: totalInput, digits: 0 },
   { name: "output_tokens", get: (r) => r.tokens?.output, digits: 0 },
   { name: "num_turns", get: (r) => r.num_turns, digits: 0 },

@@ -11,6 +11,8 @@ import { spawnSync } from "child_process";
 import { readdirSync, readFileSync, existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { streamMetrics } from "../lib/stream-metrics.mjs";
+import * as loopTrial from "../trials/loop/trial.mjs";
 
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.dirname(TESTS_DIR);
@@ -107,6 +109,57 @@ for (const [name, caseDir] of casesFor("weed")) {
   if (res.status === 0) fail("weed/validate-missing-spec", "expected non-zero exit when spec.allium is absent");
   else if (!/missing/.test(res.stdout)) fail("weed/validate-missing-spec", `error does not mention the missing spec: ${res.stdout}`);
   else ok("weed/validate-missing-spec");
+}
+
+// --- stream-metrics: peak-context split (orchestrator vs subagent) -----------
+{
+  const asstMain = (ctx, extra = {}) => ({ type: "assistant", message: { usage: { cache_read_input_tokens: ctx }, content: extra.content ?? [] } });
+  const asstSub = (ctx) => ({ type: "assistant", parent_tool_use_id: "t1", message: { usage: { cache_read_input_tokens: ctx }, content: [] } });
+  const resultEvt = (o) => ({ type: "result", subtype: "success", num_turns: 40, total_cost_usd: 5.28, usage: { output_tokens: 100 }, ...o });
+
+  // inline: one growing orchestrator context, no subagents
+  const inlineStream = [asstMain(30000), asstMain(100000), asstMain(195889), resultEvt({})].map((e) => JSON.stringify(e)).join("\n");
+  const im = streamMetrics(inlineStream);
+  const inlineExpect = { peak_orchestrator_ctx: 195889, peak_subagent_ctx: 0, subagent_spawns: 0, ok: true, cost_usd: 5.28 };
+  const iMis = Object.entries(inlineExpect).filter(([k, v]) => im[k] !== v).map(([k, v]) => `${k}: expected ${v}, got ${im[k]}`);
+  if (iMis.length) fail("stream-metrics/inline", iMis.join("; ")); else ok("stream-metrics/inline");
+
+  // agents: flat orchestrator, one spawn, bounded subagent context
+  const spawn = asstMain(30000, { content: [{ type: "tool_use", name: "Agent", input: { subagent_type: "allium:distill", description: "distill audit-service" } }] });
+  const agentsStream = [asstMain(28000), spawn, asstSub(113112), asstSub(90000), asstMain(30000), resultEvt({ num_turns: 1, total_cost_usd: 8.78 })]
+    .map((e) => JSON.stringify(e)).join("\n");
+  const am = streamMetrics(agentsStream);
+  const agentsExpect = { peak_orchestrator_ctx: 30000, peak_subagent_ctx: 113112, subagent_spawns: 1, ok: true };
+  const aMis = Object.entries(agentsExpect).filter(([k, v]) => am[k] !== v).map(([k, v]) => `${k}: expected ${v}, got ${am[k]}`);
+  if (am.subagents[0]?.subagent_type !== "allium:distill") aMis.push(`subagent_type: got ${am.subagents[0]?.subagent_type}`);
+  if (aMis.length) fail("stream-metrics/agents", aMis.join("; ")); else ok("stream-metrics/agents");
+
+  // the win the loop must prove: orchestrator ctx bounded far below inline's
+  if (!(am.peak_orchestrator_ctx < im.peak_orchestrator_ctx / 3)) fail("stream-metrics/bounded", "agents orchestrator ctx not <1/3 of inline");
+  else ok("stream-metrics/bounded");
+
+  // robustness: partial/garbage lines are skipped, empty stream yields zeros
+  const em = streamMetrics('not json\n{"type":"assistant"}\n');
+  if (em.peak_orchestrator_ctx !== 0 || em.cost_usd !== null) fail("stream-metrics/empty", `unexpected: ${JSON.stringify(em)}`);
+  else ok("stream-metrics/empty");
+}
+
+// --- loop trial: modes are distinct and it reuses the distill scorer ----------
+{
+  const m = [];
+  if (JSON.stringify(loopTrial.modes) !== JSON.stringify(["inline", "agents", "agents-ledger"])) m.push(`modes: ${JSON.stringify(loopTrial.modes)}`);
+  const inline = loopTrial.prompt("courier", "inline");
+  const agents = loopTrial.prompt("courier", "agents");
+  const ledger = loopTrial.prompt("courier", "agents-ledger");
+  if (!/single session|do NOT/.test(inline)) m.push("inline prompt does not forbid delegation");
+  if (!/ORCHESTRATOR|delegate/i.test(agents)) m.push("agents prompt is not orchestrator-shaped");
+  if (!/LEDGER/.test(ledger) || !/NEW divergences/.test(ledger)) m.push("agents-ledger prompt missing the ledger lever");
+  if (/code.?map/i.test(ledger)) m.push("agents-ledger should be ledger-only (no map)");
+  if (inline === agents || agents === ledger) m.push("mode prompts are not distinct");
+  const sa = loopTrial.scoreArgs("/tmp/x.allium", "courier");
+  if (!sa[0].endsWith(path.join("distill", "score.mjs"))) m.push(`scoreArgs not pointed at distill scorer: ${sa[0]}`);
+  if (!loopTrial.guardrailFloors?.length) m.push("no guardrail floors");
+  if (m.length) fail("loop/trial-shape", m.join("; ")); else ok("loop/trial-shape");
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);
