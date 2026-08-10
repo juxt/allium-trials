@@ -24,11 +24,12 @@
 //
 // Compare two labels with: node compare.mjs <baseline-label> <candidate-label>
 
-import { execFileSync, spawnSync } from "child_process";
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync, statSync } from "fs";
+import { execFileSync, spawn } from "child_process";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, existsSync, statSync, createWriteStream } from "fs";
 import { createHash } from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
+import { streamMetrics } from "./lib/stream-metrics.mjs";
 
 const REPO_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,6 +50,7 @@ if (!existsSync(trialPath)) {
   process.exit(2);
 }
 const trial = await import(trialPath);
+const mode = opt("mode", trial.defaultMode);   // undefined for mode-insensitive trials
 const fixture = opt("fixture", trial.defaultFixture);
 if (!trial.fixtures().includes(fixture)) {
   console.error(`unknown fixture '${fixture}' for trial '${trialName}' — available: ${trial.fixtures().join(", ")}`);
@@ -139,7 +141,7 @@ if (trial.validateArgs) {
   }
 }
 
-const PROMPT = trial.prompt(fixture);
+const PROMPT = trial.prompt(fixture, mode);
 const TIMEOUT_MS = 45 * 60 * 1000;
 const fixtureSha = hashFixture(trial.hashPaths(fixture));
 const harnessGit = gitInfo(REPO_DIR);
@@ -151,6 +153,7 @@ for (const arm of arms) {
     trial: trial.name,
     plugin_dir: arm.pluginDir,
     fixture,
+    mode: mode ?? null,
     model,
     prompt: PROMPT,
     provenance: {
@@ -168,7 +171,7 @@ for (const arm of arms) {
   mkdirSync(path.join(REPO_DIR, "results", arm.label), { recursive: true });
 }
 
-function doRun(arm, i) {
+async function doRun(arm, i) {
   const summary = summaries.get(arm.label);
   const labelDir = path.join(REPO_DIR, "results", arm.label);
   const runDir = path.join(labelDir, `run-${i}`);
@@ -177,40 +180,41 @@ function doRun(arm, i) {
   mkdirSync(workspace, { recursive: true });
   trial.setup(fixture, workspace);
 
-  console.log(`[${arm.label} run ${i}/${runs}] starting ${trial.name} session...`);
+  console.log(`[${arm.label} run ${i}/${runs}] starting ${trial.name} session${mode ? ` (mode=${mode})` : ""}...`);
   const started = Date.now();
-  const proc = spawnSync(
+  // stream-json (not buffered json) so we can measure per-turn context and split
+  // orchestrator vs subagent usage; the final result event still carries the
+  // session aggregate. Stream to disk live so a killed/timed-out run is inspectable.
+  const streamPath = path.join(runDir, "stream.jsonl");
+  const child = spawn(
     "claude",
     [
       "-p", PROMPT,
-      "--output-format", "json",
+      "--output-format", "stream-json",
+      "--verbose",
       "--model", model,
       "--max-turns", maxTurns,
       "--permission-mode", "bypassPermissions",
       "--plugin-dir", arm.pluginDir,
       "--setting-sources", "project",
     ],
-    { cwd: workspace, encoding: "utf8", timeout: TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 }
+    { cwd: workspace }
   );
+  child.stdout.pipe(createWriteStream(streamPath));
+  const errChunks = [];
+  child.stderr.on("data", (d) => errChunks.push(d));
+  const killTimer = setTimeout(() => child.kill("SIGKILL"), TIMEOUT_MS);
+  const exit = await new Promise((res) => child.on("close", (code, signal) => res({ code, signal })));
+  clearTimeout(killTimer);
+  if (errChunks.length) writeFileSync(path.join(runDir, "stderr.txt"), Buffer.concat(errChunks).toString());
 
-  // spawn-level failures (binary vanished mid-suite, timeout, kill signal)
-  // must be reported as what they are, not recorded as an opaque bad score
   let spawnError = null;
-  if (proc.error) {
-    spawnError = proc.error.code === "ETIMEDOUT"
-      ? `session timed out after ${TIMEOUT_MS / 60000} minutes`
-      : `claude spawn failed: ${proc.error.code ?? proc.error.message}`;
-  } else if (proc.signal) {
-    spawnError = `claude killed by signal ${proc.signal}`;
-  }
+  if (exit.signal) spawnError = `claude killed by signal ${exit.signal}` + (Date.now() - started >= TIMEOUT_MS ? ` (timed out after ${TIMEOUT_MS / 60000}m)` : "");
   if (spawnError) console.error(`[${arm.label} run ${i}/${runs}] ${spawnError}`);
 
-  let result = null;
-  try {
-    result = JSON.parse(proc.stdout);
-  } catch {
-    result = { type: "result", subtype: "unparseable", raw_stdout: proc.stdout?.slice(-5000), raw_stderr: proc.stderr?.slice(-5000) };
-  }
+  const streamText = existsSync(streamPath) ? readFileSync(streamPath, "utf8") : "";
+  const m = streamMetrics(streamText);
+  const result = m.result ?? { type: "result", subtype: "no-result-event", tail: streamText.slice(-5000) };
   writeFileSync(path.join(runDir, "result.json"), JSON.stringify(result, null, 2));
 
   const artifactPath = trial.artifact(workspace, fixture);
@@ -224,39 +228,39 @@ function doRun(arm, i) {
     writeFileSync(path.join(runDir, "score.json"), JSON.stringify(score, null, 2));
   }
 
-  const u = result.usage ?? {};
   // the CLI can report subtype "success" even when the session died on a
   // transport error mid-run; treat those as invalid, not as quality data
   const apiError = typeof result.result === "string" && /\bAPI Error\b/i.test(result.result.slice(-2000));
   const row = {
     run: i,
-    ok: result.subtype === "success" && !apiError && !spawnError,
+    ok: m.subtype === "success" && !apiError && !spawnError,
     error: spawnError ?? (apiError ? "API error reported in session result" : null),
     wall_seconds: Math.round((Date.now() - started) / 1000),
-    num_turns: result.num_turns ?? null,
-    cost_usd: result.total_cost_usd ?? null,
-    tokens: {
-      input: u.input_tokens ?? null,
-      cache_creation: u.cache_creation_input_tokens ?? null,
-      cache_read: u.cache_read_input_tokens ?? null,
-      output: u.output_tokens ?? null,
-    },
+    num_turns: m.num_turns,
+    cost_usd: m.cost_usd,
+    tokens: m.tokens,
+    peak_orchestrator_ctx: m.peak_orchestrator_ctx,
+    peak_subagent_ctx: m.peak_subagent_ctx,
+    orchestrator_turns: m.orchestrator_turns,
+    subagent_turns: m.subagent_turns,
+    subagent_spawns: m.subagent_spawns,
+    subagents: m.subagents,
     artifact: artifactPath ? path.relative(runDir, artifactPath) : null,
     quality: score.summary,
     exclusion_violations: score.exclusions?.violations ?? [],
   };
   summary.runs.push(row);
   writeFileSync(path.join(labelDir, "summary.json"), JSON.stringify(summary, null, 2));
-  const qualityBrief = trial.qualityMetrics.map((m) => `${m}=${row.quality[m]}`).join(" ");
+  const qualityBrief = trial.qualityMetrics.map((mm) => `${mm}=${row.quality[mm]}`).join(" ");
   console.log(`[${arm.label} run ${i}/${runs}] done: cost=$${row.cost_usd} turns=${row.num_turns} ` +
-    `in=${row.tokens.input} cc=${row.tokens.cache_creation} cr=${row.tokens.cache_read} out=${row.tokens.output} ` +
-    `${qualityBrief} pass=${row.quality.quality_pass}`);
+    `peakOrchCtx=${row.peak_orchestrator_ctx} peakSubCtx=${row.peak_subagent_ctx} subagents=${row.subagent_spawns} ` +
+    `out=${row.tokens.output} ${qualityBrief} pass=${row.quality.quality_pass}`);
 }
 
 // interleave arms (A,B,A,B,…) so temporal drift in model behaviour is spread
 // evenly across arms instead of loading onto whichever ran second
 for (let i = 1; i <= runs; i++) {
-  for (const arm of arms) doRun(arm, i);
+  for (const arm of arms) await doRun(arm, i);
 }
 
 // aggregate per-arm stats (valid runs only). The median is the headline; the
@@ -271,6 +275,8 @@ const stat = (xs) => {
 const METRICS = {
   cost_usd: (r) => r.cost_usd,
   num_turns: (r) => r.num_turns,
+  peak_orchestrator_ctx: (r) => r.peak_orchestrator_ctx,
+  peak_subagent_ctx: (r) => r.peak_subagent_ctx,
   input: (r) => r.tokens.input,
   cache_creation: (r) => r.tokens.cache_creation,
   cache_read: (r) => r.tokens.cache_read,
