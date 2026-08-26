@@ -30,7 +30,20 @@ applied to `trial-a.mjs`: give BOTH build arms the same explicit method contract
 comparison isolates behavioural correctness (invariants, failure modes) from API guesswork.
 A fair re-run follows.
 
+## Run 2 (fair, both arms given the method contract): Allium 21/21, baseline 21/21
+
+With the fairness fix, the Allium arm matches the baseline exactly. That confirms run 1's
+gap was purely the API artifact, not a behavioural loss.
+
+The honest reading: on a system this simple, both paths produce fully correct code, so
+Allium's value does not show up as higher code correctness here — it is parity. Where
+Allium's edge should appear is (a) harder systems, where capturing invariants prevents
+bugs a direct build misses, and (b) the other outcome dimensions — Trial B already showed
+distill+weed catching 3/3 planted bugs, and comprehension (C), modernisation (B), and
+design-time verification are still to come. Trial A on a simple system calibrates the
+floor: Allium does not cost correctness, and the differentiation lives elsewhere.
+
 ## Caveats
 
-v3 skills, one run, one model, a tiny system, and a batch-brief approximation of the
-interactive operator. This is a first datapoint and a harness lesson, not a verdict.
+v3 skills, one run per arm, one model, a tiny system, and a batch-brief approximation of
+the interactive operator. First datapoints and a harness lesson, not a verdict.
