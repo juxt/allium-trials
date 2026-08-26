@@ -1,0 +1,38 @@
+{
+  "system": "ledger",
+  "note": "HIDDEN ground truth for Trial C (comprehension). Answerer arms see only the questions; the judge sees the answers.",
+  "questions": [
+    {
+      "q": "Can an account's balance ever become negative? What prevents it?",
+      "a": "No. Both withdraw and transfer reject the operation if the balance is less than the amount, checked before any money moves, so a balance never goes below zero."
+    },
+    {
+      "q": "Is a transfer atomic (all-or-nothing)? What happens on a failed transfer?",
+      "a": "Yes. A transfer debits the source and credits the destination together; if it fails (for example insufficient funds), neither balance changes."
+    },
+    {
+      "q": "If you try to withdraw more than the balance, what happens to the balance?",
+      "a": "Nothing. The withdrawal is rejected with an error and the balance is left unchanged."
+    },
+    {
+      "q": "Is the total amount of money conserved by a transfer, and why?",
+      "a": "Yes. A transfer subtracts an amount from the source and adds the same amount to the destination, so the sum of all balances is unchanged."
+    },
+    {
+      "q": "Can money be transferred from an account to itself?",
+      "a": "No. A same-account transfer is rejected."
+    },
+    {
+      "q": "What makes an amount valid for a deposit, withdrawal or transfer?",
+      "a": "It must be a strictly positive integer in minor units. Zero, negative, and non-integer amounts are rejected."
+    },
+    {
+      "q": "What happens if you deposit into an account that was never opened?",
+      "a": "It is rejected as an unknown account, and no balance changes."
+    },
+    {
+      "q": "Can the same account id be opened twice?",
+      "a": "No. Opening an account that already exists is rejected."
+    }
+  ]
+}
