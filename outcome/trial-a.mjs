@@ -33,6 +33,13 @@ const MODEL = opt("--model", "claude-opus-4-8");
 const MAX_TURNS = opt("--max-turns", "60");
 const skipOperator = argv.includes("--skip-operator");
 
+// The public method contract, given to BOTH build arms so the comparison isolates
+// behavioural correctness (invariants, failure modes) from API-naming guesswork.
+const API = " The `Ledger` class must expose exactly these methods: open(account_id); " +
+  "balance(account_id) returning an int; accounts() returning the sorted list of ids; " +
+  "total() returning the sum of all balances; deposit(account_id, amount); " +
+  "withdraw(account_id, amount); transfer(src, dst, amount).";
+
 function claude(prompt, cwd, { plugin = true } = {}) {
   const args = ["-p", prompt, "--output-format", "stream-json", "--verbose",
     "--model", MODEL, "--max-turns", MAX_TURNS, "--permission-mode", "bypassPermissions",
@@ -91,7 +98,7 @@ if (existsSync(aSpec)) cpSync(aSpec, join(aBuild, "spec", "ledger.allium"));
 console.log("• allium: build implementation from the spec only …");
 claude(
   "Implement the system as ledger.py in the current directory, exposing a `Ledger` class, plus a test file. " +
-  "Work ONLY from the Allium specification in spec/ledger.allium. Do not ask questions.",
+  "Work ONLY from the Allium specification in spec/ledger.allium. Do not ask questions." + API,
   aBuild);
 
 // --- 2. baseline arm: build from brief only, no Allium -----------------------
@@ -101,7 +108,7 @@ cpSync(brief, join(bBuild, "brief.md"));
 console.log("• baseline: build implementation from the brief only (no Allium) …");
 claude(
   "Implement the system as ledger.py in the current directory, exposing a `Ledger` class, plus a test file. " +
-  "Work from the requirements in brief.md. Do not ask questions.",
+  "Work from the requirements in brief.md. Do not ask questions." + API,
   bBuild, { plugin: false });
 
 // --- 3. score both against the hidden acceptance suite -----------------------
