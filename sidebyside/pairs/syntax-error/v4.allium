@@ -1,0 +1,4 @@
+-- allium: 4
+contract Broken
+  action go(
+end

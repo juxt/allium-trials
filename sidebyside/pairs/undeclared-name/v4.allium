@@ -1,0 +1,6 @@
+-- allium: 4
+component Shop
+  entity Order
+  observable state total(Order) : Amount
+  invariant sane means every o : Order :: total(o) = undeclared_helper(o)
+end

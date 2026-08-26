@@ -1,0 +1,16 @@
+-- allium: 3
+entity Order {
+    id: String
+    status: pending | shipped
+}
+
+surface Shop {
+    provides:
+        Ship(order)
+}
+
+rule ShipOrder {
+    when: Ship(order)
+    requires: order.status = pending
+    ensures: order.status = shipped
+}

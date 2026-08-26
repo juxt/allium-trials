@@ -1,0 +1,8 @@
+-- allium: 4
+component Shop
+  entity Order
+  observable state status(Order) : { pending | shipped }
+  action ship(o : Order)
+    requires status(o) = pending
+    ensures  status(o) = shipped
+end

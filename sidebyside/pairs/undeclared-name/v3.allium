@@ -1,0 +1,7 @@
+-- allium: 3
+entity Order { id: String }
+
+rule R {
+    when: Ship(order)
+    ensures: order.total = undeclared_helper(order)
+}
