@@ -1,0 +1,30 @@
+-- allium: 4
+-- ONE artifact, three uses. The same file is (1) verified at design time, (2) the
+-- contract the build satisfies, and (3) the source of the runtime monitor.
+component ReportLifecycle
+  entity Report
+
+  observable state cleared(Report) : bool
+  observable state has_ccp_lei(Report) : bool
+  observable state collateralised(Report) : bool
+  observable state has_collateral_code(Report) : bool
+  observable state bespoke_collateral(Report) : bool
+  observable state submitted(Report) : bool
+  observable state accepted(Report) : bool
+  observable state rejected(Report) : bool
+
+  -- Trade Repository acceptance rules (design-time contract).
+  axiom cleared_needs_ccp_lei means cleared(r) implies has_ccp_lei(r)
+  axiom collateral_needs_code means collateralised(r) implies has_collateral_code(r)
+  axiom bespoke_has_no_code means bespoke_collateral(r) implies not has_collateral_code(r)
+  axiom bespoke_is_collateralised means bespoke_collateral(r) implies collateralised(r)
+
+  -- Runtime invariants — the SAME artifact, monitored over the live report stream.
+  invariant code_when_collateralised means collateralised(r) implies has_collateral_code(r)
+  invariant once_accepted_stays means old(accepted(r)) implies not rejected(r)
+  invariant no_unsubmit means old(submitted(r)) implies submitted(r)
+
+  -- Report scenarios the system emits (design-time feasibility).
+  requirement cleared_report means cleared(r) and has_ccp_lei(r)
+  requirement bespoke_report means bespoke_collateral(r)
+end

@@ -1,0 +1,11 @@
+# R1: a compliant cleared report through to acceptance
+t=1 entity=R1 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F submitted=T accepted=F rejected=F
+t=2 entity=R1 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F submitted=T accepted=T rejected=F
+# R2: collateralised with no portfolio code -> POINT violation at t=1
+t=1 entity=R2 cleared=F has_ccp_lei=F collateralised=T has_collateral_code=F submitted=T accepted=F rejected=F
+# R3: accepted at t=1, then rejected at t=2 -> TEMPORAL regression at t=2
+t=1 entity=R3 cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F submitted=T accepted=T rejected=F
+t=2 entity=R3 cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F submitted=T accepted=F rejected=T
+# R4: clean collateralised report, stays accepted
+t=1 entity=R4 cleared=T has_ccp_lei=T collateralised=T has_collateral_code=T submitted=T accepted=F rejected=F
+t=2 entity=R4 cleared=T has_ccp_lei=T collateralised=T has_collateral_code=T submitted=T accepted=T rejected=F
