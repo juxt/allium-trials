@@ -24,6 +24,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { scoreFidelity } from "./fidelity.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RUNS = join(HERE, "runs", "trial-f");
@@ -115,17 +116,47 @@ Notes:
   (no state satisfies two) and exhaustive (every state satisfies one).
 `.trim();
 
+// Fixed vocabulary so a draft's routing can be scored against the hidden oracle by name.
+// It fixes the NAMES only (a data dictionary); the model must still derive the guards.
+const VOCAB = `
+USE EXACTLY THESE NAMES.
+
+Observable boolean state, one per step's fact (declare each as
+'observable state <name>(Trade) : bool'):
+  ccp_is_counterparty      step 1
+  is_clearing_member       step 2
+  executed_on_platform     step 3
+  cross_jurisdictional     step 4
+  both_have_obligations    step 5
+  confirmation_available   steps 6 AND 12 (both nodes test this same fact)
+  status_based_approach    step 7
+  same_regulatory_status   step 8
+  rules_assign_entity      step 9
+  sooner_deadline          step 10
+  counterparties_agree     step 11
+  single_tr_available      step 13
+
+Actions, one per terminal outcome (name them exactly; guard is yours to derive):
+  generate_ccp                     CCP responsible (step 1)
+  generate_clearing_member         clearing member (step 2)
+  generate_trading_platform        trading platform (step 3)
+  generate_confirmation_platform   confirmation platform (reached at step 6 or step 12)
+  generate_sooner_jurisdiction     sooner-deadline jurisdiction's rules (step 10)
+  generate_assigned_entity         entity assigned by the rules (step 9)
+  generate_agreed_entity           agreed entity (step 11)
+  generate_tr                      the TR (step 13, yes)
+  generate_counterparty_sort       counterparty by reversed-id sort (step 13, no)
+`.trim();
+
 const TASK =
   `Read the decision table below. Write it as an Allium v4 component in a file named ` +
-  `UtiGeneration.allium in the current directory. Identify each terminal outcome (the entity ` +
-  `that ends up responsible: the CCP, the clearing member, the trading platform, and so on) ` +
-  `and model it as one action whose 'requires' guard captures exactly the transactions that ` +
-  `reach that outcome. Represent each step's fact as observable boolean state (e.g. ` +
-  `'observable state cross_jurisdictional(Trade) : bool'). Allium actions have no implicit ` +
-  `order, so each guard must stand alone. The guards must form a DISJOINT case-split (no ` +
-  `transaction reaches two outcomes) that is EXHAUSTIVE (every transaction reaches one). ` +
-  `Output nothing but the file. Do not ask questions.\n\n` +
-  PRIMER + "\n\n" + REG;
+  `UtiGeneration.allium in the current directory. Model each terminal outcome as one action ` +
+  `whose 'requires' guard captures exactly the transactions that reach it. Allium actions have ` +
+  `no implicit order, so each guard must stand alone: fold in whatever earlier answers must ` +
+  `hold to reach that outcome. The guards must form a DISJOINT case-split (no transaction ` +
+  `reaches two outcomes) that is EXHAUSTIVE (every transaction reaches one). Use the exact ` +
+  `names in the vocabulary. Output nothing but the file. Do not ask questions.\n\n` +
+  PRIMER + "\n\n" + REG + "\n\n" + VOCAB;
 
 function claude(prompt, cwd) {
   return spawnSync("claude", ["-p", prompt, "--output-format", "stream-json", "--verbose",
@@ -153,9 +184,11 @@ function analyse(specPath) {
 
 function runBaseline(ws) {
   reset(ws);
+  const spec = join(ws, "UtiGeneration.allium");
   claude(TASK, ws);
-  const res = analyse(join(ws, "UtiGeneration.allium"));
-  return { arm: "baseline", iters: 1, ...res };
+  const res = analyse(spec);
+  const fid = res.parsed ? scoreFidelity(spec) : { ok: false };
+  return { arm: "baseline", iters: 1, ...res, fid };
 }
 
 function runChecker(ws) {
@@ -177,7 +210,8 @@ function runChecker(ws) {
     res = analyse(spec);
     it++;
   }
-  return { arm: "checker", iters: it, first, ...res };
+  const fid = res.parsed ? scoreFidelity(spec) : { ok: false };
+  return { arm: "checker", iters: it, first, ...res, fid };
 }
 
 mkdirSync(RUNS, { recursive: true }); // ensure exists; each run resets only its own workspace
@@ -188,7 +222,8 @@ for (let i = 1; i <= N; i++) {
 }
 function log(i, r) {
   const v = !r.parsed ? "PARSE-FAIL" : !r.sawCaseSplit ? "NO-CASE-SPLIT" : r.overlap && r.gap ? "OVERLAP+GAP" : r.overlap ? "OVERLAP" : r.gap ? "GAP" : "clean";
-  console.log(`run ${i} ${r.arm.padEnd(8)} iters=${r.iters} -> ${v}`);
+  const f = r.fid && r.fid.ok ? `fid=${r.fid.fidelity}${r.fid.faithful ? " FAITHFUL" : r.fid.vocabOk ? " misroute" : " vocab!"}` : "fid=n/a";
+  console.log(`run ${i} ${r.arm.padEnd(8)} iters=${r.iters} -> ${v.padEnd(12)} ${f}`);
 }
 
 function summary(arm) {
@@ -199,7 +234,11 @@ function summary(arm) {
   const overlap = rs.filter((r) => r.overlap).length;
   const bad = rs.filter((r) => !r.parsed || !r.sawCaseSplit).length;
   const avgIt = (rs.reduce((a, r) => a + r.iters, 0) / rs.length).toFixed(1);
-  const s = { arm, n: rs.length, clean, defect, overlap, malformed: bad, avgIters: avgIt };
+  const faithful = rs.filter((r) => r.fid && r.fid.faithful).length;
+  const cleanButMisrouting = rs.filter((r) => r.clean && r.fid && r.fid.ok && !r.fid.faithful).length;
+  const scored = rs.filter((r) => r.fid && r.fid.ok && r.fid.vocabOk);
+  const avgFid = scored.length ? +(scored.reduce((a, r) => a + r.fid.fidelity, 0) / scored.length).toFixed(3) : null;
+  const s = { arm, n: rs.length, clean, defect, overlap, malformed: bad, avgIters: avgIt, faithful, cleanButMisrouting, avgFid };
   if (arm === "checker") {
     const fd = rs.filter((r) => r.first && (r.first.overlap || r.first.gap || !r.first.parsed || !r.first.sawCaseSplit)).length;
     s.firstDraftDefect = fd; // defective before the loop; `defect` is after
