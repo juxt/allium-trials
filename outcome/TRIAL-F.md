@@ -64,3 +64,31 @@ here is axiom-relative, because conditions like `sooner_deadline` only apply und
 `cross_jurisdictional`; the loop's fix for a gap may be to state that domain axiom rather
 than change a guard. Full guard-level fidelity to the table is a separate axis the
 analyser does not check.
+
+## Fidelity result (N=8, fixed vocabulary) — the non-saturation was fragile
+
+To score fidelity (does the draft route every trade like the table, not just partition
+cleanly) each condition and outcome needs a canonical name, so this arm fixes a
+vocabulary — a data dictionary. Scored against a hidden oracle (`oracle-uti.mjs`, the
+table as a total routing function, cross-checked at fidelity 1.0 against an independent
+path-guard derivation) over all 4096 combinations.
+
+    baseline   8/8 clean, 8/8 FAITHFUL (fidelity 1.0)
+    checker    8/8 clean, 8/8 FAITHFUL (fidelity 1.0), 0 iterations needed
+
+The task saturated once the vocabulary was fixed. The cause is structural: giving one
+name per fact means a single `confirmation_available` condition, which encodes the
+hardest reading in the table — that steps 6 and 12 test the same fact. A data dictionary
+hands the model exactly the insight the free-vocabulary drafts kept missing.
+
+So the earlier free-vocabulary 3/8 defect rate was real but not robust: its difficulty
+was largely outcome-identification and consistent naming, not the boolean guard-tracing,
+which opus does reliably. A structurally-clean spec here does not misroute — fidelity
+tracks structure perfectly once names are fixed.
+
+Consequence for the eval: case-split fidelity is trivialised by a data dictionary for a
+strong model, which is the realistic setting. The property whose difficulty SURVIVES a
+data dictionary is rule-set CONSISTENCY — a contradiction emerges from rule interaction
+and is not removed by naming the rules. That is the more robust non-saturated target, and
+the joint-SAT capability (`consistency()` with a minimal conflicting core) is already
+built for it.
