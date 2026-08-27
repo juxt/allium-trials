@@ -1,0 +1,70 @@
+-- allium: 4
+-- Larger Trade Repository acceptance contract (~30 interacting rules over ~28 fields),
+-- past the old 16-atom enumeration cap; checked by the SAT engine. Same shape as the
+-- small contract: axioms are acceptance rules; an integrator's `requirement` scenarios are
+-- checked feasible against them. Contains a DEEP emergent infeasibility: a bespoke
+-- collateral schedule can never be reported, via a 3-rule chain (bespoke implies
+-- collateralised implies a portfolio code, but bespoke forbids the code) whose rules are
+-- spread across the contract, not adjacent.
+component TrGatewayL
+  entity Report
+
+  observable state action_new(Report) : bool
+  observable state action_modify(Report) : bool
+  observable state action_correct(Report) : bool
+  observable state action_terminate(Report) : bool
+  observable state has_uti(Report) : bool
+  observable state has_prior_uti(Report) : bool
+  observable state cleared(Report) : bool
+  observable state has_ccp_lei(Report) : bool
+  observable state clearing_exception(Report) : bool
+  observable state intent_to_clear(Report) : bool
+  observable state is_clearing_member(Report) : bool
+  observable state asset_rates(Report) : bool
+  observable state asset_credit(Report) : bool
+  observable state asset_fx(Report) : bool
+  observable state asset_equity(Report) : bool
+  observable state has_index_factor(Report) : bool
+  observable state has_fx_notional2(Report) : bool
+  observable state has_equity_underlier(Report) : bool
+  observable state collateralised(Report) : bool
+  observable state has_collateral_code(Report) : bool
+  observable state bespoke_collateral(Report) : bool
+  observable state uncollateralised(Report) : bool
+  observable state has_variation_margin(Report) : bool
+  observable state confirmed(Report) : bool
+  observable state has_confirmation_time(Report) : bool
+  observable state allocation(Report) : bool
+  observable state is_package(Report) : bool
+  observable state has_package_id(Report) : bool
+
+  axiom new_needs_uti means action_new(r) implies has_uti(r)
+  axiom modify_needs_prior means action_modify(r) implies has_prior_uti(r)
+  axiom correct_needs_prior means action_correct(r) implies has_prior_uti(r)
+  axiom terminate_needs_prior means action_terminate(r) implies has_prior_uti(r)
+  axiom new_not_modify means not (action_new(r) and action_modify(r))
+  axiom new_not_correct means not (action_new(r) and action_correct(r))
+  axiom new_not_terminate means not (action_new(r) and action_terminate(r))
+  axiom cleared_needs_ccp_lei means cleared(r) implies has_ccp_lei(r)
+  axiom collateral_needs_code means collateralised(r) implies has_collateral_code(r)
+  axiom ccp_lei_only_if_cleared means has_ccp_lei(r) implies cleared(r)
+  axiom cleared_not_intent means cleared(r) implies not intent_to_clear(r)
+  axiom cleared_not_exception means cleared(r) implies not clearing_exception(r)
+  axiom exception_not_cleared means clearing_exception(r) implies not cleared(r)
+  axiom clearing_member_is_cleared means is_clearing_member(r) implies cleared(r)
+  axiom rates_not_credit means not (asset_rates(r) and asset_credit(r))
+  axiom credit_not_fx means not (asset_credit(r) and asset_fx(r))
+  axiom fx_not_equity means not (asset_fx(r) and asset_equity(r))
+  axiom credit_needs_factor means asset_credit(r) implies has_index_factor(r)
+  axiom bespoke_is_collateralised means bespoke_collateral(r) implies collateralised(r)
+  axiom fx_needs_notional2 means asset_fx(r) implies has_fx_notional2(r)
+  axiom equity_needs_underlier means asset_equity(r) implies has_equity_underlier(r)
+  axiom uncollat_not_collat means uncollateralised(r) implies not collateralised(r)
+  axiom uncollat_no_vm means uncollateralised(r) implies not has_variation_margin(r)
+  axiom bespoke_has_no_code means bespoke_collateral(r) implies not has_collateral_code(r)
+  axiom confirmed_needs_time means confirmed(r) implies has_confirmation_time(r)
+  axiom cleared_is_confirmed means cleared(r) implies confirmed(r)
+  axiom allocation_needs_prior means allocation(r) implies has_prior_uti(r)
+  axiom allocation_not_new means allocation(r) implies not action_new(r)
+  axiom package_needs_id means is_package(r) implies has_package_id(r)
+end
