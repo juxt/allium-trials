@@ -45,9 +45,7 @@ these kinds of report, and we want each kind to be accepted:
   - new trades, submitted with a freshly generated UTI;
   - modifications to existing trades, carrying the prior UTI;
   - cleared trades: eligible trades are cleared through a CCP and we submit the CCP's LEI;
-  - collateralised trades: we collateralise under a bespoke schedule negotiated per
-    counterparty, so these reports carry a bespoke collateral schedule rather than a
-    standard portfolio code;
+  - collateralised trades: we collateralise these under bespoke, per-counterparty schedules;
   - index credit derivatives, submitted with the index factor;
   - post-trade allocations to client sub-accounts, referencing the block's prior UTI.
 `.trim();
