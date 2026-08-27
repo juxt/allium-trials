@@ -55,3 +55,20 @@ The honest fork: keep hunting for a non-saturated correctness regime (which poin
 building the EPR/Z3 backend for scale), or reframe the eval to measure the assurance value
 directly (soundness, coverage, a machine-checkable certificate) rather than catch-rate
 against a strong model.
+
+## Scale (the SAT backend): does more rules move the miss-rate?
+
+The bounded enumeration was replaced by a dependency-free SAT engine (Tseitin + DPLL, no
+Z3, single static binary preserved), lifting the 16-atom cap. A larger contract
+(`GATEWAY-CONTRACT-L.allium`, 28 fields, 30 interacting rules) was checked soundly in
+milliseconds — beyond what the old enumeration could attempt at all.
+
+`--large` N=8, opus: of the runs that completed, miss-rate 0 again. The bespoke conflict,
+though now diluted among 30 rules, is a recognisable local pair (a collateralised trade
+needs a code; a bespoke schedule forbids one), and the model still connected them. (4 of 8
+runs produced no file within the turn budget — a harness reliability issue on the larger
+task, not a design signal.)
+
+So more rules alone does not move the miss-rate: the model localises the conflict. The
+sharper test is a conflict that is NOT a local pair.
+
