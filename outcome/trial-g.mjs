@@ -30,10 +30,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SYS = join(HERE, "systems", "tr-gateway");
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
-const LARGE = argv.includes("--large");
+const CHAIN = argv.includes("--chain");
+const LARGE = argv.includes("--large") || CHAIN; // chain uses the large contract
 const CONTRACT = readFileSync(join(SYS, LARGE ? "GATEWAY-CONTRACT-L.allium" : "GATEWAY-CONTRACT.allium"), "utf8");
 const RULES = readFileSync(join(SYS, LARGE ? "GATEWAY-RULES-L.md" : "GATEWAY-RULES.md"), "utf8");
-const RUNS = join(HERE, "runs", LARGE ? "trial-g-L" : "trial-g");
+const RUNS = join(HERE, "runs", CHAIN ? "trial-g-chain" : LARGE ? "trial-g-L" : "trial-g");
 const ALLIUM = "/Users/hgarner/code/allium-tools/target/debug/allium";
 
 const MODEL = opt("--model", "claude-opus-4-8");
@@ -67,7 +68,25 @@ emits these kinds of report, and we want each kind to be accepted:
   - package trades, each carrying a package id.
 `.trim();
 
-const BRIEF = LARGE ? BRIEF_LARGE : BRIEF_SMALL;
+// The chain brief features a scenario whose infeasibility is a genuine FORWARD CHAIN: a
+// clearing-member report for a trade pending confirmation asserts is_clearing_member and
+// not-confirmed, which do not clash directly — the contradiction emerges only after
+// propagating clearing_member -> cleared -> confirmed. Reading and SAT diverge here.
+const BRIEF_CHAIN = `
+Our clearing-member desk reports to the trade repository. The reporting system emits these
+kinds of report, and we want each kind to be accepted:
+
+  - new trades with a freshly generated UTI; and lifecycle reports (modifications,
+    corrections, terminations), each carrying the prior UTI;
+  - cleared trades: eligible trades are cleared through a CCP and we submit the CCP's LEI;
+  - clearing-member reports: we act as the clearing member, and we submit these while the
+    trade is still pending confirmation, so the confirmation timestamp is not yet present;
+  - index credit derivatives, submitted with the index factor;
+  - post-trade allocations to client sub-accounts, referencing the block's prior UTI;
+  - package trades, each carrying a package id.
+`.trim();
+
+const BRIEF = CHAIN ? BRIEF_CHAIN : LARGE ? BRIEF_LARGE : BRIEF_SMALL;
 
 const TASK =
   `You are integrating our reporting system with the trade repository. Read the repository's ` +
