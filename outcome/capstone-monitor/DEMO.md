@@ -64,3 +64,27 @@ the artifact. This demo is that value made concrete:
   invariant, deterministically, on every run — an audit trail, not a judgement call.
 
 Design-time verify, build, runtime monitor: one artifact, three uses, mechanically.
+
+## The reproducible gate (`gate.sh`)
+
+The value axis is not one clever pass; it is the same checks on every build, deterministic,
+no judgement calls. `gate.sh` runs both stages and exits non-zero if either finds a problem:
+
+    == Stage 1: design-time (allium analyse) ==
+      FAIL — design defect:
+        - requirement `bespoke_report` ... is INFEASIBLE ... Blocked by: collateral_needs_code, bespoke_has_no_code
+    == Stage 2: runtime (allium monitor over the build's trace) ==
+      FAIL — 2 runtime violation(s):
+        - t=5 R3 code_when_collateralised (point): collateralised=T, has_collateral_code=F
+        - t=8 R4 once_accepted_stays (temporal): old accepted=T, rejected=T
+    GATE: FAIL
+
+This is what a checker gives that a strong model's one-off review does not: a total,
+deterministic, reproducible verdict with provenance, cheap enough to run on every commit.
+
+## Honesty (soundness of the monitor itself)
+
+The whole value rests on the verdict being trustworthy, so the monitor never evaluates an
+invariant it cannot faithfully compute. Quantified, relational, or value-comparison
+invariants are reported under `skipped` with a reason, not silently mis-evaluated. The
+report carries `monitored` and `skipped` counts so a green result is never a hidden gap.
