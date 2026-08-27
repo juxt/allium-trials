@@ -180,7 +180,7 @@ function runChecker(ws) {
   return { arm: "checker", iters: it, first, ...res };
 }
 
-reset(RUNS);
+mkdirSync(RUNS, { recursive: true }); // ensure exists; each run resets only its own workspace
 const rows = [];
 for (let i = 1; i <= N; i++) {
   if (ARM === "baseline" || ARM === "both") { const r = runBaseline(join(RUNS, `base-${i}`)); rows.push(r); log(i, r); }
@@ -208,5 +208,6 @@ function summary(arm) {
 }
 console.log("\n=== Trial F summary (model=%s, iters<=%d) ===", MODEL, ITERS);
 for (const arm of ["baseline", "checker"]) { const s = summary(arm); if (s) console.log(JSON.stringify(s)); }
-writeFileSync(join(RUNS, "results.json"), JSON.stringify({ model: MODEL, iters: ITERS, rows, ts: process.env.TRIAL_TS || null }, null, 2));
-console.log("\nwrote", join(RUNS, "results.json"));
+const outfile = join(RUNS, `results-${ARM}.json`);
+writeFileSync(outfile, JSON.stringify({ model: MODEL, iters: ITERS, arm: ARM, rows, ts: process.env.TRIAL_TS || null }, null, 2));
+console.log("\nwrote", outfile);
