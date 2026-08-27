@@ -1,0 +1,12 @@
+t=1 entity=B1 action_new=T action_modify=F cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=F uti=U001 prior_uti=none
+t=2 entity=B1 action_new=T action_modify=F cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=T rejected=F allocation=F uti=U001 prior_uti=none
+t=3 entity=A1 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=T uti=U002 prior_uti=U001
+t=4 entity=A2 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=T uti=U003 prior_uti=U001
+t=5 entity=T2 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=T has_collateral_code=T bespoke_collateral=F submitted=T accepted=F rejected=F allocation=F uti=U004 prior_uti=none
+t=6 entity=T2 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=T has_collateral_code=T bespoke_collateral=F submitted=T accepted=T rejected=F allocation=F uti=U004 prior_uti=none
+t=7 entity=T3 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=T has_collateral_code=T bespoke_collateral=F submitted=T accepted=F rejected=F allocation=F uti=U005 prior_uti=none
+t=8 entity=T4 action_new=T action_modify=F cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=F uti=U006 prior_uti=none
+t=9 entity=T4 action_new=T action_modify=F cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=T rejected=F allocation=F uti=U006 prior_uti=none
+t=10 entity=T4 action_new=T action_modify=F cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=T rejected=F allocation=F uti=U006 prior_uti=none
+t=11 entity=T5 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=F uti=U007 prior_uti=none
+t=12 entity=A3 action_new=T action_modify=F cleared=F has_ccp_lei=F collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F allocation=T uti=U008 prior_uti=U001

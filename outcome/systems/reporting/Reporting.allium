@@ -1,0 +1,38 @@
+-- allium: 4
+-- A CFTC trade-reporting system's spec. One artifact: design-time contract (axioms +
+-- report scenarios) and runtime invariants (point, temporal, relational).
+component Reporting
+  entity Report
+
+  observable state action_new(Report) : bool
+  observable state action_modify(Report) : bool
+  observable state cleared(Report) : bool
+  observable state has_ccp_lei(Report) : bool
+  observable state collateralised(Report) : bool
+  observable state has_collateral_code(Report) : bool
+  observable state bespoke_collateral(Report) : bool
+  observable state submitted(Report) : bool
+  observable state accepted(Report) : bool
+  observable state rejected(Report) : bool
+  observable state allocation(Report) : bool
+  observable state uti(Report) : Uti
+  observable state prior_uti(Report) : Uti
+
+  -- Design-time acceptance rules (feasibility + consistency).
+  axiom new_needs_uti means action_new(r) implies submitted(r)
+  axiom cleared_needs_ccp_lei means cleared(r) implies has_ccp_lei(r)
+  axiom collateral_needs_code means collateralised(r) implies has_collateral_code(r)
+  axiom bespoke_has_no_code means bespoke_collateral(r) implies not has_collateral_code(r)
+  axiom bespoke_is_collateralised means bespoke_collateral(r) implies collateralised(r)
+
+  -- Runtime invariants.
+  invariant code_when_collateralised means collateralised(r) implies has_collateral_code(r)
+  invariant ccp_lei_when_cleared means cleared(r) implies has_ccp_lei(r)
+  invariant once_accepted_stays means old(accepted(r)) implies not rejected(r)
+  invariant no_unsubmit means old(submitted(r)) implies submitted(r)
+  invariant unique_uti means every a :: every b :: (uti(a) = uti(b)) implies (a = b)
+  invariant allocation_refs_block means every a :: allocation(a) implies some b :: prior_uti(a) = uti(b)
+
+  -- A declared report scenario, checked feasible at design time.
+  requirement cleared_report means cleared(r) and has_ccp_lei(r) and submitted(r)
+end
