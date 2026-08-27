@@ -15,7 +15,9 @@ Version flag `VERSION` selects behaviour, for the regression experiment:
 import os
 import sys
 
-VERSION = int(os.environ.get("VERSION", "1"))
+# A "commit" is a set of bug flags (each defect an independent feature/regression).
+def bug(name):
+    return os.environ.get(name, "0") == "1"
 
 PREDS_BOOL = [
     "action_new", "action_modify", "cleared", "has_ccp_lei", "collateralised",
@@ -54,8 +56,8 @@ class ReportingSystem:
         r = self.reports.setdefault(rid, Report(rid))
         r.b["action_new"] = True
         r.b["submitted"] = True
-        # BUG (v1): a re-book path reuses an existing UTI instead of minting a fresh one.
-        r.v["uti"] = reuse_uti if (reuse_uti and VERSION == 1) else self.mint_uti()
+        # BUG_REBOOK: a re-book path reuses an existing UTI instead of minting a fresh one.
+        r.v["uti"] = reuse_uti if (reuse_uti and bug("BUG_REBOOK")) else self.mint_uti()
         if cleared:
             r.b["cleared"] = True
             r.b["has_ccp_lei"] = True
@@ -64,11 +66,12 @@ class ReportingSystem:
             r.b["has_collateral_code"] = True
         elif collateral == "bespoke":
             r.b["collateralised"] = True
-            r.b["bespoke_collateral"] = True
-            # BUG (v1): bespoke leaves the code empty; v2 falls back to a standard code.
-            r.b["has_collateral_code"] = False if VERSION == 1 else True
-            if VERSION != 1:
-                r.b["bespoke_collateral"] = False
+            # BUG_BESPOKE: bespoke leaves the code empty; otherwise fall back to a code.
+            if bug("BUG_BESPOKE"):
+                r.b["bespoke_collateral"] = True
+                r.b["has_collateral_code"] = False
+            else:
+                r.b["has_collateral_code"] = True
         self.emit(r)
 
     def accept(self, rid):
@@ -79,9 +82,9 @@ class ReportingSystem:
 
     def late_reject(self, rid):
         r = self.reports[rid]
-        # BUG (v1): a late correction rejects an already-accepted report; v2 opens a new
-        # correction report instead of un-accepting.
-        if VERSION == 1:
+        # BUG_LATE_REJECT: a late correction rejects an already-accepted report; otherwise a
+        # new correction report is opened instead of un-accepting.
+        if bug("BUG_LATE_REJECT"):
             r.b["rejected"] = True
             r.b["accepted"] = False
         self.emit(r)
@@ -121,9 +124,9 @@ def workload(sys_):
     # A re-booked trade that reuses B1's UTI (uniqueness breach on v1).
     sys_.new_trade("T5", reuse_uti=b1_uti)
 
-    # An allocation booked before its block is reported (referential-integrity breach on
-    # v1); v2 books it against the real block UTI.
-    sys_.allocate("A3", "U999" if VERSION == 1 else b1_uti)
+    # BUG_ORPHAN: an allocation booked before its block is reported (referential-integrity
+    # breach); otherwise it is booked against the real block UTI.
+    sys_.allocate("A3", "U999" if bug("BUG_ORPHAN") else b1_uti)
 
 
 def main():
