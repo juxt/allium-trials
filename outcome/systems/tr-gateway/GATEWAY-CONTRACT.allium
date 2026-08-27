@@ -1,0 +1,39 @@
+-- allium: 4
+-- Third-party TRADE REPOSITORY acceptance contract (fixed; the integrating system never
+-- edits this). Each axiom is an acceptance rule the TR enforces on a submitted report,
+-- modelled on CFTC / DTCC swap-data-reporting validation logic. The vocabulary below is
+-- the shared data dictionary an integrator codes against. A report is ACCEPTED only if it
+-- satisfies every axiom; an integration whose assumptions cannot jointly satisfy them is a
+-- design-time defect the consistency check catches before a single report is sent.
+component TrGateway
+  entity Report
+
+  observable state action_new(Report) : bool           -- action type = NEWT
+  observable state action_modify(Report) : bool         -- action type = MODI
+  observable state has_uti(Report) : bool
+  observable state has_prior_uti(Report) : bool
+  observable state cleared(Report) : bool
+  observable state has_ccp_lei(Report) : bool
+  observable state intent_to_clear(Report) : bool
+  observable state collateralised(Report) : bool
+  observable state has_collateral_code(Report) : bool
+  observable state bespoke_collateral(Report) : bool
+  observable state credit_derivative(Report) : bool
+  observable state has_index_factor(Report) : bool
+  observable state confirmed(Report) : bool
+  observable state has_confirmation_time(Report) : bool
+  observable state allocation(Report) : bool
+
+  axiom new_needs_uti means action_new(r) implies has_uti(r)
+  axiom modify_needs_prior means action_modify(r) implies has_prior_uti(r)
+  axiom one_action_type means not (action_new(r) and action_modify(r))
+  axiom cleared_needs_ccp_lei means cleared(r) implies has_ccp_lei(r)
+  axiom ccp_lei_only_if_cleared means has_ccp_lei(r) implies cleared(r)
+  axiom cleared_not_intent means cleared(r) implies not intent_to_clear(r)
+  axiom collateral_needs_code means collateralised(r) implies has_collateral_code(r)
+  axiom bespoke_has_no_code means bespoke_collateral(r) implies not has_collateral_code(r)
+  axiom credit_needs_factor means credit_derivative(r) implies has_index_factor(r)
+  axiom confirmed_needs_time means confirmed(r) implies has_confirmation_time(r)
+  axiom allocation_needs_prior means allocation(r) implies has_prior_uti(r)
+  axiom allocation_not_new means allocation(r) implies not action_new(r)
+end
