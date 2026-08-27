@@ -34,11 +34,33 @@ with jumps and multi-path outcomes is not.
 
 ## Checker result (N=8)
 
-_pending — see results-checker.json_
+    first-draft defective 2/8    ->    after loop: clean 8/8    (0 shipped defects)
+    avg iterations 1.6 (defective drafts converged in 3 and 4 iterations)
+
+Both defective first-drafts were caught and fixed. Integrity check on run 4 (the
+4-iteration case): the final spec keeps all nine real terminal outcomes (CCP, clearing
+member, trading platform, sooner-deadline rules, assigned entity, agreed entity,
+confirmation platform, TR, counterparty sort) — no spurious catch-all action, no merged
+or dropped outcome. So the loop drove a genuine structural correction, not checker-gaming
+(killing a gap with a junk action, or an overlap by deleting an outcome).
 
 ## Reading
 
-The headline v4>v3 claim: without the checker a meaningful fraction of specs ship a
-real structural defect (a trade double-classified or unclassified — a reporting failure)
-that reading missed; with the checker in the loop they are caught and, per the checker
-arm, fixed. This is the design-time value of a sound analyser, on real regulation.
+Side by side, on the verbatim CPMI-IOSCO table, opus:
+
+    baseline (no checker)      5/8 clean, 3/8 ship a real structural defect
+    checker in the loop        8/8 clean, 0/8 ship a defect (2 caught + fixed)
+
+Without the checker a real fraction of specs ship a defect — a trade double-classified or
+unclassified, a reporting failure — that reading missed. With the analyser in an
+elicit-style loop they are caught and fixed in a few iterations, without degrading the
+spec. This is the design-time value of a sound analyser, measured probabilistically on
+real regulation. It is the first non-saturated v4-over-v3 result: unlike the earlier
+ledger and idempotency trials, the baseline fails a meaningful fraction of the time, so
+the checker has something to add.
+
+Caveat on scope: the sound signal is disjointness (overlaps are exact). Exhaustiveness
+here is axiom-relative, because conditions like `sooner_deadline` only apply under
+`cross_jurisdictional`; the loop's fix for a gap may be to state that domain axiom rather
+than change a guard. Full guard-level fidelity to the table is a separate axis the
+analyser does not check.
