@@ -20,22 +20,17 @@ surface Queue {
         Acked(message)        -- the consumer acknowledges processing
 }
 
--- THE CONTRACT, stated as guarantees the queue makes to any consumer:
+-- THE CONTRACT — the delivery guarantees the queue makes. These are FACTS about
+-- the queue's behaviour. What a consumer must do to integrate soundly is left to
+-- the consumer's design (and is what the checker must work out against this
+-- contract); the contract does not prescribe it.
 --
 --   at_least_once: every published message is Delivered one OR MORE times. The
---                  queue redelivers anything it has not seen Acked (and may
---                  redeliver even after an Ack it did not observe). So a consumer
---                  WILL see duplicate Deliveries of the same message id.
+--                  queue redelivers anything it has not seen Acked, and may
+--                  redeliver even after an Ack it did not observe.
 --
 --   no_ordering:   Deliveries may arrive in any order.
---
--- The consequence the integrator must honour: because the same message id can be
--- Delivered more than once, the EFFECT of processing a message must be idempotent
--- in the message id, or duplicates corrupt state. A design that assumes
--- exactly-once delivery is UNSOUND against this contract — and that is the design
--- flaw the checker should catch at design time.
-rule RedeliveryIsPossible {
+rule DeliveryGuarantee {
     when: Delivered(message)
-    -- a later Delivered(message) with the same message.id may occur; nothing
-    -- guarantees a message is Delivered only once.
+    -- a later Delivered(message) carrying the same message.id may occur.
 }
