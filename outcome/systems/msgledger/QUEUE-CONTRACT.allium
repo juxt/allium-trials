@@ -1,0 +1,41 @@
+-- allium: 3
+-- QUEUE-CONTRACT.allium — the library specification of a third-party message queue.
+-- This is what an integrator is given ABOUT the queue: its delivery contract. The
+-- integration must be sound against THIS, and the point of the trial is that the
+-- checker validates the integration against it before any code is written.
+--
+-- Simpler than Kafka on purpose: one topic, no ordering guarantees, and the single
+-- load-bearing fact — AT-LEAST-ONCE delivery.
+
+entity Message {
+    id: String        -- a stable, unique id per published message
+    account: String
+    amount: Integer
+}
+
+-- The delivery contract.
+surface Queue {
+    provides:
+        Delivered(message)    -- the queue hands a message to the consumer
+        Acked(message)        -- the consumer acknowledges processing
+}
+
+-- THE CONTRACT, stated as guarantees the queue makes to any consumer:
+--
+--   at_least_once: every published message is Delivered one OR MORE times. The
+--                  queue redelivers anything it has not seen Acked (and may
+--                  redeliver even after an Ack it did not observe). So a consumer
+--                  WILL see duplicate Deliveries of the same message id.
+--
+--   no_ordering:   Deliveries may arrive in any order.
+--
+-- The consequence the integrator must honour: because the same message id can be
+-- Delivered more than once, the EFFECT of processing a message must be idempotent
+-- in the message id, or duplicates corrupt state. A design that assumes
+-- exactly-once delivery is UNSOUND against this contract — and that is the design
+-- flaw the checker should catch at design time.
+rule RedeliveryIsPossible {
+    when: Delivered(message)
+    -- a later Delivered(message) with the same message.id may occur; nothing
+    -- guarantees a message is Delivered only once.
+}
