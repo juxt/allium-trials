@@ -1,0 +1,8 @@
+t=1 entity=R1 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F
+t=2 entity=R1 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=T rejected=F
+t=3 entity=R2 cleared=F has_ccp_lei=F collateralised=T has_collateral_code=T bespoke_collateral=F submitted=T accepted=F rejected=F
+t=4 entity=R2 cleared=F has_ccp_lei=F collateralised=T has_collateral_code=T bespoke_collateral=F submitted=T accepted=T rejected=F
+t=5 entity=R3 cleared=F has_ccp_lei=F collateralised=T has_collateral_code=F bespoke_collateral=T submitted=T accepted=F rejected=F
+t=6 entity=R4 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=F
+t=7 entity=R4 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=T rejected=F
+t=8 entity=R4 cleared=T has_ccp_lei=T collateralised=F has_collateral_code=F bespoke_collateral=F submitted=T accepted=F rejected=T

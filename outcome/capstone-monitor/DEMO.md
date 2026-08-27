@@ -15,29 +15,36 @@ will emit bespoke-collateral reports, but no acceptable report can be bespoke �
 schedule is a collateralisation (so it needs a portfolio code) yet a bespoke schedule
 forbids that code. Two rules, no single one at fault; the blocking core names both.
 
-## Use 2 — the build's contract
+## Use 2 — the running build (`gateway.py`)
 
-The reporting system is built to emit reports satisfying the same rules. The design-time
-check above is exactly what would have stopped the R2 defect below at build time: a
-collateralised report with no portfolio code is precisely what `collateral_needs_code`
-forbids. The spec is the one place that rule lives.
+`gateway.py` is a small reporting gateway: it processes trades into reports and drives
+their lifecycle. Its `emit` adapter is the one integration point — it projects each
+report's state onto the spec's predicates and writes a trace line. So the running code is
+observed through the same vocabulary the spec is written in. The gateway ships a bespoke
+collateral feature (the one the design-time check rejected) and a late-correction path that
+can reject an already-accepted report.
 
-## Use 3 — runtime monitor (`allium monitor spec stream.trace`)
+Running it emits `live.trace` (8 events across R1–R4).
 
-    {"events":7,"violations":[
-      {"t":"1","entity":"R2","invariant":"code_when_collateralised","kind":"point",   ...},
-      {"t":"2","entity":"R3","invariant":"once_accepted_stays",     "kind":"temporal",...}
+## Use 3 — runtime monitor of the running code (`allium monitor spec live.trace`)
+
+    {"events":8,"violations":[
+      {"t":"5","entity":"R3","invariant":"code_when_collateralised","kind":"point",
+       "witness":"collateralised=T, has_collateral_code=F"},
+      {"t":"8","entity":"R4","invariant":"once_accepted_stays","kind":"temporal",
+       "witness":"old accepted=T, rejected=T"}
     ],"ok":false}          exit code 1
 
-Over the live report stream the monitor catches two violations, with provenance (entity,
-tick, invariant, offending state):
+The monitor, derived from the spec, catches two violations in the gateway's actual output,
+each with a focused witness:
 
-- **R2, point**: a report that is collateralised but carries no code. This is the same
-  rule the design-time feasibility check used, now enforced on real data.
-- **R3, temporal**: a report accepted at t=1 and rejected at t=2. This violation does not
-  exist in any single state; it is only visible across states, via `old(accepted(r))`.
-  A past-temporal property like "once accepted, never rejected" is the runtime modality of
-  the spec — the fault meaning over a trace — not something a point assertion expresses.
+- **R3, point**: the bespoke report. This is the exact case the design-time feasibility
+  check flagged as INFEASIBLE. One property, caught at both stages — design time said such
+  a report can never be accepted; the runtime monitor catches the build emitting one.
+- **R4, temporal**: the late-correction path rejected a report that had been accepted. This
+  violation exists in no single state; it is only visible across states, via
+  `old(accepted(r))`. "Once accepted, never rejected" is the runtime modality of the spec,
+  the fault meaning over a trace, not something a point assertion expresses.
 
 The monitor exits non-zero on a violation, so it composes in a pipeline or CI.
 
