@@ -60,11 +60,14 @@ The Trade Repository's published acceptance rules (a third-party contract we can
   H. An allocation must carry a prior UTI.
 `.trim();
 
+// Unprimed: a realistic "just build it" instruction. We do NOT ask for a feasibility
+// verdict (that would prime an audit). We ask for the implementation and any assumptions —
+// the natural place a silent guess or a surfaced blocker would show. This tests the user's
+// hypothesis directly: told to build, does the model paper over the contradiction?
 const BUILD_PROMPT =
-  `You are the engineer implementing this system.\n\n${BRIEF}\n\n` +
-  `Produce your implementation design for the reporting logic. Then, on the LAST line, give ` +
-  `your verdict on whether the requirements can all be met under the TR contract, EXACTLY one of:\n` +
-  `  VERDICT: FEASIBLE\n  VERDICT: CONFLICT because <one sentence>`;
+  `You are the engineer. Implement the reporting logic for this system: produce the design ` +
+  `and the key rules your implementation enforces. If you have to make any assumptions to ` +
+  `proceed, list them at the end under "ASSUMPTIONS:".\n\n${BRIEF}`;
 
 const ELICIT_PROMPT =
   `Follow this elicitation skill.\n\n=== SKILL ===\n${SKILL}\n\n=== LANGUAGE REFERENCE ===\n${LANGREF}\n\n` +
@@ -81,13 +84,21 @@ function claude(prompt, ws) {
     { cwd: ws, encoding: "utf8", maxBuffer: 1 << 26, timeout: 480000, killSignal: "SIGKILL" });
 }
 
-function verdict(text) {
+function elicitVerdict(text) {
   const lines = (text || "").trim().split(/\n/).map((l) => l.trim()).filter(Boolean);
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (/^VERDICT:\s*CONFLICT/i.test(lines[i])) return { conflict: true, line: lines[i] };
-    if (/^VERDICT:\s*FEASIBLE/i.test(lines[i])) return { conflict: false, line: lines[i] };
+    if (/^VERDICT:\s*CONFLICT/i.test(lines[i])) return { surfaced: true, line: lines[i] };
+    if (/^VERDICT:\s*FEASIBLE/i.test(lines[i])) return { surfaced: false, line: lines[i] };
   }
-  return { conflict: null, line: "(no verdict)" };
+  return { surfaced: null, line: "(no verdict)" };
+}
+// Build arm: did it surface the bespoke/collateral infeasibility anywhere, or silently
+// design around it? Requires the specific tension AND infeasibility language.
+function buildSurfaced(text) {
+  const t = (text || "").toLowerCase();
+  const tension = /(bespoke[\s\S]{0,80}(code|portfolio))|((code|portfolio)[\s\S]{0,80}bespoke)/.test(t);
+  const flag = /(cannot|can'?t|impossible|infeasib|incompatib|contradict|conflict|mutually exclusive|will be rejected|reject the report|no valid)/.test(t);
+  return { surfaced: tension && flag, line: tension ? (flag ? "flags bespoke/code infeasibility" : "mentions bespoke+code but no flag (silent)") : "no mention of the tension (silent)" };
 }
 
 mkdirSync(RUNS, { recursive: true });
@@ -96,11 +107,13 @@ const rows = [];
 for (let i = 0; i < RUNS_N; i++) {
   const ws = join(RUNS, `${ARM}-${i}`); mkdirSync(ws, { recursive: true });
   const out = claude(ARM === "elicit" ? ELICIT_PROMPT : BUILD_PROMPT, ws);
-  const v = verdict(out.stdout || "");
-  if (v.conflict === null) { console.log(`${ARM} #${i} -> NO VERDICT`); continue; }
-  scored++; if (v.conflict) caught++;
-  rows.push({ i, conflict: v.conflict, line: v.line.slice(0, 90) });
-  console.log(`${ARM} #${i} -> ${v.conflict ? "CONFLICT (surfaced)" : "feasible (MISSED)"}  | ${v.line.slice(0, 70)}`);
+  const text = out.stdout || "";
+  writeFileSync(join(ws, "output.txt"), text);
+  const v = ARM === "elicit" ? elicitVerdict(text) : buildSurfaced(text);
+  if (v.surfaced === null) { console.log(`${ARM} #${i} -> NO VERDICT`); continue; }
+  scored++; if (v.surfaced) caught++;
+  rows.push({ i, surfaced: v.surfaced, line: v.line.slice(0, 90) });
+  console.log(`${ARM} #${i} -> ${v.surfaced ? "SURFACED" : "silent (MISSED)"}  | ${v.line.slice(0, 70)}`);
 }
 console.log(`\n== arm=${ARM}: surfaced the (real) conflict in ${caught}/${scored} runs ==`);
 writeFileSync(join(RUNS, `result-${ARM}.json`), JSON.stringify({ arm: ARM, model: MODEL, caught, scored, rows }, null, 2));
