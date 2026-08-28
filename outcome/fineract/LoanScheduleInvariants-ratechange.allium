@@ -1,0 +1,29 @@
+-- allium: 4
+-- The load-bearing invariants that must SURVIVE a mid-loan interest-rate change.
+-- EMI-constancy is deliberately dropped: a rate change is meant to change the instalment,
+-- so emi_constant is not an operation-invariant law. The rest must still hold, and that is
+-- the Loop-2 question: does a real rate-change schedule still conserve principal, roll the
+-- balance, stay monotonic, and close to zero?
+component LoanSchedule
+  entity Period
+  given disbursed : Money
+
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state is_last(Period) : bool
+
+  invariant principal_split means every p :: principal(p) = emi(p) - interest(p)
+
+  invariant balance_rolls means every p :: every next ::
+    follows(next, p) implies (outstanding_start(next) = outstanding_start(p) - principal(p))
+
+  invariant balance_monotonic means every p :: every next ::
+    follows(next, p) implies (outstanding_start(next) <= outstanding_start(p))
+
+  invariant conservation means sum p :: principal(p) = disbursed
+
+  invariant closes_to_zero means every p ::
+    is_last(p) implies (outstanding_start(p) - principal(p) = 0)
+end

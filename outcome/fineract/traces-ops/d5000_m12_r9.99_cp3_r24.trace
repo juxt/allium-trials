@@ -1,0 +1,14 @@
+op=rate_change change_period=3 rate1=9.99 rate2=24
+period=0 emi=439.56 interest=41.62 principal=397.94 outstanding_start=5000.00 is_last=F
+period=1 emi=439.56 interest=38.31 principal=401.25 outstanding_start=4602.06 is_last=F
+period=2 emi=439.56 interest=34.97 principal=404.59 outstanding_start=4200.81 is_last=F
+period=3 emi=465.09 interest=75.92 principal=389.17 outstanding_start=3796.22 is_last=F
+period=4 emi=465.09 interest=68.14 principal=396.95 outstanding_start=3407.05 is_last=F
+period=5 emi=465.09 interest=60.20 principal=404.89 outstanding_start=3010.10 is_last=F
+period=6 emi=465.09 interest=52.10 principal=412.99 outstanding_start=2605.21 is_last=F
+period=7 emi=465.09 interest=43.84 principal=421.25 outstanding_start=2192.22 is_last=F
+period=8 emi=465.09 interest=35.42 principal=429.67 outstanding_start=1770.97 is_last=F
+period=9 emi=465.09 interest=26.83 principal=438.26 outstanding_start=1341.30 is_last=F
+period=10 emi=465.09 interest=18.06 principal=447.03 outstanding_start=903.04 is_last=F
+period=11 emi=465.13 interest=9.12 principal=456.01 outstanding_start=456.01 is_last=T
+given disbursed=5000.00

@@ -10,7 +10,7 @@
 //
 // Usage: node regen.mjs [--seeds 2]   (writes regen-result.json; slow — model calls per arm/seed)
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -73,12 +73,24 @@ Use only the Python standard library. Output ONLY the code in a single \`\`\`pyt
 
 const ALLIUM = readFileSync(join(HERE, "LoanScheduleInvariants.allium"), "utf8");
 const PROSE = readFileSync(join(HERE, "regen-prose-spec.txt"), "utf8");
+// Loop 1: the distilled numerical policy (rounding/day-count/EMI/final instalment), if present.
+const POLICY_PATH = join(HERE, "rounding-policy.md");
+const POLICY = existsSync(POLICY_PATH) ? readFileSync(POLICY_PATH, "utf8") : null;
+const withPolicy = (base) =>
+  `${base}\n\nThe implementation MUST also reproduce this institution's exact numerical policy (rounding mode, day-count, EMI computation, final-instalment adjustment):\n\n${POLICY}`;
+
 const ARMS = {
   thin: () => `Implement a standard declining-balance amortising loan repayment schedule calculator.\n\n${INTERFACE}`,
   prose: () =>
     `Implement a loan repayment schedule calculator whose output satisfies this behavioural specification:\n\n${PROSE}\n\n${INTERFACE}`,
   allium: () =>
     `Implement a loan repayment schedule calculator whose output satisfies this Allium behavioural specification (a formal spec language: \`invariant\` items constrain the schedule; \`every p ::\` quantifies over periods; \`sum p ::\` aggregates; \`follows\`/\`is_last\` order the periods):\n\n${ALLIUM}\n\n${INTERFACE}`,
+  // Loop 1 arms: the same specs enriched with the distilled numerical policy.
+  thin_policy: () => withPolicy(`Implement a declining-balance amortising loan repayment schedule calculator.\n\n${INTERFACE}`),
+  allium_policy: () =>
+    withPolicy(
+      `Implement a loan repayment schedule calculator whose output satisfies this Allium behavioural specification:\n\n${ALLIUM}\n\n${INTERFACE}`,
+    ),
 };
 
 function regenerate(promptText, dir) {
@@ -170,8 +182,18 @@ function grade(got) {
   return { strict, loose, total: oracle.length, fieldFail, posFail };
 }
 
-const results = {};
+// --only arm1,arm2 restricts which arms run; results merge into the existing file so a
+// follow-up (Loop 1) run does not clobber the baseline arms.
+const onlyArg = argv[argv.indexOf("--only") + 1];
+const only = argv.includes("--only") ? new Set(onlyArg.split(",")) : null;
+const resultPath = join(HERE, "regen-result.json");
+const results = existsSync(resultPath) ? JSON.parse(readFileSync(resultPath, "utf8")) : {};
 for (const [arm, mk] of Object.entries(ARMS)) {
+  if (only && !only.has(arm)) continue;
+  if (arm.endsWith("_policy") && !POLICY) {
+    console.error(`[${arm}] skipped: rounding-policy.md not present yet`);
+    continue;
+  }
   results[arm] = [];
   for (let s = 0; s < SEEDS; s++) {
     const dir = join(RUNS, `${arm}_${s}`);
