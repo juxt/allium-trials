@@ -40,7 +40,7 @@ const DISTILL =
 
 function claude(prompt, ws) {
   return spawnSync("claude", ["-p", prompt, "--output-format", "text", "--model", MODEL,
-    "--max-turns", "3", "--permission-mode", "bypassPermissions",
+    "--max-turns", ARM === "distill" ? "8" : "3", "--permission-mode", "bypassPermissions",
     "--disallowedTools", "Bash Edit Write Read Glob Grep WebFetch WebSearch Task NotebookEdit"],
     { cwd: ws, encoding: "utf8", maxBuffer: 1 << 26, timeout: 300000, killSignal: "SIGKILL" });
 }
