@@ -1,0 +1,5 @@
+repo: https://github.com/apache/fineract
+tag: 1.15.0
+sha: d5636847ac556c30b437254c353f05526d172b97
+pinned: 2026-08-28
+reproduce: git clone --filter=blob:none https://github.com/apache/fineract && cd fineract && git checkout 1.15.0
