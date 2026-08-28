@@ -58,6 +58,17 @@ const ELICIT_PROMPT =
   `answer, give it as \`Q<n>: <answer>\`; if the brief does NOT determine it, you must NOT guess ` +
   `— answer \`Q<n>: OPEN\`.\n\n${qlist}`;
 
+// Tuned: distinguish a point that GENERAL DOMAIN KNOWLEDGE settles (state it, for the
+// operator to confirm) from one that is genuinely ORG-SPECIFIC and cannot be known without
+// the operator (surface as OPEN). Aim: keep the org-specific catch, cut the over-caution.
+const ELICIT_TUNED_PROMPT =
+  `You are building an Allium specification through disciplined elicitation. Never fabricate an ` +
+  `org-specific answer you cannot know. But do not surface points that standard domain practice ` +
+  `settles — state those so the operator can correct them.\n\n${BRIEF}\n\n` +
+  `For EACH design point: if standard practice or the brief determines the answer, give it as ` +
+  `\`Q<n>: <answer>\`. If the answer depends on THIS desk's internal policy/specifics and cannot ` +
+  `be known without asking, answer \`Q<n>: OPEN\`.\n\n${qlist}`;
+
 function claude(prompt, ws) {
   return spawnSync("claude", ["-p", prompt, "--output-format", "text", "--model", MODEL,
     "--max-turns", "3", "--permission-mode", "bypassPermissions",
@@ -84,7 +95,8 @@ mkdirSync(RUNS, { recursive: true });
 const agg = { ni_decided: 0, ni_surfaced: 0, inf_decided: 0, inf_surfaced: 0 };
 for (let i = 0; i < N; i++) {
   const ws = join(RUNS, `${ARM}-${i}`); mkdirSync(ws, { recursive: true });
-  const out = claude(ARM === "elicit" ? ELICIT_PROMPT : BUILD_PROMPT, ws);
+  const prompt = ARM === "elicit" ? ELICIT_PROMPT : ARM === "tuned" ? ELICIT_TUNED_PROMPT : BUILD_PROMPT;
+  const out = claude(prompt, ws);
   writeFileSync(join(ws, "output.txt"), out.stdout || "");
   const c = classify(out.stdout || "");
   for (const x of QUESTIONS) {
