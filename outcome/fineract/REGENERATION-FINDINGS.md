@@ -62,6 +62,59 @@ infer. Two concrete targets, both already on the map:
    them. This is where regenerating from a spec should genuinely beat regenerating from nothing,
    and where a real interaction bug could hide.
 
+## Loop 1: distil the missing policy, re-run (does the score move?)
+
+The failing tests said the gap was Fineract's exact numerical policy. So we distilled it — a
+subagent read the calculator and produced a 292-line policy (rounding HALF_EVEN 2dp, 30/360
+day-count, iterative annuity EMI, final-instalment residual) — enriched the spec with it, and
+re-ran the identical eval.
+
+    arm             strict (penny)   loose (structural)
+    thin / prose / allium   140/150          150/150
+    thin_policy             143/150          150/150
+    allium_policy           143/150          150/150
+
+The score moved: 140 -> 143. The completeness loop works in direction — naming the missing
+behaviour and adding it improved fidelity. But it did not reach 150. Even a detailed policy
+leaves a residual, because bit-exact reproduction needs Fineract's exact iterative re-levelling
+and tie-breaking, which the policy distiller itself flagged as not fully pinnable from a
+description. **Some behaviour is irreducibly operational: a descriptive spec can approach but not
+reach bit-exactness with a real implementation.** And `allium_policy` = `thin_policy` again: the
+gain is entirely in the content (the policy), never the formalism.
+
+## Loop 2: the non-textbook operation (mid-loan rate change)
+
+The last hope for regeneration to show the spec beating the model's prior: a genuinely
+non-textbook operation. A subagent generated 32 real rate-change schedules; Fineract keeps the
+term and re-amortises the remaining balance at the new rate. Two facets:
+
+**Interaction bug-hunt (monitor).** The five load-bearing laws (principal split, balance roll,
+monotonicity, conservation, closes-to-zero) all SURVIVE the rate change exactly — 32/32, residual
+0. No interaction bug, and the invariants are provably operation-stable, which is real assurance.
+
+**Regeneration.** Regenerate the rate-change behaviour from a thin prompt vs the operation
+contract vs contract+policy, graded against the 32 oracle schedules:
+
+    arm            strict (penny)   loose (structural = got the recompute policy)
+    thin           22/32            32/32
+    contract       22/32            32/32
+    contract+pol   23/32            32/32
+
+The hoped-for win did not appear. `thin` already gets the recompute policy right 32/32
+structurally: the model's prior includes "loan rate change keeps the term and recomputes the
+instalment". The operation was not non-textbook after all. The contract adds nothing; the policy
+nudges pennies 22 -> 23, the same marginal effect as Loop 1.
+
+## What the two loops settle
+
+Regeneration saturates completely, including for the operation we expected to be non-obvious. A
+competent model reproduces the behaviour from almost nothing, so the spec's completeness cannot be
+demonstrated through regeneration on this codebase. The one thing the spec could add — the exact
+numerical policy — moves penny-fidelity only marginally (140->143, 22->23) and never to exactness,
+because the last pennies live in the code's iterative rounding, not in any description. The spec's
+value is therefore not in regeneration; it is in the standing gate, the auditable contract, and
+the operation-stability the monitor proves. Those do not saturate; reproduction does.
+
 ## Honest limits
 
 - One target (the core schedule) and one interface. The negative result is specific to textbook

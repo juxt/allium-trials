@@ -1,0 +1,38 @@
+{
+  "thin": [
+    {
+      "strict": 22,
+      "loose": 32,
+      "total": 32
+    },
+    {
+      "strict": 22,
+      "loose": 32,
+      "total": 32
+    }
+  ],
+  "contract": [
+    {
+      "strict": 22,
+      "loose": 32,
+      "total": 32
+    },
+    {
+      "strict": 22,
+      "loose": 32,
+      "total": 32
+    }
+  ],
+  "contract_pol": [
+    {
+      "strict": 23,
+      "loose": 32,
+      "total": 32
+    },
+    {
+      "strict": 23,
+      "loose": 32,
+      "total": 32
+    }
+  ]
+}
