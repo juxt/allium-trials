@@ -75,12 +75,18 @@ reviewing the output. The subtle case is `penny_leak`: a 0.01 discrepancy buried
 up to 24 rows. We asked the model to review each schedule in-head (no tools, so it must reason,
 not compute), without naming the invariant, and say VALID or BROKEN.
 
-<!-- MODEL-ARM-RESULT -->
-_Model-alone arm running; result folded in on completion._
+Over 12 long schedules (12 and 24 months), clean and penny-leaked:
 
-The gate's catch rate on this break is 100%. The gap between that and the model's in-head rate is
-the value: not that the model is incapable, but that a deterministic, complete gate does not rely
-on attention holding across a long table on every review of every schedule.
+    reviewer                    clean called VALID   penny-leak caught
+    deterministic gate          150/150 (0 false)    125/125  = 100%
+    model, in-head, no tools     12/12  (0 false)      8/12   =  67%
+
+The model raised no false alarms on clean schedules, and caught the penny-leak two times in
+three — but **missed it on a third** (4 of 12: `d1000_r0_m12`, `d1000_r24_m24`, `d1000_r9.99_m12`,
+`d100_r0_m24`). The gap between 100% and 67% is the value: not that the model is incapable of the
+arithmetic, but that a deterministic, complete gate does not rely on attention holding across a
+long numeric table on every review of every schedule. A penny goes through the model roughly a
+third of the time; it never goes through the gate.
 
 ## Honest limits
 

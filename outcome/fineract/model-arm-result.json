@@ -24,6 +24,41 @@
       "f": "d1000_r24_m12.trace",
       "verdict": "VALID",
       "out": "VALID"
+    },
+    {
+      "f": "d1000_r24_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r5_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r5_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r9.99_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r9.99_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d100_r0_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d100_r0_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
     }
   ],
   "mutated": [
@@ -51,6 +86,41 @@
       "f": "d1000_r24_m12.trace",
       "verdict": "BROKEN",
       "out": "BROKEN\nPeriod 2: starting balance is 925.44 but should be 925.45 (1000.00 − 74.55); the rollforward breaks there, and total principal sums to 999.99, one cent short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r24_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID or BROKEN check:\n\nBROKEN\nPeriod 1: 1000.00 − 32.86 = 967.14, but period 2 starts at 967.13 (off by 0.01). Consequently the 24 principal payments sum to 999.99, one cent short of the 1000.00 disb"
+    },
+    {
+      "f": "d1000_r5_m12.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: 1000.00 − 81.43 = 918.57, but period 2 starts at 918.56 (off by 0.01); total principal sums to 999.99, not 1000.00."
+    },
+    {
+      "f": "d1000_r5_m24.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: 1000.00 − 39.69 = 960.31, but period 2 starts at 960.30 (off by 0.01); consequently total principal sums to 999.99, not the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r9.99_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID or BROKEN check:\n\nBROKEN\nPeriod 1→2: starting balance 1000.00 less principal 79.57 should give 920.43, but period 2 starts at 920.42 (off by 0.01). Consequently the principal payments total 999."
+    },
+    {
+      "f": "d1000_r9.99_m24.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: principal is 37.80 but 1000.00 − 37.80 = 962.20, yet period 2 starts at 962.19 (should be 37.81); total principal sums to 999.99, one cent short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d100_r0_m12.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: principal 8.32 leaves 100.00 − 8.32 = 91.68, but period 2 starts at 91.67; principals also total only 99.99, one cent short of the 100.00 disbursed."
+    },
+    {
+      "f": "d100_r0_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID or BROKEN check:\n\nBROKEN\nPeriod 1: balance 100.00 − principal 4.16 = 95.84, but period 2 starts at 95.83; and total principal sums to 99.99, not 100.00 (the period-1 principal should be 4.17)."
     }
   ]
 }
