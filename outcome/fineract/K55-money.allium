@@ -1,0 +1,30 @@
+-- allium: 4
+-- K55 — money as fixed-point minor units, currency a non-mixable dimension.
+-- Demonstrates SD-1: same-currency arithmetic is well-formed; a cross-currency sum
+-- is a category error the checker rejects; a money-typed zero is well-formed.
+component Ledger
+  entity Account
+  given fee : Money(gbp)
+
+  observable state balance(Account) : Money(gbp)
+  observable state pending(Account) : Money(gbp)
+  observable state fx_notional(Account) : Money(usd)
+  observable state rate(Account) : Rate
+
+  -- Same-currency addition: well-formed.
+  invariant same_ccy_add means every a ::
+    balance(a) = pending(a) + fee
+
+  -- A money-typed zero: well-formed (0 is the additive identity of every dimension).
+  invariant settles_to_zero means every a ::
+    balance(a) - pending(a) = 0
+
+  -- Rate scales money and keeps its dimension: well-formed.
+  invariant interest means every a ::
+    pending(a) = rate(a) * balance(a)
+
+  -- Cross-currency addition: a CATEGORY ERROR. gbp + usd has no meaning without an
+  -- explicit, rate-carrying conversion. The checker must reject this line.
+  invariant cross_ccy_add means every a ::
+    balance(a) = balance(a) + fx_notional(a)
+end
