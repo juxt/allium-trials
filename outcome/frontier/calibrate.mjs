@@ -22,6 +22,7 @@ const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] :
 const SIZES = opt("--sizes", "12,24,40").split(",").map(Number);
 const PER = Number(opt("--per", "6"));
 const MODEL = opt("--model", "claude-opus-4-8");
+const ARM = opt("--arm", "alone"); // alone | v4 | v3
 
 // Deterministic-ish RNG seeded per instance for reproducibility.
 function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32; }
@@ -101,38 +102,64 @@ function claudeAlone(promptText, ws) {
     "--model", MODEL, "--max-turns", "1", "--permission-mode", "bypassPermissions"],
     { cwd: ws, encoding: "utf8", maxBuffer: 1 << 26, timeout: 300000, killSignal: "SIGKILL" });
 }
+function claudeTool(promptText, ws) {
+  return spawnSync("claude", ["-p", promptText, "--output-format", "text",
+    "--model", MODEL, "--max-turns", "12", "--permission-mode", "bypassPermissions"],
+    { cwd: ws, encoding: "utf8", maxBuffer: 1 << 26, timeout: 420000, killSignal: "SIGKILL" });
+}
+const V4_GUIDE =
+  `You have a sound checker. In your working directory write a file spec.allium encoding the rules, then run it.\n` +
+  `spec.allium must be EXACTLY:\n-- allium: 4\ncomponent C\n  entity X\n` +
+  `  observable state f0(X) : bool   (one line per field f0..f{N-1})\n` +
+  `  axiom r1 means <rule 1 encoded>  (one axiom per rule)\nend\n` +
+  `Encode each rule: "if fa then fb" -> fa(x) implies fb(x); "not both fa and fb" -> not (fa(x) and fb(x)); ` +
+  `"fa is true" -> fa(x); "fa is false" -> not fa(x).\n` +
+  `Then run:  ${ALLIUM} analyse spec.allium\n` +
+  `Read the JSON. If a message contains "CONTRADICTORY", the rules are unsatisfiable. If it contains ` +
+  `"jointly satisfiable (e.g. <witness>)", that witness is a satisfying assignment (fields not shown are free; set them F).\n`;
+// v3 tooling: the same checker binary but the model must use v3 (which has no consistency check).
+const V3_GUIDE =
+  `You have the Allium v3 checker at ${ALLIUM} (use \`-- allium: 3\` specs; run \`${ALLIUM} analyse spec.allium\`). ` +
+  `Use it however it helps to decide the question.\n`;
 
 function parseAnswer(text) {
-  if (/IMPOSSIBLE/i.test(text) && !/ASSIGN/i.test(text)) return { impossible: true };
-  const m = text.match(/ASSIGN[:\s]*([^\n]*)/i);
-  if (!m) return { impossible: /IMPOSSIBLE/i.test(text) };
-  const assign = {};
-  for (const tok of m[1].split(/[\s,]+/)) {
-    const kv = tok.match(/(f\d+)\s*=\s*([TF])/i);
-    if (kv) assign[kv[1]] = kv[2].toUpperCase() === "T";
+  // The answer is on the LAST matching line; scan bottom-up so restating the format earlier
+  // in the transcript does not confuse the verdict.
+  const lines = (text || "").trim().split(/\n/).map((l) => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const l = lines[i];
+    if (/^IMPOSSIBLE\b/i.test(l)) return { impossible: true };
+    if (/^ASSIGN\b/i.test(l)) {
+      const assign = {};
+      for (const kv of l.matchAll(/(f\d+)\s*=\s*([TF])/gi)) assign[kv[1]] = kv[2].toUpperCase() === "T";
+      return { assign };
+    }
   }
-  return { assign };
+  if (/IMPOSSIBLE/i.test(text)) return { impossible: true };
+  return { assign: {} };
 }
 
-rmSync(RUNS, { recursive: true, force: true });
+// (keep prior arms) do not wipe RUNS
 mkdirSync(RUNS, { recursive: true });
 const results = [];
-let seed = 1;
+
 for (const M of SIZES) {
   const N = Math.max(6, Math.round(M / 2));
   let correct = 0, scored = 0;
   const by = { SAT: { c: 0, n: 0 }, UNSAT: { c: 0, n: 0 } };
   for (let i = 0; i < PER; i++) {
-    const ws = join(RUNS, `M${M}-${i}`); mkdirSync(ws, { recursive: true });
+    const ws = join(RUNS, `${ARM}-M${M}-${i}`); mkdirSync(ws, { recursive: true });
     const forceUnsat = i % 2 === 1; // half aim for UNSAT
-    const rules = genInstance(N, M, seed++, forceUnsat);
+    const rules = genInstance(N, M, M * 1000 + i, forceUnsat); // deterministic -> arms are paired
     const ora = oracle(rules, N, ws);
     if (ora.sat === null) continue;
-    const prompt =
+    const task =
       `You are validating a report against a rulebook. ${prose(rules, N)}\n\n` +
-      `Find an assignment of EVERY field to true/false that satisfies EVERY rule, or determine none exists. ` +
-      `Answer on one line, EXACTLY one of:\n  ASSIGN: f0=T f1=F ... (all ${N} fields)\n  IMPOSSIBLE`;
-    const out = claudeAlone(prompt, ws);
+      `Decide whether some assignment of EVERY field to true/false satisfies EVERY rule.\n`;
+    const guide = ARM === "v4" ? V4_GUIDE.replace("{N-1}", N - 1) : ARM === "v3" ? V3_GUIDE : "";
+    const prompt = task + guide +
+      `\nAnswer on the LAST line, EXACTLY one of:\n  ASSIGN: f0=T f1=F ... (all ${N} fields)\n  IMPOSSIBLE`;
+    const out = ARM === "alone" ? claudeAlone(prompt, ws) : claudeTool(prompt, ws);
     const ans = parseAnswer(out.stdout || "");
     let ok;
     if (ora.sat === false) ok = ans.impossible === true;
@@ -147,4 +174,4 @@ for (const M of SIZES) {
 }
 console.log("SUMMARY (unaided LLM accuracy vs rule count):");
 for (const r of results) console.log(`  M=${r.M} N=${r.N}: overall ${r.acc} | find-SAT ${r.sat.c}/${r.sat.n} | prove-UNSAT ${r.unsat.c}/${r.unsat.n}`);
-writeFileSync(join(RUNS, "calibrate.json"), JSON.stringify(results, null, 2));
+writeFileSync(join(RUNS, `calibrate-${ARM}.json`), JSON.stringify(results, null, 2));
