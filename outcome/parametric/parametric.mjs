@@ -101,7 +101,7 @@ if (ARM === "oracle-test") {
 let confWrongInd = 0, wrong = 0, scored = 0;
 const byGuard = {};
 for (const k of Object.keys(GUARDS)) {
-  const ora = oracle(k, join(RUNS, `o-${k}`)); mkdirSync(join(RUNS, `o-${k}`), { recursive: true });
+  mkdirSync(join(RUNS, `o-${k}`), { recursive: true }); const ora = oracle(k, join(RUNS, `o-${k}`));
   byGuard[k] = { truth: ora.inductive, said: [] };
   for (let i = 0; i < PER; i++) {
     const ws = join(RUNS, `${k}-${i}`); mkdirSync(ws, { recursive: true });
