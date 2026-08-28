@@ -2,3 +2,5 @@ results/
 results-*.log
 outcome/fineract/mutated/
 outcome/fineract/model-arm.log
+outcome/fineract/regen-runs/
+outcome/fineract/regen.log

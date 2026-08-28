@@ -1,0 +1,27 @@
+{
+  "thin": [
+    {
+      "strict": 139,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 17,
+          "principal": 47,
+          "outstanding_start": 95
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 33,
+        "interior": 165
+      }
+    }
+  ]
+}

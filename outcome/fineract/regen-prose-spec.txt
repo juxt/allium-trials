@@ -1,0 +1,15 @@
+Behavioural specification of a declining-balance amortising loan repayment schedule
+for a loan of `disbursed` principal over `months` equal monthly periods at
+`annual_rate_percent` annual interest. The load-bearing behaviours a correct schedule
+must satisfy:
+
+1. EMI constancy: every non-final period carries the same instalment amount.
+2. Interest on outstanding: the interest charged in a period is that period's interest
+   rate applied to the balance outstanding at the start of the period.
+3. Principal split: the principal repaid in a period is the instalment less that period's
+   interest.
+4. Balance roll-forward: the balance at the start of the next period is this period's
+   starting balance minus the principal repaid this period.
+5. Balance monotonic: the outstanding balance never increases from one period to the next.
+6. Conservation: the principal repaid across all periods equals the disbursed amount.
+7. Termination: the final period reduces the outstanding balance to exactly zero.
