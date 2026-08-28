@@ -4,6 +4,26 @@
       "f": "d1000_r0_m12.trace",
       "verdict": "VALID",
       "out": "VALID"
+    },
+    {
+      "f": "d1000_r0_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r18_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r18_m24.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    },
+    {
+      "f": "d1000_r24_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
     }
   ],
   "mutated": [
@@ -11,6 +31,26 @@
       "f": "d1000_r0_m12.trace",
       "verdict": "VALID",
       "out": "VALID or BROKEN check:\n\nBROKEN\nPeriod 1: principal 83.32 leaves 1000.00 − 83.32 = 916.68, but period 2 starts at 916.67; principals also total 999.99, one cent short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r0_m24.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: principal 41.66 leaves 1000.00 − 41.66 = 958.34, but period 2 starts at 958.33; consequently the principal column sums to 999.99, a cent short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r18_m12.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: 1000.00 − 76.67 = 923.33, but period 2 starts at 923.32 (off by 0.01); consequently principal sums to 999.99, one cent short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r18_m24.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 1: starting balance 1000.00 less principal 34.91 gives 965.09, but period 2 starts at 965.08; that missing 0.01 also leaves total principal at 999.99, short of the 1000.00 disbursed."
+    },
+    {
+      "f": "d1000_r24_m12.trace",
+      "verdict": "BROKEN",
+      "out": "BROKEN\nPeriod 2: starting balance is 925.44 but should be 925.45 (1000.00 − 74.55); the rollforward breaks there, and total principal sums to 999.99, one cent short of the 1000.00 disbursed."
     }
   ]
 }
