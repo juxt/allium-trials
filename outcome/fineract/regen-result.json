@@ -142,5 +142,30 @@
         "interior": 147
       }
     }
+  ],
+  "thin_policy": [
+    {
+      "strict": 143,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 30,
+          "interest": 14,
+          "principal": 35,
+          "outstanding_start": 65
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 21,
+        "interior": 123
+      }
+    }
   ]
 }
