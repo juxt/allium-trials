@@ -1,2 +1,4 @@
 results/
 results-*.log
+outcome/fineract/mutated/
+outcome/fineract/model-arm.log

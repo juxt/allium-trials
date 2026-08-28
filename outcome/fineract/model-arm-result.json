@@ -1,0 +1,16 @@
+{
+  "clean": [
+    {
+      "f": "d1000_r0_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID"
+    }
+  ],
+  "mutated": [
+    {
+      "f": "d1000_r0_m12.trace",
+      "verdict": "VALID",
+      "out": "VALID or BROKEN check:\n\nBROKEN\nPeriod 1: principal 83.32 leaves 1000.00 − 83.32 = 916.68, but period 2 starts at 916.67; principals also total 999.99, one cent short of the 1000.00 disbursed."
+    }
+  ]
+}

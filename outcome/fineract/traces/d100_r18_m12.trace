@@ -1,0 +1,13 @@
+period=0 emi=9.17 interest=1.50 principal=7.67 outstanding_start=100.00 is_last=F
+period=1 emi=9.17 interest=1.38 principal=7.79 outstanding_start=92.33 is_last=F
+period=2 emi=9.17 interest=1.27 principal=7.90 outstanding_start=84.54 is_last=F
+period=3 emi=9.17 interest=1.15 principal=8.02 outstanding_start=76.64 is_last=F
+period=4 emi=9.17 interest=1.03 principal=8.14 outstanding_start=68.62 is_last=F
+period=5 emi=9.17 interest=0.91 principal=8.26 outstanding_start=60.48 is_last=F
+period=6 emi=9.17 interest=0.78 principal=8.39 outstanding_start=52.22 is_last=F
+period=7 emi=9.17 interest=0.66 principal=8.51 outstanding_start=43.83 is_last=F
+period=8 emi=9.17 interest=0.53 principal=8.64 outstanding_start=35.32 is_last=F
+period=9 emi=9.17 interest=0.40 principal=8.77 outstanding_start=26.68 is_last=F
+period=10 emi=9.17 interest=0.27 principal=8.90 outstanding_start=17.91 is_last=F
+period=11 emi=9.15 interest=0.14 principal=9.01 outstanding_start=9.01 is_last=T
+given disbursed=100.00
