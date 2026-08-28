@@ -1,0 +1,48 @@
+-- allium: 4
+component Rulebook
+  entity R
+  observable state has_code(R) : bool
+  observable state bespoke(R) : bool
+  observable state cleared(R) : bool
+  observable state has_factor(R) : bool
+  observable state has_prior_uti(R) : bool
+  observable state new_trade(R) : bool
+  observable state cross_border(R) : bool
+  observable state has_uti(R) : bool
+  observable state has_ccp_lei(R) : bool
+  observable state collateralised(R) : bool
+  observable state confirmed(R) : bool
+  observable state intragroup(R) : bool
+  observable state credit(R) : bool
+  observable state package(R) : bool
+  observable state reconciled(R) : bool
+  observable state has_ts(R) : bool
+  axiom r1 means has_code(r) implies bespoke(r)
+  axiom r2 means not (bespoke(r) and cleared(r))
+  axiom r3 means has_factor(r) implies has_prior_uti(r)
+  axiom r4 means not (new_trade(r) and cross_border(r))
+  axiom r5 means not (cleared(r) and bespoke(r))
+  axiom r6 means has_uti(r) implies has_prior_uti(r)
+  axiom r7 means has_ccp_lei(r) implies collateralised(r)
+  axiom r8 means confirmed(r) implies has_uti(r)
+  axiom r9 means has_uti(r) implies cleared(r)
+  axiom r10 means not (confirmed(r) and has_factor(r))
+  axiom r11 means not (has_code(r) and cross_border(r))
+  axiom r12 means not (has_ccp_lei(r) and has_code(r))
+  axiom r13 means cleared(r) implies has_ccp_lei(r)
+  axiom r14 means collateralised(r) implies intragroup(r)
+  axiom r15 means not (has_uti(r) and credit(r))
+  axiom r16 means package(r) implies has_uti(r)
+  axiom r17 means has_ccp_lei(r)
+  axiom r18 means not (cleared(r) and has_factor(r))
+  axiom r19 means not (package(r) and has_uti(r))
+  axiom r20 means not (collateralised(r) and cross_border(r))
+  axiom r21 means cleared(r)
+  axiom r22 means has_ccp_lei(r) implies reconciled(r)
+  axiom r23 means not (bespoke(r) and confirmed(r))
+  axiom r24 means collateralised(r) implies reconciled(r)
+  axiom r25 means not (collateralised(r) and new_trade(r))
+  axiom r26 means has_ts(r)
+  axiom r27 means collateralised(r) implies has_code(r)
+  axiom r28 means not (bespoke(r) and has_uti(r))
+end

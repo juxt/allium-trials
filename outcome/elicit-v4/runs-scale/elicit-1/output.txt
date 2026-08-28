@@ -1,0 +1,9 @@
+The analyser reports **CONTRADICTORY**. The rulebook admits no valid report.
+
+The minimal conflicting core is **r25** and **r27**:
+- R25: no report has confirmed → `not confirmed(r)`
+- R27: every report has confirmed → `confirmed(r)`
+
+These directly contradict each other. Nothing else in the 28 rules matters; this pair alone is unsatisfiable, so no report can satisfy the rulebook.
+
+VERDICT: CONFLICT because r25, r27

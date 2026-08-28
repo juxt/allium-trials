@@ -1,0 +1,9 @@
+The rulebook is contradictory. The analysis found a minimal conflicting core of three rules:
+
+- **R24**: every report has `cleared`
+- **R17**: if `cleared`, then `bespoke`
+- **R19**: not both `cleared` and `bespoke`
+
+R24 forces every report to be cleared. R17 then forces it to be bespoke. R19 forbids a report from being both cleared and bespoke. No report can satisfy all three, so the rulebook admits no valid report.
+
+VERDICT: CONFLICT because r17, r19, r24

@@ -1,0 +1,39 @@
+Confirmed: **zero** of the 131,072 possible reports satisfy all 28 rules. The rulebook is unsatisfiable. No report can ever be valid, so a validator that enforces these checks faithfully would reject every input including an empty report.
+
+Rather than write 28 checks that can never all pass, here's the proof.
+
+## The rulebook is contradictory
+
+**Direct contradiction (two rules):**
+- R27: *every* report has `confirmed` → `confirmed = true`
+- R25: *no* report has `confirmed` → `confirmed = false`
+
+These cannot both hold. That alone makes the rulebook UNSAT.
+
+**A second, independent contradiction** (so this isn't one stray typo). Follow the forced consequences of R19 (`cleared = true`):
+
+- R19 → `cleared`
+- R6 (`cleared → has_ccp_lei`) → `has_ccp_lei`
+- R21 (`has_ccp_lei → collateralised`) → `collateralised`
+- R15 (`collateralised → has_code`) → `has_code`
+- R26 (`¬(has_ccp_lei ∧ has_code)`) → **violated**, since both are now forced true.
+
+And a third along the same chain: R2 (`has_code → bespoke`) forces `bespoke`, while R10 (`¬(cleared ∧ bespoke)`) forbids it given `cleared`. There's also R16→`new_trade` colliding with R9 (`¬(new_trade ∧ has_ccp_lei)`).
+
+So the infeasibility is over-determined: the R25/R27 pair kills it outright, and the `cleared` chain kills it again through at least three separate rule collisions.
+
+## What I'd need to proceed
+
+The validator itself is trivial to write, it's the specification that's broken. One of these is true, and I can't tell which from the rulebook alone:
+
+1. **A rule is wrong.** Most likely R25 or R27 (one contradicts the other), and possibly the `cleared`-chain rules (R6/R10/R15/R21/R26/R2). Tell me the intended direction and I'll implement it.
+2. **These aren't all hard constraints.** If some are warnings, defaults, or apply to different report *types* rather than every report, the rulebook needs to say so, then it may become satisfiable.
+3. **You actually want the meta-checker**, i.e. a tool that detects and reports this contradiction. I can deliver that as the deliverable: the brute-force/UNSAT-core checker above, which any future rulebook edit can be run against.
+
+## ASSUMPTIONS
+
+- Attributes are the 17 names appearing in the rules; each is an independent boolean, and a "report" is any assignment over them (no attribute is implied present unless a rule forces it).
+- "must have X" / "if it has X" are hard logical constraints (implications and mutual-exclusions), and *all* rules apply to *every* report. "every report has X" = X forced true, "no report has X" = X forced false.
+- Validation means: a report is valid iff it satisfies all rules simultaneously. Under that reading the valid set is empty.
+
+Tell me which of the three paths you want and I'll write the validator to match.

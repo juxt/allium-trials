@@ -1,0 +1,12 @@
+The analyser reports the rulebook is **CONTRADICTORY**. It admits no valid report.
+
+The minimal conflicting core is **r7, r12, r17, r27**:
+
+- **r17** — every report has `has_ccp_lei`
+- **r7** — `has_ccp_lei` implies `collateralised`
+- **r27** — `collateralised` implies `has_code`
+- **r12** — a report must not have both `has_ccp_lei` and `has_code`
+
+The forced chain `has_ccp_lei → collateralised → has_code` collides with r12's ban on `has_ccp_lei` and `has_code` together. Since r17 mandates `has_ccp_lei` on every report, no report can satisfy all four.
+
+VERDICT: CONFLICT because r7, r12, r17, r27

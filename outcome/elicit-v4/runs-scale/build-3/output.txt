@@ -1,0 +1,39 @@
+I implemented the validator, and running it surfaced a blocking defect: **the rulebook is unsatisfiable. No report can ever pass.**
+
+## The validator
+
+`validator.py` encodes all 28 rules in a declarative table of three shapes, so each check maps one-to-one to the published text:
+
+- **require** (every report has X): R17 `has_ccp_lei`, R21 `cleared`, R26 `has_ts`
+- **implies** (if A then B): R1, R3, R6, R7, R8, R9, R13, R14, R16, R22, R24, R27
+- **exclude** (not both A and B): R2, R4, R5, R10, R11, R12, R15, R18, R19, R20, R23, R25, R28
+
+`validate(report)` returns the list of violated rule IDs (empty = valid); missing attributes default to False.
+
+## The defect
+
+Before trusting the validator, I ran an exhaustive satisfiability check over all 2^16 attribute combinations. Zero pass. The validator is sound, but it rejects every possible input, which means the Trade Repository can never accept a report.
+
+The contradiction is forced by a four-rule chain with no escape:
+
+1. **R17** — every report has `has_ccp_lei`, so it is always true.
+2. **R7** — `has_ccp_lei` requires `collateralised`, so `collateralised` is forced true.
+3. **R27** — `collateralised` requires `has_code`, so `has_code` is forced true.
+4. **R12** — a report must not have both `has_ccp_lei` and `has_code`. Both are now forced true. Every report violates R12.
+
+Minimal unsat core: **{R17, R7, R27, R12}**. The other 24 rules are irrelevant to the infeasibility; you cannot fix this by adjusting inputs, only by changing the rulebook.
+
+## What needs a decision
+
+This is a rulebook defect, not something to design around. One of the four core rules has to give. The likely candidates:
+
+- **R27** (`collateralised → has_code`) directly contradicts **R12** (`has_ccp_lei ✗ has_code`) once R7 and R17 chain them together. Dropping or narrowing one of these is the smallest fix.
+- Alternatively R7 (forcing `collateralised` on every report via R17) may be stronger than intended.
+
+I've left the validator in place. It is correct as written and will keep returning "all reports invalid" until the rulebook contradiction is resolved. I did not silently pick a fix, because which rule is wrong is a policy question for whoever owns the rulebook.
+
+ASSUMPTIONS
+- All 28 rules are hard validation constraints; a report is valid only if it violates none. There are no soft/warning rules.
+- Attributes are the 16 named across the rules; any attribute absent from a report is treated as False.
+- "every report has X" (R17, R21, R26) means X must be true, not merely present.
+- Rules that restate each other (R2/R5 both exclude bespoke+cleared) are kept as separate IDs for traceability rather than deduplicated.

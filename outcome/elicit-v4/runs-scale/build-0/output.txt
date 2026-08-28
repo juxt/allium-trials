@@ -1,0 +1,34 @@
+## The rulebook is unsatisfiable
+
+I implemented the validator (`validator.py`: a `validate(report)` returning the list of violated rule IDs, empty means valid), but the substantive finding is this: **no report can ever pass validation.** Exhaustive check over all 2^17 attribute combinations returns zero valid reports.
+
+This is not a design detail to work around. Any validator that faithfully enforces these 28 rules rejects every possible input, so shipping it as-is means the Trade Repository can never accept a report. That is almost certainly a defect in the rulebook, not the intended behaviour.
+
+### The proof (minimal core: R24, R17, R19)
+
+Three rules alone are contradictory, independent of the other 25:
+
+- **R24** every report has `cleared`, so `cleared = true` always.
+- **R17** if `cleared` then `bespoke`, so `bespoke = true` is forced.
+- **R19** must not have both `cleared` and `bespoke`, so `cleared ∧ bespoke` is forbidden.
+
+R24 forces `cleared`, R17 then forces `bespoke`, and R19 forbids exactly that pair. Any two of the three are satisfiable; all three together are not. I verified this both by brute force and by isolating the core.
+
+There is a second, independent contradiction path worth flagging when you fix the first:
+
+- **R14** forces `allocation`, and **R1** forbids `reconciled ∧ allocation`, so `reconciled = false` always.
+- **R24** forces `cleared`; **R17**/**R6**/**R13** chains push toward `bespoke`/`has_code`; and separately **R11 → R12 → R5 → R6** plus **R22** (`has_factor` and `has_code` cannot coexist) tighten the space further.
+
+The `cleared`/`bespoke` core is the cleanest single thing to resolve first.
+
+### What needs a decision
+
+To make the rulebook satisfiable, at least one of R24, R17, R19 has to change. The likely candidates:
+
+- **R19 is wrong** — perhaps it should be "must not have both `cleared` and something else" (a typo'd attribute), since R17 explicitly says cleared reports *are* bespoke.
+- **R17 is wrong** — cleared reports should not imply bespoke.
+- **R24 is wrong** — not every report is cleared; it should be conditional.
+
+I can't pick for you without knowing the domain intent. The validator is written and correct against the rules as stated; it just enforces a contradiction. Tell me which of the three should give, and I'll confirm the whole set becomes satisfiable (and check the secondary path).
+
+Which rule is mis-stated?

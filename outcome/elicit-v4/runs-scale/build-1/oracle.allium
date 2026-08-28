@@ -1,0 +1,49 @@
+-- allium: 4
+component Rulebook
+  entity R
+  observable state confirmed(R) : bool
+  observable state cleared(R) : bool
+  observable state has_code(R) : bool
+  observable state bespoke(R) : bool
+  observable state has_pkg_id(R) : bool
+  observable state has_prior_uti(R) : bool
+  observable state has_uti(R) : bool
+  observable state has_ccp_lei(R) : bool
+  observable state has_factor(R) : bool
+  observable state has_ts(R) : bool
+  observable state reconciled(R) : bool
+  observable state new_trade(R) : bool
+  observable state credit(R) : bool
+  observable state cross_border(R) : bool
+  observable state collateralised(R) : bool
+  observable state package(R) : bool
+  observable state allocation(R) : bool
+  axiom r1 means not (confirmed(r) and cleared(r))
+  axiom r2 means has_code(r) implies bespoke(r)
+  axiom r3 means has_pkg_id(r) implies has_prior_uti(r)
+  axiom r4 means not has_uti(r)
+  axiom r5 means not (has_ccp_lei(r) and has_factor(r))
+  axiom r6 means cleared(r) implies has_ccp_lei(r)
+  axiom r7 means confirmed(r) implies has_ts(r)
+  axiom r8 means reconciled(r) implies bespoke(r)
+  axiom r9 means not (new_trade(r) and has_ccp_lei(r))
+  axiom r10 means not (cleared(r) and bespoke(r))
+  axiom r11 means has_prior_uti(r) implies has_uti(r)
+  axiom r12 means has_prior_uti(r) implies reconciled(r)
+  axiom r13 means credit(r) implies has_ts(r)
+  axiom r14 means not (has_factor(r) and cross_border(r))
+  axiom r15 means collateralised(r) implies has_code(r)
+  axiom r16 means cleared(r) implies new_trade(r)
+  axiom r17 means has_ccp_lei(r) implies new_trade(r)
+  axiom r18 means not (package(r) and confirmed(r))
+  axiom r19 means cleared(r)
+  axiom r20 means not (package(r) and allocation(r))
+  axiom r21 means has_ccp_lei(r) implies collateralised(r)
+  axiom r22 means not (bespoke(r) and has_prior_uti(r))
+  axiom r23 means not (cross_border(r) and has_pkg_id(r))
+  axiom r24 means not allocation(r)
+  axiom r25 means not confirmed(r)
+  axiom r26 means not (has_ccp_lei(r) and has_code(r))
+  axiom r27 means confirmed(r)
+  axiom r28 means credit(r) implies has_uti(r)
+end

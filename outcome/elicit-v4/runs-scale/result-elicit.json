@@ -1,5 +1,5 @@
 {
-  "arm": "build",
+  "arm": "elicit",
   "model": "claude-opus-4-8",
   "nvars": 18,
   "caught": 4,

@@ -1,0 +1,36 @@
+The validator runs and confirms the finding. Here's the summary.
+
+## The validator
+
+`validate_report.py` encodes all 28 rules as predicates over a report's boolean attributes. Four primitives cover every rule shape:
+
+- **not-both(a, b)** — mutual exclusion (R1, R6, R9, R10, R14, R15, R16, R25)
+- **implies(a, b)** — if `a` then `b` (R3, R4, R5, R8, R11, R12, R13, R17, R18, R20, R21, R22, R23, R24, R26, R28)
+- **never(a)** — attribute forbidden on all reports (R2, R7)
+- **always(a)** — attribute required on all reports (R19, R27)
+
+`validate(report)` returns the list of violated rule ids (empty means valid); `explain` gives the human-readable lines; `is_valid` is the boolean. Absent keys read as false, so a report only needs to list its present attributes.
+
+## The check that matters: feasibility
+
+The rules are self-contradictory, so a faithful validator rejects every input. The proof is a four-rule chain, confirmed by exhausting the core assignments in the `__main__` block:
+
+```
+R27  cleared              := true      (unconditional)
+R22  cleared → has_ccp_lei  ⟹ has_ccp_lei := true
+R17  has_ccp_lei → collateralised ⟹ collateralised := true
+R7   ¬collateralised        ⟹ collateralised := false   ← contradiction
+```
+
+Minimal unsatisfiable core: **{R7, R17, R22, R27}**.
+
+## What I did not do
+
+I didn't quietly relax R7 or drop R17 to make reports pass. The validator enforces the rulebook as written and flags that the accept-set is empty. Resolving it needs a decision from the Trade Repository about which rule is wrong — most likely R7 (`collateralised` forbidden) conflicts with the clearing chain that R27→R22→R17 mandates, so either cleared reports shouldn't force `has_ccp_lei`, or `collateralised` shouldn't be globally forbidden. That's a domain call, not an implementation one.
+
+## Assumptions
+
+- **ASSUMPTION**: "no report has X" / "every report has X" are validation checks (reject reports that have / lack X), not axioms I may assume true of the input. Under any reading the contradiction stands; this only affects how it surfaces (as a rejection vs. an assertion failure).
+- **ASSUMPTION**: attributes are the only state; an absent attribute means false (closed-world). No attribute is derived or defaulted to true except where a rule demands it.
+- **ASSUMPTION**: all 28 rules are in force simultaneously with equal authority; there's no precedence or override ordering that would let one rule suppress another.
+- **ASSUMPTION**: the duplicate/near-duplicate rules (R4≡R26, R13≡R24, R3-family) are intentional-or-harmless redundancy, not a transcription error that changes intent. They don't affect the core.

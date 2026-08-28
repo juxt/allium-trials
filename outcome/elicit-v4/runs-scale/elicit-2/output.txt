@@ -1,0 +1,3 @@
+The rulebook is contradictory. The core is a forced chain: every report is `cleared` (r27); cleared forces `has_ccp_lei` (r22), which forces `collateralised` (r17), which forces `has_code` (r26), which forces `bespoke` (r24) — but r15 forbids a report from being both `cleared` and `bespoke`. No report can satisfy all rules.
+
+VERDICT: CONFLICT because r15, r17, r22, r24, r26, r27
