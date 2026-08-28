@@ -1,0 +1,3 @@
+-- allium: 3
+entity Trade { status: draft | live | settled  transitions status { draft -> live  live -> settled  terminal: settled } }
+rule Settle { when: Settle(t) requires: t.status = archived ensures: t.status = settled }

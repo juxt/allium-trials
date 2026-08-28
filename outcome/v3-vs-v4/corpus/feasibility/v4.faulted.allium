@@ -1,0 +1,11 @@
+-- allium: 4
+component R
+  entity Rep
+  observable state collateralised(Rep) : bool
+  observable state has_code(Rep) : bool
+  observable state bespoke(Rep) : bool
+  axiom needs_code means collateralised(r) implies has_code(r)
+  axiom bespoke_no_code means bespoke(r) implies not has_code(r)
+  axiom bespoke_is_collat means bespoke(r) implies collateralised(r)
+  requirement bespoke_report means bespoke(r)
+end

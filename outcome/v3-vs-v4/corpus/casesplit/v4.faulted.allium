@@ -1,0 +1,9 @@
+-- allium: 4
+component Classify
+  entity Trade
+  observable state a(Trade) : bool
+  observable state b(Trade) : bool
+  action first(t : Trade) requires a(t) ; ensures ok(t)
+  action second(t : Trade) requires b(t) ; ensures ok(t)
+  action third(t : Trade) requires not a(t) and not b(t) ; ensures ok(t)
+end

@@ -1,0 +1,7 @@
+-- allium: 4
+component Order
+  entity Order
+  observable state open(Order) : bool
+  observable state gone(Order) : bool
+  action close(o : Order) requires shut(o) ; ensures gone(o)
+end

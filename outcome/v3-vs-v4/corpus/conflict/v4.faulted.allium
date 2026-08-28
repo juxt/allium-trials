@@ -1,0 +1,7 @@
+-- allium: 4
+component Order
+  entity Order
+  observable state pending(Order) : bool
+  action confirm(o : Order) requires pending(o) ; ensures done(o)
+  action cancel(o : Order) requires pending(o) ; ensures done(o)
+end

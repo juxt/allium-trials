@@ -1,0 +1,3 @@
+-- allium: 3
+entity Trade { status: draft | live  transitions status { draft -> live  terminal: live } }
+rule GoLive { when: GoLive(t) requires: t.status = draft ensures: t.status = live }

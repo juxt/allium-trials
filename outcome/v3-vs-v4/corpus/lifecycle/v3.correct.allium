@@ -1,0 +1,5 @@
+-- allium: 3
+entity Order { status: pending | active | done
+  transitions status { pending -> active  active -> done  terminal: done } }
+rule Act    { when: Act(o)    requires: o.status = pending ensures: o.status = active }
+rule Finish { when: Finish(o) requires: o.status = active  ensures: o.status = done }

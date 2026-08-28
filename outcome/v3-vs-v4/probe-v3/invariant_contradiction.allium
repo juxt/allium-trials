@@ -1,0 +1,7 @@
+-- allium: 3
+entity Account {
+    frozen: Boolean
+    active: Boolean
+    invariant MustBeActive { this.active = true }
+    invariant FrozenNotActive { this.frozen = true and this.active = false }
+}

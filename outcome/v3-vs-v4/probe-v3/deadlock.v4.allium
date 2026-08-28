@@ -1,0 +1,6 @@
+-- allium: 4
+component Order
+  entity Order
+  status Order : pending | active | stuck | done
+  transitions status { pending -> active  active -> stuck  terminal: done }
+end

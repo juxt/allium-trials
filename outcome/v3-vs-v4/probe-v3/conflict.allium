@@ -1,0 +1,7 @@
+-- allium: 3
+entity Order {
+    status: pending | confirmed | cancelled
+    transitions status { pending -> confirmed  pending -> cancelled  terminal: confirmed, cancelled }
+}
+rule Confirm { when: order: Order.status becomes pending requires: order.status = pending ensures: order.status = confirmed }
+rule Cancel  { when: order: Order.status becomes pending requires: order.status = pending ensures: order.status = cancelled }

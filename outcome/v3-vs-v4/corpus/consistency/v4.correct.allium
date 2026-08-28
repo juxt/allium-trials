@@ -1,0 +1,7 @@
+-- allium: 4
+component Account
+  entity Account
+  observable state active(Account) : bool
+  invariant must_be_active means active(a)
+  invariant also_ok means active(a) implies active(a)
+end

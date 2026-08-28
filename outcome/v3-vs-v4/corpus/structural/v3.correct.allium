@@ -1,0 +1,3 @@
+-- allium: 3
+entity Order { customer: Customer  status: open | closed  transitions status { open -> closed  terminal: closed } }
+external entity Customer { name: String }

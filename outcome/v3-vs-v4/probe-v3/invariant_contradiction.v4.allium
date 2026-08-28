@@ -1,0 +1,8 @@
+-- allium: 4
+component Account
+  entity Account
+  observable state active(Account) : bool
+  observable state frozen(Account) : bool
+  invariant must_be_active means active(a)
+  invariant frozen_not_active means frozen(a) and not active(a)
+end
