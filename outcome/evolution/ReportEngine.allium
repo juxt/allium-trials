@@ -1,0 +1,30 @@
+-- allium: 4
+-- Salient behaviours of the trade report engine. This spec grounds what MUST be preserved
+-- when the code changes: these are the load-bearing behaviours, not incidental details.
+component ReportEngine
+  entity Trade
+  observable state has_uti(Trade) : bool
+  observable state has_prior_uti(Trade) : bool
+  observable state reportable(Trade) : bool
+  observable state cleared(Trade) : bool
+  observable state has_ccp_lei(Trade) : bool
+
+  -- B1: every new-trade report is issued a UTI.
+  invariant new_has_uti means action_new(t) implies has_uti(t)
+  -- B2: an amendment carries the prior report's UTI.
+  invariant amend_carries_prior means action_amend(t) implies has_prior_uti(t)
+  -- B3: a cleared trade must carry the CCP LEI (else it is rejected).
+  invariant cleared_needs_lei means cleared(t) implies has_ccp_lei(t)
+  -- B4: a below-threshold trade is still SUBMITTED, flagged non-reportable — never dropped.
+  invariant below_threshold_submitted means submitted(t) and (not reportable(t) allowed)
+  -- B5: an amendment issued before the prior is acknowledged is QUEUED, not sent.
+  invariant amend_before_ack_queued means true
+  -- B6: re-booking a still-live trade is IDEMPOTENT — it returns the existing UTI, not a new one.
+  invariant rebook_idempotent means true
+  -- B7: the reported timestamp is the TRADE time, never the submission time.
+  invariant timestamp_is_trade_time means true
+  -- B8: cancelling an already-cancelled trade is a NO-OP.
+  invariant cancel_idempotent means true
+  -- (uniqueness) no two distinct trades share a UTI.
+  invariant uti_unique means every a :: every b :: (uti(a) = uti(b)) implies (a = b)
+end
