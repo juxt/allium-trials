@@ -22,6 +22,125 @@
         "last": 33,
         "interior": 165
       }
+    },
+    {
+      "strict": 140,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 15,
+          "principal": 45,
+          "outstanding_start": 78
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 30,
+        "interior": 147
+      }
+    }
+  ],
+  "prose": [
+    {
+      "strict": 140,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 15,
+          "principal": 45,
+          "outstanding_start": 78
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 30,
+        "interior": 147
+      }
+    },
+    {
+      "strict": 140,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 15,
+          "principal": 45,
+          "outstanding_start": 78
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 30,
+        "interior": 147
+      }
+    }
+  ],
+  "allium": [
+    {
+      "strict": 140,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 15,
+          "principal": 45,
+          "outstanding_start": 78
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 30,
+        "interior": 147
+      }
+    },
+    {
+      "strict": 140,
+      "loose": 150,
+      "total": 150,
+      "fieldFail": {
+        "strict": {
+          "emi": 39,
+          "interest": 15,
+          "principal": 45,
+          "outstanding_start": 78
+        },
+        "loose": {
+          "emi": 0,
+          "interest": 0,
+          "principal": 0,
+          "outstanding_start": 0
+        }
+      },
+      "posFail": {
+        "last": 30,
+        "interior": 147
+      }
     }
   ]
 }
