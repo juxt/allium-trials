@@ -9,3 +9,6 @@ outcome/fineract/regen-ops-runs/
 outcome/fineract/regen-ops.log
 outcome/fineract/scale-test/worktrees/
 outcome/fineract/scale-test/*.log
+outcome/elicit-eval/out_*.txt
+outcome/elicit-eval/out2_*.txt
+outcome/elicit-eval/run*.log

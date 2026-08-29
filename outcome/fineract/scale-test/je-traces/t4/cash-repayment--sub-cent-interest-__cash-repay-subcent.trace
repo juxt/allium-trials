@@ -1,0 +1,3 @@
+period=0 account=GL-2 debit=0.00 credit=200.00
+period=1 account=GL-3 debit=0.00 credit=100.005
+period=2 account=GL-1 debit=300.005 credit=0.00

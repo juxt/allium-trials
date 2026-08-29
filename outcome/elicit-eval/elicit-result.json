@@ -1,0 +1,53 @@
+{
+  "nospec": [
+    {
+      "SURFACED": 5,
+      "GUESSED": 4,
+      "ABSENT": 1
+    },
+    {
+      "SURFACED": 5,
+      "GUESSED": 5,
+      "ABSENT": 0
+    },
+    {
+      "SURFACED": 7,
+      "GUESSED": 3,
+      "ABSENT": 0
+    }
+  ],
+  "prose": [
+    {
+      "SURFACED": 6,
+      "GUESSED": 4,
+      "ABSENT": 0
+    },
+    {
+      "SURFACED": 6,
+      "GUESSED": 3,
+      "ABSENT": 1
+    },
+    {
+      "SURFACED": 3,
+      "GUESSED": 7,
+      "ABSENT": 0
+    }
+  ],
+  "v4elicit": [
+    {
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    },
+    {
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    },
+    {
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    }
+  ]
+}
