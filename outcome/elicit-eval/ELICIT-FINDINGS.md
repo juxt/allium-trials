@@ -59,6 +59,46 @@ v4elicit variance is zero.
   not the syntax in isolation. Prose has no such discipline and does not surface. That the package
   beats prose is the point.
 
+## Expanded matrix (4 arms x 2 features x 3 reps, verified)
+
+Added the v3 elicit arm and a second underspecified feature ("account dormancy", 10 planted
+decisions incl. escheatment).
+
+    arm        surfaced   guessed     (mean over 2 tasks x 3 reps)
+    nospec       5.7        4.0
+    prose        4.2        5.5     <- WORSE than no spec
+    v3elicit     8.8        0.0
+    v4elicit     8.5        0.2
+
+Per task the pattern holds (task A: v3 8.7/0.0, v4 8.0/0.3, prose 5.3/4.7, nospec 5.0/4.3;
+task B: v3 9.0/0.0, v4 9.0/0.0, prose 3.0/6.3, nospec 6.3/3.7).
+
+Three robust findings:
+
+1. **The elicit skill delivers clear air** over prose and none: ~8.5-8.8 surfaced, ~0 guessed,
+   low variance, on both features.
+2. **A prose spec is worse than no spec.** It guesses MORE (5.5 vs 4.0). Verified by reading
+   outputs: asked to "write a spec", the model authors confident specifics as fact ("stated first
+   and precisely") without flagging them open. The instruction to specify licenses fabrication.
+   One prose run fabricated 9 of 10 decisions.
+3. **v4 does NOT beat v3 at surfacing** (8.5/0.2 vs 8.8/0.0 — a tie, v3 marginally ahead). The
+   value is the elicit DISCIPLINE, which both skills carry, not the v4 syntax.
+
+## What this means for the mission, honestly
+
+Clear air for the elicit skill over prose and no spec: yes, large and repeatable. Clear air for
+v4 over v3: NOT on this axis. Surfacing the unknowable is a disposition the elicit process instils
+(refuse to guess, ask), and both the v3 and v4 skills instil it equally. The v4-specific value, a
+formal machine-checkable spec, does not manifest at the surfacing step.
+
+Where it should manifest, and the next test (directive 5): the SECOND half of the elicit loop.
+Once the human answers the surfaced questions, some answers conflict (a percentage fee with a flat
+cap below the percentage on the smallest instalment; a recurring fee with a one-per-instalment
+idempotency rule). v4's `analyse` catches such contradiction/infeasibility deterministically; v3
+does so heuristically; prose not at all. That is where v4 earns clear air over v3, and it is the
+test to run next: feed conflicting answers to the surfaced questions and measure which arm catches
+the conflict. (We have prior evidence analyse catches contradictory rule sets, 74/74.)
+
 ## Why this is the right place to have pushed
 
 Every accuracy-on-knowable-tasks experiment saturated, and formalism never beat prose there. Here,
