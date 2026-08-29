@@ -58,4 +58,25 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
 
 ## Iteration log
 
-(iterations appended below)
+### Iteration 1 — v4 (decimal/rational literals) + processed the non-leading conflict eval
+- **Non-leading conflict eval result (conflict-runs2, 2 reps):** v4 3/6 caught, 1/4 false-alarm;
+  v3 0/6, 0/4; prose 4/6, 1/4; nospec 6/6, 2/4. (v4 catches via analyse; prose/nospec via a blind
+  spontaneous-flag judge.)
+- **GOOD:** v4 now catches conflicts it caught none of before (floorcap 2/2, monotonic 1/2), and
+  cleanly beats v3 (3/6 vs 0/6) — v3 analyse has no consistency/vacuity check. The reworked skill +
+  reachability check are working: v4's floorcap catch is the reachability report naming the core.
+- **BAD / verified:** v4's one false alarm (clean_pct) was a REAL bug — `0.02` mis-lexed as `0`
+  (v4 had only integer literals), so `fee = 0.02*base` collapsed to `fee = 0`, spuriously clashing
+  with `fee >= 5`. Fixed: added general decimal/rational literals (Tok::Dec/Expr::Dec, exact num/den
+  through types/arith/monitor). Re-verified: false alarm gone, floorcap still caught, 43 tests green.
+- **BAD / open:** nospec 6/6 with 2/4 clean false-alarms strongly suggests the spontaneous-flag
+  judge is counting the model's routine "I'll flag these for sign-off" HEDGING as a conflict catch,
+  not genuine detection of the specific clash. So nospec's 6/6 is likely inflated. Also the harness
+  didn't save prose/nospec text outputs, so I couldn't verify. => Iteration 2 (harness): (a) save all
+  arm outputs; (b) make the spontaneous-flag judge require detection of the SPECIFIC emergent clash,
+  not generic caveats; re-run and compare.
+- **Also open (v4 backlog):** recurrence still 0/6 for v4 — the model encodes the mind-change into a
+  coherent policy (not a hard conflict); monotonic only 1/2 — needs guard-COMBINATION reachability
+  (V1). Note V3: analyse still prints a misleading boolean "jointly satisfiable" alongside the arith
+  verdict.
+- Commit: allium-tools (decimals). Next: iteration 2 = harness (judge strictness + save outputs).
