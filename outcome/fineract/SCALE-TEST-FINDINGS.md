@@ -1,3 +1,36 @@
+# CORRECTION (2026-08-29): the t3 "silent break" was a FALSE POSITIVE
+
+The headline below — one genuine silent break (t3) — is RETRACTED. It was a testing artifact,
+not a real double-entry break.
+
+Root cause: the oracle mocks `AccountingProcessorHelper`. The t3 edit adds a NEW helper method,
+`roundRepaymentInterest`, and calls it. The oracle, built before t3, does not stub that method,
+so the mock returns `null`, and `totalDebitAmount.add(null)` throws a `NullPointerException`
+inside the processor. My grader counted that ERROR as an oracle failure and classified it a
+silent break. The faithful leg-dumper, which reproduces the method's real 2 dp rounding, shows
+t3's actual postings are IDENTICAL to baseline and balance exactly. The t3 edit rounds both the
+debit accumulator and the interest credit with the same value, so it never unbalances.
+
+Corrected result: across the 8 blind edits, **zero genuine double-entry breaks**. Checking the
+faithful dumped legs of baseline, t3, t5, and t8 (13 transactions each) with the blind-authored
+Allium spec: every transaction balances. The scale test SATURATED — the model preserved
+double-entry on every edit, including the ones designed to trap it. Verification's value was NOT
+demonstrated by a real catch here.
+
+How the error surfaced: the fair Allium-vehicle test forced a faithful reproduction of t3 (the
+dumper stubbed the new method), and a baseline-vs-t3 trace diff showed them identical, which led
+to the NPE. The rigour of the follow-up experiment caught the false positive in the first one.
+
+Two process fixes this mandates: (1) the grader must distinguish a test ERROR (NPE, compile,
+infra) from an assertion FAILURE (real imbalance) and never treat the former as a break; (2) a
+mock-based oracle cannot grade edits that add and call new helper methods — it must reproduce the
+method's real behaviour (as the dumper does) or not mock the helper.
+
+Everything from here down is the ORIGINAL writeup and is left intact for the record, but its
+central claim is withdrawn per the above.
+
+---
+
 # The scale test: blind cross-module edits vs an independent-authority invariant
 
 The question the whole programme kept failing to answer: is there a regime where a deterministic

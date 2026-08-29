@@ -1,0 +1,2 @@
+period=0 account=GL-2 debit=1000.00 credit=0.00
+period=1 account=GL-1 debit=0.00 credit=1000.00
