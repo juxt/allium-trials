@@ -1,0 +1,75 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+index f6b4a7b7d..6650b2ff6 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+@@ -19,6 +19,7 @@
+ package org.apache.fineract.accounting.journalentry.service;
+ 
+ import java.math.BigDecimal;
++import java.math.RoundingMode;
+ import java.time.LocalDate;
+ import java.util.ArrayList;
+ import java.util.LinkedHashMap;
+@@ -1448,4 +1449,15 @@ public class AccountingProcessorHelper {
+                     totalCreditedAmount, totalAmount);
+         }
+     }
++
++    /**
++     * Rounds a loan repayment's interest component to 2 decimal places using half-even (banker's) rounding, as required
++     * for downstream reporting.
++     */
++    public BigDecimal roundRepaymentInterest(final BigDecimal interestAmount) {
++        if (interestAmount == null) {
++            return null;
++        }
++        return interestAmount.setScale(2, RoundingMode.HALF_EVEN);
++    }
+ }
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+index 0e2d5beda..2b9133e73 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+@@ -1728,17 +1728,18 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+ 
+         // handle interest payment
+         if (MathUtil.isGreaterThanZero(interestAmount)) {
+-            totalDebitAmount = totalDebitAmount.add(interestAmount);
++            final BigDecimal roundedInterestAmount = this.helper.roundRepaymentInterest(interestAmount);
++            totalDebitAmount = totalDebitAmount.add(roundedInterestAmount);
+             final GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                     AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+             if (accountMap.containsKey(account)) {
+-                final BigDecimal amount = accountMap.get(account).add(interestAmount);
++                final BigDecimal amount = accountMap.get(account).add(roundedInterestAmount);
+                 accountMap.put(account, amount);
+             } else {
+-                accountMap.put(account, interestAmount);
++                accountMap.put(account, roundedInterestAmount);
+             }
+             if (loanTransactionDTO.getTransactionType().isGoodwillCredit()) {
+-                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, interestAmount,
++                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, roundedInterestAmount,
+                         AccrualAccountsForLoan.INCOME_FROM_GOODWILL_CREDIT_INTEREST.getValue(), debitAccountMapForGoodwillCredit,
+                         paymentTypeId);
+             }
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+index ec593c231..0a6638e74 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+@@ -754,11 +754,12 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+         }
+ 
+         if (interestAmount != null && interestAmount.compareTo(BigDecimal.ZERO) > 0) {
+-            totalDebitAmount = totalDebitAmount.add(interestAmount);
++            final BigDecimal roundedInterestAmount = this.helper.roundRepaymentInterest(interestAmount);
++            totalDebitAmount = totalDebitAmount.add(roundedInterestAmount);
+             this.helper.createCreditJournalEntryForLoan(office, currencyCode, CashAccountsForLoan.INTEREST_ON_LOANS, loanProductId,
+-                    paymentTypeId, loanId, transactionId, transactionDate, interestAmount);
++                    paymentTypeId, loanId, transactionId, transactionDate, roundedInterestAmount);
+             if (loanTransactionDTO.getTransactionType().isGoodwillCredit()) {
+-                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, interestAmount,
++                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, roundedInterestAmount,
+                         CashAccountsForLoan.INCOME_FROM_GOODWILL_CREDIT_INTEREST.getValue(), debitAccountMapForGoodwillCredit,
+                         paymentTypeId);
+             }

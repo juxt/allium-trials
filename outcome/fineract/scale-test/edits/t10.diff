@@ -1,0 +1,110 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+index f6b4a7b7d..9e7b461cf 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+@@ -19,6 +19,7 @@
+ package org.apache.fineract.accounting.journalentry.service;
+ 
+ import java.math.BigDecimal;
++import java.math.RoundingMode;
+ import java.time.LocalDate;
+ import java.util.ArrayList;
+ import java.util.LinkedHashMap;
+@@ -441,6 +442,56 @@ public class AccountingProcessorHelper {
+         }
+     }
+ 
++    /**
++     * Amortises a deferred fee across the loan's repayment periods, posting one balanced pair of journal entries per
++     * period instead of recognising the whole fee in a single entry. The fee is split evenly, with any rounding
++     * remainder folded into the final period so the posted amounts always sum back to the original fee.
++     *
++     * @param numberOfPeriods
++     *            the number of repayment periods to spread the fee across; a value of one (or less) recognises the whole
++     *            fee at once and is equivalent to {@link #createJournalEntriesForLoanCharges}
++     */
++    public void createAmortisedJournalEntriesForLoanCharges(final Office office, final String currencyCode,
++            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long loanId,
++            final String transactionId, final LocalDate transactionDate, final BigDecimal totalAmount,
++            final List<ChargePaymentDTO> chargePaymentDTOs, final int numberOfPeriods) {
++
++        if (numberOfPeriods <= 1) {
++            createJournalEntriesForLoanCharges(office, currencyCode, accountTypeToBeDebited, accountTypeToBeCredited, loanProductId, loanId,
++                    transactionId, transactionDate, totalAmount, chargePaymentDTOs);
++            return;
++        }
++
++        final BigDecimal periods = BigDecimal.valueOf(numberOfPeriods);
++        // track the unposted balance of each individual charge so any rounding remainder can be folded into the final
++        // period; the period total is then derived from those shares so every period stays balanced and the per-charge
++        // amounts always reconcile with the period total, which createJournalEntriesForLoanCharges asserts on.
++        final BigDecimal[] remainingPerCharge = new BigDecimal[chargePaymentDTOs.size()];
++        for (int i = 0; i < chargePaymentDTOs.size(); i++) {
++            remainingPerCharge[i] = chargePaymentDTOs.get(i).getAmount();
++        }
++
++        for (int period = 0; period < numberOfPeriods; period++) {
++            final boolean lastPeriod = period == numberOfPeriods - 1;
++
++            // derive the period total from the per-charge shares so the two always reconcile, whatever the rounding
++            final List<ChargePaymentDTO> periodPayments = new ArrayList<>();
++            BigDecimal amountForPeriod = BigDecimal.ZERO;
++            for (int i = 0; i < chargePaymentDTOs.size(); i++) {
++                final ChargePaymentDTO chargePaymentDTO = chargePaymentDTOs.get(i);
++                final BigDecimal chargeAmountForPeriod = lastPeriod ? remainingPerCharge[i]
++                        : chargePaymentDTO.getAmount().divide(periods, 2, RoundingMode.DOWN);
++                remainingPerCharge[i] = remainingPerCharge[i].subtract(chargeAmountForPeriod);
++                amountForPeriod = amountForPeriod.add(chargeAmountForPeriod);
++                periodPayments.add(new ChargePaymentDTO(chargePaymentDTO.getChargeId(), chargeAmountForPeriod,
++                        chargePaymentDTO.getLoanChargeId()));
++            }
++
++            createJournalEntriesForLoanCharges(office, currencyCode, accountTypeToBeDebited, accountTypeToBeCredited, loanProductId, loanId,
++                    transactionId, transactionDate, amountForPeriod, periodPayments);
++        }
++    }
++
+     /**
+      * Convenience method that creates a pair of related Debits and Credits for Cash Based accounting.
+      *
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+index 0e2d5beda..040499336 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+@@ -2054,9 +2054,13 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+                             AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), loanProductId, loanId, transactionId, transactionDate,
+                             feesAmount, loanTransactionDTO.getFeePayments());
+                 } else {
+-                    this.helper.createJournalEntriesForLoanCharges(office, currencyCode, AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(),
+-                            AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate,
+-                            feesAmount, loanTransactionDTO.getFeePayments());
++                    // amortise the fee income across the loan's repayment periods so a portion is recognised each
++                    // period rather than the whole fee at once; a single period recognises the fee in full
++                    final int numberOfPeriods = numberOfRepaymentPeriods(loanDTO);
++                    this.helper.createAmortisedJournalEntriesForLoanCharges(office, currencyCode,
++                            AccrualAccountsForLoan.FEES_RECEIVABLE.getValue(), AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(),
++                            loanProductId, loanId, transactionId, transactionDate, feesAmount, loanTransactionDTO.getFeePayments(),
++                            numberOfPeriods);
+                 }
+             }
+         }
+@@ -2085,6 +2089,19 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+         }
+     }
+ 
++    /**
++     * Number of repayment periods to spread a deferred fee across. Derived from the loan's repayment transactions; falls
++     * back to one, which recognises the fee in a single entry.
++     */
++    private int numberOfRepaymentPeriods(final LoanDTO loanDTO) {
++        if (loanDTO.getNewLoanTransactions() == null) {
++            return 1;
++        }
++        final long repaymentPeriods = loanDTO.getNewLoanTransactions().stream()
++                .filter(txn -> txn.getTransactionType() != null && txn.getTransactionType().isRepaymentType()).count();
++        return repaymentPeriods > 0 ? (int) repaymentPeriods : 1;
++    }
++
+     private void createJournalEntriesForRefund(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO, final Office office) {
+         // loan properties
+         final Long loanProductId = loanDTO.getLoanProductId();

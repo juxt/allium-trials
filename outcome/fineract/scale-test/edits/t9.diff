@@ -1,0 +1,53 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+index 0e2d5beda..65edcc953 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+@@ -183,9 +183,11 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+         }
+ 
+         final boolean isInitiateTransfer = loanTransactionDTO.getTransactionType().isInitiateTransfer();
+-        final Integer debitAccount = isInitiateTransfer ? AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue()
++        // a corrected (reversed) transfer posts to the opposite accounts from the original transfer
++        final boolean debitSuspense = isInitiateTransfer != loanTransactionDTO.isReversed();
++        final Integer debitAccount = debitSuspense ? AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue()
+                 : AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue();
+-        final Integer creditAccount = isInitiateTransfer ? AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue()
++        final Integer creditAccount = debitSuspense ? AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue()
+                 : AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue();
+ 
+         this.helper.createJournalEntriesForLoan(office, currencyCode, debitAccount, creditAccount, loanProductId, null, loanId,
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+index ec593c231..d7ecb9407 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+@@ -896,15 +896,24 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
+ 
++        // a corrected (reversed) transfer posts to the opposite accounts from the original transfer
++        final boolean isReversal = loanTransactionDTO.isReversed();
++
+         if (loanTransactionDTO.getTransactionType().isInitiateTransfer()) {
+-            this.helper.createJournalEntriesForLoan(office, currencyCode, CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue(),
+-                    CashAccountsForLoan.LOAN_PORTFOLIO.getValue(), loanProductId, null, loanId, transactionId, transactionDate,
+-                    principalAmount);
++            final Integer debitAccount = isReversal ? CashAccountsForLoan.LOAN_PORTFOLIO.getValue()
++                    : CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue();
++            final Integer creditAccount = isReversal ? CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue()
++                    : CashAccountsForLoan.LOAN_PORTFOLIO.getValue();
++            this.helper.createJournalEntriesForLoan(office, currencyCode, debitAccount, creditAccount, loanProductId, null, loanId,
++                    transactionId, transactionDate, principalAmount);
+         } else if (loanTransactionDTO.getTransactionType().isApproveTransfer()
+                 || loanTransactionDTO.getTransactionType().isWithdrawTransfer()) {
+-            this.helper.createJournalEntriesForLoan(office, currencyCode, CashAccountsForLoan.LOAN_PORTFOLIO.getValue(),
+-                    CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId, null, loanId, transactionId, transactionDate,
+-                    principalAmount);
++            final Integer debitAccount = isReversal ? CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue()
++                    : CashAccountsForLoan.LOAN_PORTFOLIO.getValue();
++            final Integer creditAccount = isReversal ? CashAccountsForLoan.LOAN_PORTFOLIO.getValue()
++                    : CashAccountsForLoan.TRANSFERS_SUSPENSE.getValue();
++            this.helper.createJournalEntriesForLoan(office, currencyCode, debitAccount, creditAccount, loanProductId, null, loanId,
++                    transactionId, transactionDate, principalAmount);
+         }
+     }
+ 

@@ -1,0 +1,105 @@
+diff --git a/fineract-loan/src/main/java/org/apache/fineract/portfolio/loanaccount/data/AccountingBridgeLoanTransactionDTO.java b/fineract-loan/src/main/java/org/apache/fineract/portfolio/loanaccount/data/AccountingBridgeLoanTransactionDTO.java
+index bc3d62561..fdfe37f63 100644
+--- a/fineract-loan/src/main/java/org/apache/fineract/portfolio/loanaccount/data/AccountingBridgeLoanTransactionDTO.java
++++ b/fineract-loan/src/main/java/org/apache/fineract/portfolio/loanaccount/data/AccountingBridgeLoanTransactionDTO.java
+@@ -42,6 +42,7 @@ public class AccountingBridgeLoanTransactionDTO {
+     private BigDecimal principalPortion;
+     private BigDecimal interestPortion;
+     private BigDecimal feeChargesPortion;
++    private BigDecimal serviceFeePortion;
+     private BigDecimal penaltyChargesPortion;
+     private BigDecimal overPaymentPortion;
+     private String chargeRefundChargeType;
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/data/LoanTransactionDTO.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/data/LoanTransactionDTO.java
+index 16fcad696..d0ea7f821 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/data/LoanTransactionDTO.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/data/LoanTransactionDTO.java
+@@ -47,6 +47,10 @@ public class LoanTransactionDTO {
+     private final BigDecimal penalties;
+     private final BigDecimal overPayment;
+ 
++    /*** Service fee component of a repayment, recorded in the GL like other fees ***/
++    @Setter
++    private BigDecimal serviceFee;
++
+     /*** Boolean values determines if the transaction is reversed ***/
+     private final boolean reversed;
+ 
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+index f6b4a7b7d..5eaea184d 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+@@ -177,6 +177,7 @@ public class AccountingProcessorHelper {
+ 
+             transaction.setLoanToLoanTransfer(loanTxnDto.isLoanToLoanTransfer());
+             transaction.setChargeTaxPayments(chargeTaxPayments);
++            transaction.setServiceFee(loanTxnDto.getServiceFeePortion());
+             newLoanTransactions.add(transaction);
+         }
+ 
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+index 0e2d5beda..ffab0ea68 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+@@ -1705,6 +1705,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
+         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+         final BigDecimal feesAmount = loanTransactionDTO.getFees();
++        final BigDecimal serviceFeeAmount = loanTransactionDTO.getServiceFee();
+         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
+         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
+         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+@@ -1810,6 +1811,24 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+             }
+         }
+ 
++        // handle service fee payment
++        if (MathUtil.isGreaterThanZero(serviceFeeAmount)) {
++            totalDebitAmount = totalDebitAmount.add(serviceFeeAmount);
++            final GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
++                    AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), paymentTypeId);
++            if (accountMap.containsKey(account)) {
++                final BigDecimal amount = accountMap.get(account).add(serviceFeeAmount);
++                accountMap.put(account, amount);
++            } else {
++                accountMap.put(account, serviceFeeAmount);
++            }
++            if (loanTransactionDTO.getTransactionType().isGoodwillCredit()) {
++                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, serviceFeeAmount,
++                        AccrualAccountsForLoan.INCOME_FROM_GOODWILL_CREDIT_FEES.getValue(), debitAccountMapForGoodwillCredit,
++                        paymentTypeId);
++            }
++        }
++
+         if (MathUtil.isGreaterThanZero(overPaymentAmount)) {
+             totalDebitAmount = totalDebitAmount.add(overPaymentAmount);
+             final GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+index ec593c231..bab5353d4 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+@@ -736,6 +736,7 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
+         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+         final BigDecimal feesAmount = loanTransactionDTO.getFees();
++        final BigDecimal serviceFeeAmount = loanTransactionDTO.getServiceFee();
+         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
+         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
+         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+@@ -809,6 +810,16 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+             }
+         }
+ 
++        if (serviceFeeAmount != null && serviceFeeAmount.compareTo(BigDecimal.ZERO) > 0) {
++            totalDebitAmount = totalDebitAmount.add(serviceFeeAmount);
++            this.helper.createCreditJournalEntryForLoan(office, currencyCode, CashAccountsForLoan.INCOME_FROM_FEES, loanProductId,
++                    paymentTypeId, loanId, transactionId, transactionDate, serviceFeeAmount);
++            if (loanTransactionDTO.getTransactionType().isGoodwillCredit()) {
++                loanCommonAccountingHelper.populateDebitAccountEntry(loanProductId, serviceFeeAmount,
++                        CashAccountsForLoan.INCOME_FROM_GOODWILL_CREDIT_FEES.getValue(), debitAccountMapForGoodwillCredit, paymentTypeId);
++            }
++        }
++
+         if (overPaymentAmount != null && overPaymentAmount.compareTo(BigDecimal.ZERO) > 0) {
+             totalDebitAmount = totalDebitAmount.add(overPaymentAmount);
+             this.helper.createCreditJournalEntryForLoan(office, currencyCode, CashAccountsForLoan.OVERPAYMENT, loanProductId, paymentTypeId,

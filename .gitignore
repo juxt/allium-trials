@@ -7,3 +7,5 @@ outcome/fineract/regen.log
 outcome/fineract/regen-policy.log
 outcome/fineract/regen-ops-runs/
 outcome/fineract/regen-ops.log
+outcome/fineract/scale-test/worktrees/
+outcome/fineract/scale-test/*.log

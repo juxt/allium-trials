@@ -1,0 +1,26 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+index f6b4a7b7d..0e935c157 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+@@ -933,6 +933,10 @@ public class AccountingProcessorHelper {
+ 
+     private void createCreditJournalEntryForLoan(final Office office, final String currencyCode, final GLAccount account, final Long loanId,
+             final String transactionId, final LocalDate transactionDate, final BigDecimal amount) {
++        // do not clutter the general ledger with zero amount lines
++        if (MathUtil.isEmpty(amount)) {
++            return;
++        }
+         final boolean manualEntry = false;
+         Long loanTransactionId = null;
+         String modifiedTransactionId = transactionId;
+@@ -968,6 +972,10 @@ public class AccountingProcessorHelper {
+ 
+     public void createDebitJournalEntryForLoan(final Office office, final String currencyCode, final GLAccount account, final Long loanId,
+             final String transactionId, final LocalDate transactionDate, final BigDecimal amount) {
++        // do not clutter the general ledger with zero amount lines
++        if (MathUtil.isEmpty(amount)) {
++            return;
++        }
+         final boolean manualEntry = false;
+         Long loanTransactionId = null;
+         String modifiedTransactionId = transactionId;

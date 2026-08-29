@@ -1,0 +1,52 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+index f6b4a7b7d..6bc5ce6ca 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java
+@@ -44,6 +44,7 @@ import org.apache.fineract.accounting.journalentry.data.ChargePaymentDTO;
+ import org.apache.fineract.accounting.journalentry.data.ChargeTaxPaymentDTO;
+ import org.apache.fineract.accounting.journalentry.data.ClientChargePaymentDTO;
+ import org.apache.fineract.accounting.journalentry.data.ClientTransactionDTO;
++import org.apache.fineract.accounting.journalentry.data.GLAccountBalanceHolder;
+ import org.apache.fineract.accounting.journalentry.data.LoanDTO;
+ import org.apache.fineract.accounting.journalentry.data.LoanTransactionDTO;
+ import org.apache.fineract.accounting.journalentry.data.SavingsDTO;
+@@ -508,6 +509,25 @@ public class AccountingProcessorHelper {
+                 transactionId, transactionDate, amount);
+     }
+ 
++    /**
++     * Nets a recovered principal amount against recovery income within the given balance holder before the journal
++     * entries are posted, so that the ledger reflects the net recovery. Both the recovery income credit and its
++     * offsetting fund source debit are reduced by the recovered principal, keeping the entry balanced.
++     */
++    public void netRecoveredPrincipalAgainstRecoveryIncome(final Long loanProductId, final Long paymentTypeId,
++            final BigDecimal recoveredPrincipal, final GLAccountBalanceHolder glAccountBalanceHolder) {
++        if (!MathUtil.isGreaterThanZero(recoveredPrincipal)) {
++            return;
++        }
++        final BigDecimal netAdjustment = recoveredPrincipal.negate();
++        final GLAccount recoveryIncomeAccount = getLinkedGLAccountForLoanProduct(loanProductId,
++                CashAccountsForLoan.INCOME_FROM_RECOVERY.getValue(), paymentTypeId);
++        glAccountBalanceHolder.addToCredit(recoveryIncomeAccount, netAdjustment);
++        final GLAccount fundSourceAccount = getLinkedGLAccountForLoanProduct(loanProductId, CashAccountsForLoan.FUND_SOURCE.getValue(),
++                paymentTypeId);
++        glAccountBalanceHolder.addToDebit(fundSourceAccount, netAdjustment);
++    }
++
+     public void createSplitJournalEntriesForLoan(Office office, String currencyCode, List<JournalAmountHolder> splitAccountsHolder,
+             JournalAmountHolder totalAccountHolder, Long loanProductId, Long paymentTypeId, Long loanId, String transactionId,
+             LocalDate transactionDate) {
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+index ec593c231..34d0ca879 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+@@ -576,6 +576,9 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+             } else if (loanTransactionDTO.getTransactionType().isRepayment()) {
+                 populateCreditDebitMaps(loanProductId, principalAmount, paymentTypeId, CashAccountsForLoan.INCOME_FROM_RECOVERY.getValue(),
+                         CashAccountsForLoan.FUND_SOURCE.getValue(), glAccountBalanceHolder);
++                // net the recovered principal against recovery income so the ledger reflects the net recovery
++                this.helper.netRecoveredPrincipalAgainstRecoveryIncome(loanProductId, paymentTypeId, principalAmount,
++                        glAccountBalanceHolder);
+ 
+             } else {
+                 populateCreditDebitMaps(loanProductId, principalAmount, paymentTypeId, CashAccountsForLoan.LOAN_PORTFOLIO.getValue(),

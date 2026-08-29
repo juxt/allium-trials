@@ -1,0 +1,34 @@
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+index 0e2d5beda..aa7e15287 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java
+@@ -2094,7 +2094,11 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
+         // transaction properties
+         final String transactionId = loanTransactionDTO.getTransactionId();
+         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+-        final BigDecimal refundAmount = loanTransactionDTO.getAmount();
++        // only the refunded portion of the overpayment relieves the overpayment liability; fall back to the full amount
++        // when the portion is not supplied (whole-overpayment refund)
++        final BigDecimal refundAmount = MathUtil.isGreaterThanZero(loanTransactionDTO.getOverPayment())
++                ? loanTransactionDTO.getOverPayment()
++                : loanTransactionDTO.getAmount();
+         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+ 
+         if (MathUtil.isGreaterThanZero(refundAmount)) {
+diff --git a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+index ec593c231..2c5505060 100644
+--- a/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
++++ b/fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java
+@@ -493,7 +493,11 @@ public class CashBasedAccountingProcessorForLoan implements AccountingProcessorF
+         // transaction properties
+         final String transactionId = loanTransactionDTO.getTransactionId();
+         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+-        final BigDecimal refundAmount = loanTransactionDTO.getAmount();
++        // only the refunded portion of the overpayment relieves the overpayment liability; fall back to the full amount
++        // when the portion is not supplied (whole-overpayment refund)
++        final BigDecimal refundAmount = MathUtil.isGreaterThanZero(loanTransactionDTO.getOverPayment())
++                ? loanTransactionDTO.getOverPayment()
++                : loanTransactionDTO.getAmount();
+         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+ 
+         if (loanTransactionDTO.isAccountTransfer()) {
