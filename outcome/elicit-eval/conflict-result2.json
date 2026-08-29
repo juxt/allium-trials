@@ -1,0 +1,16 @@
+{
+  "v4": {
+    "conflict_floorcap": [
+      1,
+      1
+    ],
+    "conflict_recurrence": [
+      0,
+      0
+    ],
+    "conflict_monotonic": [
+      1,
+      0
+    ]
+  }
+}
