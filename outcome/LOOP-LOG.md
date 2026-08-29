@@ -80,3 +80,19 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   (V1). Note V3: analyse still prints a misleading boolean "jointly satisfiable" alongside the arith
   verdict.
 - Commit: allium-tools (decimals). Next: iteration 2 = harness (judge strictness + save outputs).
+
+### Iteration 2 — harness (strict spontaneous-flag judge + save outputs)
+- Rebuilt the non-leading conflict eval's judge to require detection of the SPECIFIC clash (judged
+  against ground truth), not generic hedging, and to save every arm's output for verification.
+  Re-run launched (runc3). GOOD: removes the suspected inflation of nospec's 6/6. Result pending
+  (collect next wake). Commit: allium-trials.
+
+### Iteration 3 — v4 (V3: coherent analyse verdict)
+- analyse post-filters the boolean "jointly satisfiable" line for any component the arithmetic tier
+  overrules (CONTRADICTORY/VACUOUSLY). Before, a floor>cap spec printed both "jointly satisfiable"
+  AND "VACUOUSLY", which is misleading and the elicit gate reads it. GOOD: verified suppressed,
+  vacuity kept, regression test added, 44 tests green. Commit: allium-tools.
+- Next: iteration 4 = harness — collect the strict-judge re-run (runc3) and log the corrected
+  v4/v3/prose/nospec numbers honestly (read the saved outputs to confirm the judge isn't over/under
+  strict). Then iteration 5 = v4 (candidate: V5 wire vacuity into `check`, or V1 guard-combination
+  reachability — but note the monotonic miss is an ENCODING loophole (skill), not only a check gap).
