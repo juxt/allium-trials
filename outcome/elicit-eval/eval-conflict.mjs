@@ -29,10 +29,13 @@ const ELICIT_V4 = readFileSync("/Users/hgarner/code/allium/skills-v4/elicit/SKIL
 
 const SCENARIOS = [
   { id: "conflict_floorcap", conflict: true,
+    why: "the minimum fee (20) is set ABOVE the cap (10), so no single fee amount can satisfy both",
     answers: `- Late fee basis: 2% of the overdue instalment amount.\n- Cap: cap the fee at 10 per instalment.\n- Minimum: there must be a minimum fee of 20, so even small instalments carry a meaningful penalty.\n- Grace period: 10 days.\n- Recurrence: one fee per missed instalment.` },
   { id: "conflict_recurrence", conflict: true,
+    why: "one answer says a SINGLE one-off fee, another says a RECURRING monthly fee until paid — the fee is both one-off and recurring",
     answers: `- Recurrence: just a single one-off fee when the instalment is first missed.\n- Escalation: if the instalment is still unpaid after a month, charge another fee, and keep charging monthly until it is paid.\n- Fee: flat 25.\n- Grace period: 5 days.` },
   { id: "conflict_monotonic", conflict: true,
+    why: "unpaid fees are ADDED to the outstanding balance, but another rule says the outstanding balance must NEVER increase — adding a fee increases it",
     answers: `- Fee accrual: add the unpaid late fee to the loan's outstanding balance.\n- Balance rule: the outstanding balance should only ever go down over the life of the loan, never up.\n- Fee: flat 30 per missed instalment.\n- Grace period: 7 days.` },
   { id: "clean_flat", conflict: false,
     answers: `- Fee: flat 25 per missed instalment.\n- Grace period: 10 days.\n- Recurrence: one-off per missed instalment.\n- Cap: none.\n- Accrual: booked to a separate fee-income ledger, not added to the loan balance.` },
@@ -57,17 +60,23 @@ function analyseFlags(spec, dir, tag) {
   const r = spawnSync(ALLIUM, ["analyse", p], { encoding: "utf8", maxBuffer: 1 << 26 });
   return /CONTRADICTORY|INFEASIBLE|VACUOUSLY/.test((r.stdout || "") + (r.stderr || ""));
 }
-// Blind spontaneous-flag judge: told NOTHING about the planted conflict.
-function spontaneousFlag(out) {
-  const j = claude(`Below is an engineer's response to a set of confirmed requirements for a feature. Did the response STOP to flag an unresolved conflict or inconsistency among the requirements that it says must be resolved before proceeding? Or did it just proceed (spec/build the feature), whether or not it noted minor assumptions? Answer on the last line exactly "FLAG" (it surfaced a blocking conflict among the requirements) or "PROCEED" (it went ahead).\n\n=== RESPONSE ===\n${out}`, 2);
-  return /\bFLAG\b/i.test(j.trim().split("\n").slice(-3).join(" "));
+// Strict spontaneous-flag judge. The ARM is blind; the JUDGE knows ground truth and requires the
+// response to identify the SPECIFIC clash, not merely raise generic assumptions/sign-off caveats
+// (which a careful model does on every ticket). On a clean scenario it checks for a false alarm.
+function spontaneousFlag(out, sc, dir, tag) {
+  writeFileSync(join(dir, `${tag}.txt`), out); // save for verification
+  const prompt = sc.conflict
+    ? `An engineer was given confirmed requirements for a feature and asked to build/spec it (NOT asked to check consistency). There is a specific hidden conflict: ${sc.why}. Did the engineer's response SPECIFICALLY identify this clash and treat it as needing resolution before proceeding? Merely listing assumptions or asking to confirm numbers does NOT count — it must call out THIS specific inconsistency. Answer on the last line exactly "CATCH" or "MISS".\n\n=== RESPONSE ===\n${out}`
+    : `An engineer was given confirmed, mutually-CONSISTENT requirements for a feature and asked to build/spec it. Did the response wrongly claim the requirements conflict or cannot all hold together? Answer on the last line exactly "FALSEALARM" or "OK".\n\n=== RESPONSE ===\n${out}`;
+  const j = claude(prompt, 2).trim().split("\n").slice(-3).join(" ");
+  return sc.conflict ? /\bCATCH\b/i.test(j) : /\bFALSEALARM\b/i.test(j);
 }
 
 const ARMS = {
   v4: (sc, dir, rep) => analyseFlags(extractSpec(claude(`Follow this Allium v4 elicitation process to ENCODE the confirmed operator answers below into a v4 specification. Apply the "Encode so the spec can bite" rules exactly: encode each answer faithfully, never reconcile conflicting answers, one predicate per concept, quantify with every, and assert guarded cases are reachable. Output ONLY the final spec in a fenced block.\n\n=== PROCESS ===\n${ELICIT_V4}\n\n=== v4 REFERENCE ===\n${V4REF}\n\n=== CONFIRMED ANSWERS ===\n${sc.answers}`, 4), 4), dir, `v4_${sc.id}_${rep}`),
   v3: (sc, dir, rep) => analyseFlags(extractSpec(claude(`Encode these confirmed operator answers for a late-payment-fee feature into an Allium (v3) specification, capturing each answer faithfully as a rule. Output ONLY the spec in a fenced block.\n\n=== ANSWERS ===\n${sc.answers}\n\n=== ALLIUM REFERENCE ===\n${V3REF}`, 4), 3), dir, `v3_${sc.id}_${rep}`),
-  prose: (sc) => spontaneousFlag(claude(`You are a senior engineer. Here are confirmed operator answers for a late-payment-fee feature. Write a clear prose specification of the intended behaviour, then outline how you will implement it.${SUFFIX}\n\n${sc.answers}`)),
-  nospec: (sc) => spontaneousFlag(claude(`You are a senior engineer. Here are confirmed operator answers for a late-payment-fee feature. Implement it, ready for production; give your plan and the concrete decisions your implementation will make.${SUFFIX}\n\n${sc.answers}`)),
+  prose: (sc, dir, rep) => spontaneousFlag(claude(`You are a senior engineer. Here are confirmed operator answers for a late-payment-fee feature. Write a clear prose specification of the intended behaviour, then outline how you will implement it.${SUFFIX}\n\n${sc.answers}`), sc, dir, `prose_${sc.id}_${rep}`),
+  nospec: (sc, dir, rep) => spontaneousFlag(claude(`You are a senior engineer. Here are confirmed operator answers for a late-payment-fee feature. Implement it, ready for production; give your plan and the concrete decisions your implementation will make.${SUFFIX}\n\n${sc.answers}`), sc, dir, `nospec_${sc.id}_${rep}`),
 };
 
 const results = {};
