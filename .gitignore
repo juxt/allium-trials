@@ -14,3 +14,5 @@ outcome/elicit-eval/out2_*.txt
 outcome/elicit-eval/run*.log
 outcome/elicit-eval/conflict-runs/
 outcome/elicit-eval/runc.log
+outcome/elicit-eval/conflict-runs2/
+outcome/elicit-eval/runc2.log
