@@ -4,10 +4,26 @@ Method: big-n where cheap, MECHANICAL metrics only (monitor holds/fails, JUnit p
 judge, after model judges misfired repeatedly in P1/P2), on REAL code. Weaknesses of P1/P2 attacked
 head-on (small n, model-judge reliance, within-context, battery-dependent numbers).
 
-## The confident finding: the spec-gate's regression value is SCOPED BY BUG MORPHOLOGY
+## THE LAW (confident, big-n, mechanical, BOTH code types): DESYNC caught, consistent-VALUE blind
 
-A behavioural spec checks RELATIONAL invariants (things that must hold BETWEEN quantities). Whether
-that catches a regression depends on whether the bug breaks a relation or preserves it:
+A behavioural spec checks RELATIONAL invariants (things that must hold BETWEEN quantities). So it
+catches a bug iff the bug BREAKS a relation; it is blind to bugs that change values while keeping all
+relations intact. One law, confirmed on both code types, mechanically, at big n:
+
+| evidence | class | detection |
+|---|---|---|
+| E3 (schedule, injected)      | structural break                  | 600/600 = 100% (CI 99-100%) |
+| E5 (accounting, real traces) | DESYNC (omit/dup/mismatch a leg)  | 60/60 = 100% (CI 94-100%) |
+| E4 (accounting, REAL CODE)   | omit credit legs                  | 4/7 cash traces (exact residuals 340/1000/300/300) |
+| E5 (accounting, real traces) | consistent VALUE (scale all legs) | 0/30 = 0% (CI 0-11%) |
+| E2 (calculator, REAL CODE)   | consistent VALUE (arithmetic mutants) | 0/20 (shipped fixed-value tests caught 18/20) |
+
+Whether a spec-gate adds regression value is decided by a domain's CHARACTERISTIC bug type: double-
+entry / ledger / allocation / reconciliation code, where bugs are omitted or mismatched parts (DESYNC)
+-> high value; solver / derivation code, where bugs are wrong arithmetic the code makes self-consistent
+(consistent-VALUE) -> ~zero value (only golden/fixed-value tests catch those).
+
+## The same law, seen as bug morphology on each code type
 
 ### Solver / derivation code (the loan calculator) — spec-gate value ~= ZERO  [E2, strong]
 - 20 real-code mutants of ProgressiveEMICalculator (multiply->subtract/add across 9 sites x2, setScale

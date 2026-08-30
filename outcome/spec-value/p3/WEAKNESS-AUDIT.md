@@ -55,3 +55,10 @@
 - => CONFIDENT two-sided, mechanical, real-code conclusion: the spec-gate catches omission/desync bugs
   in STRUCTURE-ASSEMBLING code (double-entry) and is BLIND to value bugs in SOLVER code. Scope the
   benefit accordingly.
+
+## E5 (big-n, mechanical, real accounting traces) — the unifying law confirmed both sides
+- DESYNC (omit/halve/duplicate one leg): 60/60 = 100% caught (95% CI 94-100%).
+- consistent VALUE (scale all legs together): 0/30 = 0% caught (95% CI 0-11%).
+- Same law as solver E2 (value bugs 0/20). CONFIDENT, GENERAL: the relational spec catches DESYNC
+  (relation-breaking) bugs ~100% and consistent-VALUE bugs ~0%, regardless of code type. Domains whose
+  characteristic bugs are desyncs (double-entry/ledger/allocation) benefit; solver domains do not.

@@ -1,0 +1,38 @@
+{
+  "DESYNC": {
+    "d": 60,
+    "n": 60,
+    "byop": {
+      "omit_credit_leg": {
+        "d": 15,
+        "n": 15
+      },
+      "omit_debit_leg": {
+        "d": 15,
+        "n": 15
+      },
+      "halve_one_credit": {
+        "d": 15,
+        "n": 15
+      },
+      "duplicate_one_debit": {
+        "d": 15,
+        "n": 15
+      }
+    }
+  },
+  "VALUE": {
+    "d": 0,
+    "n": 30,
+    "byop": {
+      "scale_all_1_10": {
+        "d": 0,
+        "n": 15
+      },
+      "scale_all_0_90": {
+        "d": 0,
+        "n": 15
+      }
+    }
+  }
+}
