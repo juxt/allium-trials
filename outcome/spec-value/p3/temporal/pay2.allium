@@ -1,0 +1,8 @@
+-- allium: 4
+component Payments
+  entity Event
+  observable state is_auth(Event) : bool
+  observable state is_capture(Event) : bool
+  invariant nested_follows means every c :: is_capture(c) implies some a :: (is_auth(a) and follows(c, a))
+  invariant single_q means every p :: is_capture(p) implies not is_auth(p)
+end

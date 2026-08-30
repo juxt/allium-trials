@@ -1,0 +1,7 @@
+-- allium: 4
+component Payments
+  entity Event
+  observable state is_auth(Event) : bool
+  observable state is_capture(Event) : bool
+  invariant capture_needs_prior_auth means every c :: is_capture(c) implies some a :: (is_auth(a) and before(a, c))
+end

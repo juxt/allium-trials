@@ -53,3 +53,22 @@ D1 is the load-bearing one: adding a reference/absolute-value capability would l
 value bugs that currently only golden tests catch — turning the "complementary" story into a fuller
 regression gate. D2-D6 are smaller, mostly-known fixes that raise the trustworthiness of the checks
 themselves (exactness, coverage honesty, vacuity). None is a fundamental barrier; all have prior art.
+
+## D7 — Temporal/ordering paradigm not checkable end-to-end  [confirmed empirically, HIGH VALUE]
+Finding: an auth-before-capture property is NOT checkable. analyse reports the ordering predicates
+`before`/`follows`/`precedes` as "not declared" (name resolution); the monitor evaluates ONLY numeric
+invariants and SKIPS boolean/temporal ones — it returned `monitored:0, ok:true` on a spec whose only
+invariant was temporal (false comfort: an unchecked temporal spec reads as passing). The ordering
+vocabulary EXISTS in the monitor's expression evaluator (before/precedes/after/follows) but is not
+wired into name-resolution or the monitorable-invariant set.
+Fix (incremental): declare the ordering predicates in analyse name-resolution; extend the monitor to
+evaluate boolean/temporal invariants (not just numeric) over the ordered trace; add past + bounded-
+future operators. Prior art: Allium's OWN v3 (lifecycle/rule/trigger), TLA+/temporal logics, MFOTL
+(p-lens memo). Highest-value paradigm to add: banking is full of ordering/replay/settlement-sequence
+properties; runtime-checkable over finite traces (unlike full liveness).
+
+## D3 (STRENGTHENED) — the monitor silently skips WHOLE CLASSES of invariant, reporting ok=true
+Beyond skipping invariants that reference absent givens (original D3), monitor-schedule skips EVERY
+non-numeric invariant (pure boolean, temporal/ordering) entirely and still reports `ok:true`. A spec of
+only such invariants monitors 0 and looks like it passed. Fix: report monitored/total and FAIL loudly
+(or refuse) when load-bearing invariants are unmonitorable, rather than silently returning ok.
