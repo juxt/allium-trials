@@ -1,3 +1,3 @@
-period=0 emi=2600.00 interest=100.00 principal=2500.00 outstanding_start=5000.00 is_last=F
-period=1 emi=2600.00 interest=100.00 principal=2500.00 outstanding_start=2500.00 is_last=T
-given disbursed=5000.00
+period=0 emi=2600.00 interest=100.00 principal=2500.00 outstanding_start=5000.00 rate_factor=0.020000 is_last=F
+period=1 emi=2600.00 interest=100.00 principal=2500.00 outstanding_start=2500.00 rate_factor=0.020000 is_last=T
+given disbursed=5000.00 annual_rate_pct=24.00 months=2

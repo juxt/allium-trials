@@ -1,2 +1,2 @@
-period=0 emi=1008.33 interest=8.33 principal=1000.00 outstanding_start=1000.00 is_last=T
-given disbursed=1000.00
+period=0 emi=1008.33 interest=8.33 principal=1000.00 outstanding_start=1000.00 rate_factor=0.008325 is_last=T
+given disbursed=1000.00 annual_rate_pct=9.99 months=1

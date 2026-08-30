@@ -1,7 +1,7 @@
-period=0 emi=16.67 interest=0.00 principal=16.67 outstanding_start=100.00 is_last=F
-period=1 emi=16.67 interest=0.00 principal=16.67 outstanding_start=83.33 is_last=F
-period=2 emi=16.67 interest=0.00 principal=16.67 outstanding_start=66.66 is_last=F
-period=3 emi=16.67 interest=0.00 principal=16.67 outstanding_start=49.99 is_last=F
-period=4 emi=16.67 interest=0.00 principal=16.67 outstanding_start=33.32 is_last=F
-period=5 emi=16.65 interest=0.00 principal=16.65 outstanding_start=16.65 is_last=T
-given disbursed=100.00
+period=0 emi=16.67 interest=0.00 principal=16.67 outstanding_start=100.00 rate_factor=0.000000 is_last=F
+period=1 emi=16.67 interest=0.00 principal=16.67 outstanding_start=83.33 rate_factor=0.000000 is_last=F
+period=2 emi=16.67 interest=0.00 principal=16.67 outstanding_start=66.66 rate_factor=0.000000 is_last=F
+period=3 emi=16.67 interest=0.00 principal=16.67 outstanding_start=49.99 rate_factor=0.000000 is_last=F
+period=4 emi=16.67 interest=0.00 principal=16.67 outstanding_start=33.32 rate_factor=0.000000 is_last=F
+period=5 emi=16.65 interest=0.00 principal=16.65 outstanding_start=16.65 rate_factor=0.000000 is_last=T
+given disbursed=100.00 annual_rate_pct=0.00 months=6

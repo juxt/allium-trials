@@ -1,7 +1,7 @@
-period=0 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=999999.99 is_last=F
-period=1 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=833333.32 is_last=F
-period=2 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=666666.65 is_last=F
-period=3 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=499999.98 is_last=F
-period=4 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=333333.31 is_last=F
-period=5 emi=174991.64 interest=8325.00 principal=166666.64 outstanding_start=166666.64 is_last=T
-given disbursed=999999.99
+period=0 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=999999.99 rate_factor=0.008325 is_last=F
+period=1 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=833333.32 rate_factor=0.008325 is_last=F
+period=2 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=666666.65 rate_factor=0.008325 is_last=F
+period=3 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=499999.98 rate_factor=0.008325 is_last=F
+period=4 emi=174991.67 interest=8325.00 principal=166666.67 outstanding_start=333333.31 rate_factor=0.008325 is_last=F
+period=5 emi=174991.64 interest=8325.00 principal=166666.64 outstanding_start=166666.64 rate_factor=0.008325 is_last=T
+given disbursed=999999.99 annual_rate_pct=9.99 months=6
