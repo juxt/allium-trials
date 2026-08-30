@@ -1,0 +1,190 @@
+{
+  "nospec": [
+    {
+      "task": "A",
+      "SURFACED": 1,
+      "GUESSED": 8,
+      "ABSENT": 1
+    },
+    {
+      "task": "A",
+      "SURFACED": 7,
+      "GUESSED": 3,
+      "ABSENT": 0
+    },
+    {
+      "task": "A",
+      "SURFACED": 5,
+      "GUESSED": 5,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 2,
+      "GUESSED": 8,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 3,
+      "GUESSED": 7,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 4,
+      "GUESSED": 6,
+      "ABSENT": 0
+    },
+    {
+      "task": "C",
+      "SURFACED": 4,
+      "GUESSED": 6,
+      "ABSENT": 0
+    },
+    {
+      "task": "C",
+      "SURFACED": 5,
+      "GUESSED": 4,
+      "ABSENT": 1
+    }
+  ],
+  "prose": [
+    {
+      "task": "A",
+      "SURFACED": 0,
+      "GUESSED": 9,
+      "ABSENT": 1
+    },
+    {
+      "task": "A",
+      "SURFACED": 4,
+      "GUESSED": 6,
+      "ABSENT": 0
+    },
+    {
+      "task": "A",
+      "SURFACED": 1,
+      "GUESSED": 9,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 3,
+      "GUESSED": 7,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 3,
+      "GUESSED": 6,
+      "ABSENT": 1
+    },
+    {
+      "task": "B",
+      "SURFACED": 3,
+      "GUESSED": 6,
+      "ABSENT": 1
+    },
+    {
+      "task": "C",
+      "SURFACED": 3,
+      "GUESSED": 5,
+      "ABSENT": 2
+    },
+    {
+      "task": "C",
+      "SURFACED": 2,
+      "GUESSED": 7,
+      "ABSENT": 1
+    }
+  ],
+  "v3elicit": [
+    {
+      "task": "A",
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    },
+    {
+      "task": "A",
+      "SURFACED": 7,
+      "GUESSED": 0,
+      "ABSENT": 3
+    },
+    {
+      "task": "A",
+      "SURFACED": 9,
+      "GUESSED": 1,
+      "ABSENT": 0
+    },
+    {
+      "task": "B",
+      "SURFACED": 5,
+      "GUESSED": 3,
+      "ABSENT": 2
+    },
+    {
+      "task": "B",
+      "SURFACED": 8,
+      "GUESSED": 1,
+      "ABSENT": 1
+    },
+    {
+      "task": "B",
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    },
+    {
+      "task": "C",
+      "SURFACED": 7,
+      "GUESSED": 0,
+      "ABSENT": 3
+    },
+    {
+      "task": "C",
+      "SURFACED": 9,
+      "GUESSED": 1,
+      "ABSENT": 0
+    }
+  ],
+  "v4elicit": [
+    {
+      "task": "A",
+      "SURFACED": 8,
+      "GUESSED": 1,
+      "ABSENT": 1
+    },
+    {
+      "task": "A",
+      "SURFACED": 7,
+      "GUESSED": 1,
+      "ABSENT": 2
+    },
+    {
+      "task": "A",
+      "SURFACED": 7,
+      "GUESSED": 1,
+      "ABSENT": 2
+    },
+    {
+      "task": "B",
+      "SURFACED": 7,
+      "GUESSED": 2,
+      "ABSENT": 1
+    },
+    {
+      "task": "B",
+      "SURFACED": 8,
+      "GUESSED": 0,
+      "ABSENT": 2
+    },
+    {
+      "task": "B",
+      "SURFACED": 9,
+      "GUESSED": 0,
+      "ABSENT": 1
+    }
+  ]
+}

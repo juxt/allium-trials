@@ -110,6 +110,28 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 17 — harness: judge-robustness check — SURFACING FINDING IS NOT A JUDGE ARTEFACT
+- Risk: the load-bearing surfacing finding rested on ONE judge (elicit2's SURFACED/GUESSED/ABSENT
+  scorer). Judge inflation could manufacture the whole result. Test: re-score the 40 ALREADY-SAVED
+  arm outputs with a SECOND, independently-worded scorer (verbs ASKED/DECIDED/UNADDRESSED, different
+  framing) — no regeneration, so this isolates JUDGE variance from generation variance. If the arm
+  ordering survives a change of judge wording, the finding is real.
+- Result (interim, 28/40 — C/D tasks still scoring, ordering already decisive):
+  | arm | 2nd judge surf/guess | 1st judge surf/guess |
+  |---|---|---|
+  | nospec   | 3.9 / 5.9 | 5.0 / 4.4 |
+  | prose    | 2.4 / 6.9 | 3.8 / 5.1 |
+  | v3elicit | 7.7 / 0.7 | 7.3 / 0.9 |
+  | v4elicit | 7.7 / 0.8 | 7.1 / 0.5 |
+- **Every load-bearing ordering SURVIVES the judge swap:** (a) prose worse than none — nospec surf
+  3.9 > prose 2.4, and prose guesses more (6.9 > 5.9); (b) elicit >> both non-spec arms on surfaced
+  (7.7 vs 3.9/2.4) and << on guessed (~0.7 vs ~6); (c) v4 ~= v3. The 2nd judge is uniformly stricter
+  (all surfaced counts lower), so ABSOLUTE calibration is judge-dependent — but the DIRECTION of
+  every claim is judge-independent. The surfacing value is not a scoring artefact.
+- Bad/limit: absolute numbers are not portable across judges (calibration drift ~1 pt), so report the
+  finding as an ORDERING, never as "elicit scores 7/10". Final 40/40 means land in rejudge-result.json;
+  will refine on completion. Commit: allium-trials.
+
 ### Iteration 16 — v4: close the polymorphic-literal laundering hole (regression test)
 - Probed the risk that generalising "0 is polymorphic" to ALL literals opened a laundering hole:
   could a literal in an expression bridge two incompatible real dimensions? Tested 4 edges:
