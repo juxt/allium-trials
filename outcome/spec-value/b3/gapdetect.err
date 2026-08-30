@@ -1,0 +1,6 @@
+[g1_contradiction] truth=DEFECT | analyse=DEFECT(CONTRADICTORY) stable=true | model DEFECT 6/6 correct=100% flips=false
+[g3_crossdim] truth=DEFECT | analyse=DEFECT(TYPE_ERROR) stable=true | model DEFECT 6/6 correct=100% flips=false
+[g4_clean] truth=clean | analyse=clean(-) stable=true | model DEFECT 0/6 correct=100% flips=false
+[g5_infeasible] truth=DEFECT | analyse=DEFECT(INFEASIBLE) stable=true | model DEFECT 6/6 correct=100% flips=false
+[g6_clean] truth=clean | analyse=clean(-) stable=true | model DEFECT 0/6 correct=100% flips=false
+[g7_chain] truth=DEFECT | analyse=DEFECT(CONTRADICTORY) stable=true | model DEFECT 6/6 correct=100% flips=false

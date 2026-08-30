@@ -35,3 +35,24 @@ reconvenes when RANKING.md carries a defensible SYNTHESIS.
   arm must search in its own context and turns/tokens are directly comparable. Re-running B2 clean.
 - Lesson for ALL experiments: disallow delegation, or the cost axis is meaningless. Banked in MISSION
   discipline. This is the verify-before-claiming rule catching a false headline before it was logged.
+
+## Iteration 2 — B3 deterministic gap detection — SATURATES on catch/reliability (value is the GUARANTEE)
+- 4 specs with a real seeded defect (contradiction, cross-dimension type error, infeasible
+  requirement, subtle 3-invariant chain) + 2 clean controls. analyse run 3x/spec; model reviews the
+  SAME Allium source, 6 reps/spec. Verdicts matched mechanically to ground truth (no judge, no
+  inflation risk).
+- Result:
+  - analyse: 4/4 defects, 0/2 false positives, variance 0, NAMED flag each (CONTRADICTORY/TYPE_ERROR/
+    INFEASIBLE) + non-zero exit code.
+  - model: 4/4 defects (6/6 every spec), 0/2 false positives, ZERO flips. 100% correct and stable.
+- **=> The checkable-representation benefit does NOT manifest as superior catch OR superior
+  reliability against a frontier model on tractable specs. The model was perfect and stable.** Another
+  saturation. Effect size on catch/variance = ~0.
+- **The residual, real difference is a GUARANTEE, not a rate.** analyse cannot flip, by construction,
+  and yields a named construct + exit code you can wire into CI and cite in an audit. The model was
+  empirically stable over 6 reps but carries no proof it will be on the 7th, and no certifiable named
+  verdict. In a REGULATED gate that certification is the value; on catch-rate there is none.
+- Honest limit: only tested on small specs. Determinism plausibly bites only when a spec is complex
+  enough that model review becomes unreliable — but prior work (buried 14-constraint APR) showed the
+  model catches even those, so escalation likely saturates too. Logged; may escalate if time permits.
+- B3 verdict for RANKING: LOW effect on catch/variance; value is qualitative (auditability/certifiability).

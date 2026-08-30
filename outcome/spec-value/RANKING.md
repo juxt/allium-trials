@@ -6,7 +6,7 @@ Status: OPEN. Evidence accumulating. No synthesis until B1..B5 each have a verif
 |---|---|---|---|---|
 | B1 intent / bug-prevention | not yet run | — | — | expected highest; the code-can't-tell-you-it's-wrong test |
 | B2 navigation / amortisation | RUNNING | single-shot: NO saving (token penalty ~1.8x) | low | amortisation curve pending |
-| B3 deterministic gap detection | not yet run | — | — | value = variance/audit, not catch-rate |
+| B3 deterministic gap detection | SATURATES on catch+reliability; value = certifiable guarantee | ~0 on catch/variance; qualitative on audit | med | model 4/4 defects, 0 flips over 6 reps on tractable specs; analyse's edge is a NAMED verdict + exit code + proof-of-determinism, not a higher/steadier rate |
 | B4 brownfield surfacing | not yet run | — | — | greenfield analog already proven |
 | B5 drift / regression gate | not yet run | — | — | monitor = exact laws (150/150) already |
 

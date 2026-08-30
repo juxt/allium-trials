@@ -1,0 +1,118 @@
+[
+  {
+    "id": "g1_contradiction",
+    "truth": true,
+    "analyse": true,
+    "analyse_flags": [
+      "CONTRADICTORY"
+    ],
+    "analyse_stable": true,
+    "model_catch_rate": 1,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "g3_crossdim",
+    "truth": true,
+    "analyse": true,
+    "analyse_flags": [
+      "TYPE_ERROR"
+    ],
+    "analyse_stable": true,
+    "model_catch_rate": 1,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "g4_clean",
+    "truth": false,
+    "analyse": false,
+    "analyse_flags": [],
+    "analyse_stable": true,
+    "model_catch_rate": 0,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "g5_infeasible",
+    "truth": true,
+    "analyse": true,
+    "analyse_flags": [
+      "INFEASIBLE"
+    ],
+    "analyse_stable": true,
+    "model_catch_rate": 1,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "id": "g6_clean",
+    "truth": false,
+    "analyse": false,
+    "analyse_flags": [],
+    "analyse_stable": true,
+    "model_catch_rate": 0,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "g7_chain",
+    "truth": true,
+    "analyse": true,
+    "analyse_flags": [
+      "CONTRADICTORY"
+    ],
+    "analyse_stable": true,
+    "model_catch_rate": 1,
+    "model_correct_rate": 1,
+    "model_flips": false,
+    "model_raw": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  }
+]
