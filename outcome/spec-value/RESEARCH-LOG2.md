@@ -36,3 +36,20 @@ instalments, interest on the balance, pays to zero"). Verified against the real 
   roll, close, monotonic, principal-split, emi-constant) should still HOLD -> spec-oracle MISSES it;
   the shipped fixed-value test should CATCH it. If so: spec invariants and value-oracle tests are
   COMPLEMENTARY (relational vs absolute), not substitutes — a key refinement of the PBT claim.
+
+## Iteration 3 — Phase 3 mutant M1 (wrong rate) — SPEC MISSES, shipped test CATCHES (complementarity, verified)
+- Real-code mutant: interest rate 1% low in ProgressiveEMICalculator. Regenerated 150 traces, monitored
+  gold spec, ran shipped ProgressiveEMICalculatorTest. Reverted cleanly.
+- **SPEC-ORACLE: 0/150 traces flagged — MISSES the bug entirely.** The schedule stays internally
+  consistent (EMI recomputed from the wrong rate), so every STRUCTURAL invariant still holds; the only
+  invariant that could catch it (interest = rate x balance) is not monitorable from the trace.
+- **SHIPPED FIXED-VALUE TEST: FAILED — CATCHES it** (exact expected numbers differ).
+- **=> GATE 3 outcome: specs improve tests by supplying RELATIONAL properties checkable over the WHOLE
+  input space (150 real schedules), catching structural corruption that a single-example fixed test
+  misses (Phase 2b 88%, faithful 150/150). But they do NOT replace ABSOLUTE/golden oracles: a value
+  error that keeps the structure consistent (wrong rate) slips straight through. Spec-PBT and
+  value-oracle tests are COMPLEMENTARY confidence sources, not substitutes.**
+- Refines the PBT claim honestly: a spec solves HALF the property-test oracle problem (the relational
+  half, which is the hard-to-hand-write half and the broad-coverage half). The absolute half still needs
+  a reference implementation or golden values. Strongest suite = spec invariants + reference oracle +
+  model-checking = three independent confidence sources, each covering what the others miss.

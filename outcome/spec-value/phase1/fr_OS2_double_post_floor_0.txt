@@ -1,0 +1,14 @@
+## Review
+
+The change wraps the two journal-entry calls in `retry(3, ...)`. The comment's claim, "each attempt posts a balanced pair," is only true if an attempt is all-or-nothing and retries fire only on total failure. Neither is guaranteed here, and that opens two distinct failure modes.
+
+**1. Partial failure within an attempt — violates the maintained spec.** There's no transaction boundary around the pair. If `createDebitJournalEntryForLoan` commits and then `createCreditJournalEntryForLoan` throws (the exact "transient DB error" this is meant to survive), the retry re-runs the *whole* lambda. Now you've posted two debits and one credit for the transaction. Sum of debits ≠ sum of credits. This breaks DOUBLE-ENTRY BALANCE directly. "Existing tests pass" because the happy path never exercises a mid-pair failure.
+
+**2. Success-but-lost-acknowledgement — a data-integrity bug the spec can't see.** If both legs commit and *then* the connection drops before the caller learns it succeeded, `retry` treats it as a failure and posts a second balanced pair. The books stay balanced, so the spec floor is satisfied, but the borrower's repayment is now posted twice. This is exactly the class of bug the spec does not mention and that I'm asked to catch independently: a retry over a non-idempotent financial write is a double-posting hazard.
+
+Retrying a money-moving operation is safe only with an idempotency key (so a re-attempt is recognised and dropped) or a single enclosing transaction that commits both legs atomically and is only retried after a full rollback. The code shows neither. As written, the "safety" feature converts a transient error into either an unbalanced ledger or a duplicated payment.
+
+The fix isn't complicated (wrap the pair in one transaction and/or key the posting on the transaction id), but it's mandatory before this can merge.
+
+DECISION: BLOCK
+REASON: Retrying a non-idempotent, non-atomic journal posting can double-post a repayment (balanced but wrong) or, on mid-pair failure, leave debits and credits unequal, so it must gain an idempotency key or a single rollback-safe transaction first.

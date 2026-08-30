@@ -18,3 +18,6 @@
 [OS2_double_post ceiling 1] caught_oos=YES decision=BLOCK
 [OS2_double_post ceiling 2] caught_oos=no decision=BLOCK
 [OS2_double_post ceiling 3] caught_oos=YES decision=BLOCK
+[OS2_double_post floor 0] caught_oos=no decision=BLOCK
+[OS2_double_post floor 1] caught_oos=no decision=BLOCK
+[OS2_double_post floor 2] caught_oos=YES decision=BLOCK

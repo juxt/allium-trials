@@ -1,0 +1,16 @@
+This is a review task; I'll reason about it directly rather than touch the repo.
+
+## The trap in this change
+
+The framing invites you to check one thing: does each attempt keep debits equal to credits? It does. "Each attempt posts a balanced pair" is true, so the maintained spec (DOUBLE-ENTRY BALANCE) is not violated. That is exactly why the spec being a floor matters here. Balanced books and correct books are not the same thing.
+
+Two independent failure modes the spec says nothing about:
+
+**1. Duplicate posting (idempotency).** `retry` re-runs the whole block on any thrown error. But a transient DB error is not proof that the work didn't happen. The classic case: both legs commit, then the acknowledgement times out on the way back. `retry` sees an exception and runs the block again, posting a second balanced pair for the same repayment. The customer's payment lands twice (or three times). Every duplicate is internally balanced, so double-entry never trips. This is a money-integrity bug that the spec is structurally blind to, because the invariant is per-transaction and duplication creates new, individually-valid transactions.
+
+**2. Torn write (atomicity).** The two calls aren't wrapped in a transaction. If the debit commits and the credit throws, attempt 1 leaves an orphan debit. The retry then posts debit+credit again, yielding two debits and one credit. That state actually *does* violate the maintained spec, and it means existing tests passing tells you nothing, they never exercised a mid-pair failure.
+
+The safe version of this intent needs an idempotency key (dedup on a client-supplied transaction id) and the pair inside a single atomic transaction so a retry either sees "already applied" and no-ops, or rolls back cleanly and re-applies exactly once. Bare `retry(3, ...)` around non-idempotent financial mutations has neither.
+
+DECISION: BLOCK
+REASON: Retrying a non-idempotent, non-atomic posting risks double-crediting repayments on a post-commit transient error and can leave an imbalanced torn write on mid-pair failure, neither of which the balance-only spec can catch.

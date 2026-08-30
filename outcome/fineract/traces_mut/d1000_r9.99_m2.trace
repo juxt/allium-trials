@@ -1,0 +1,3 @@
+period=0 emi=506.19 interest=8.24 principal=497.95 outstanding_start=1000.00 is_last=F
+period=1 emi=506.19 interest=4.14 principal=502.05 outstanding_start=502.05 is_last=T
+given disbursed=1000.00

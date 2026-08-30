@@ -138,5 +138,26 @@
     "rep": 3,
     "caught": 1,
     "decision": "BLOCK"
+  },
+  {
+    "id": "OS2_double_post",
+    "arm": "floor",
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS2_double_post",
+    "arm": "floor",
+    "rep": 1,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS2_double_post",
+    "arm": "floor",
+    "rep": 2,
+    "caught": 1,
+    "decision": "BLOCK"
   }
 ]

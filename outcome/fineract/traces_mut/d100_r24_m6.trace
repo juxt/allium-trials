@@ -1,0 +1,7 @@
+period=0 emi=17.84 interest=1.98 principal=15.86 outstanding_start=100.00 is_last=F
+period=1 emi=17.84 interest=1.67 principal=16.17 outstanding_start=84.14 is_last=F
+period=2 emi=17.84 interest=1.35 principal=16.49 outstanding_start=67.97 is_last=F
+period=3 emi=17.84 interest=1.02 principal=16.82 outstanding_start=51.48 is_last=F
+period=4 emi=17.84 interest=0.69 principal=17.15 outstanding_start=34.66 is_last=F
+period=5 emi=17.86 interest=0.35 principal=17.51 outstanding_start=17.51 is_last=T
+given disbursed=100.00

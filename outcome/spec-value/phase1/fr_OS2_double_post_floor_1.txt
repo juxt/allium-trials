@@ -1,0 +1,19 @@
+This is a review task. I'll reason about it directly rather than reaching for tools.
+
+## Assessment
+
+The proposed change wraps a two-step posting in a naive retry. The comment claims "each attempt posts a balanced pair", and that framing is exactly what hides the bug.
+
+**The two calls are not atomic.** `createDebitJournalEntryForLoan` and `createCreditJournalEntryForLoan` are separate operations with no transaction boundary around them. The failure the retry is meant to survive, a transient DB error, can strike *between* them:
+
+- Debit succeeds → credit throws transient error → retry re-runs the whole lambda → debit posts *again*, credit posts once.
+- Net result: **two debit legs, one credit legs**. The transaction is imbalanced.
+
+So the change can violate even the narrow spec it appears to respect. "Each attempt is balanced" is irrelevant when a failed attempt leaves a committed half-posting behind and the next attempt adds a fresh pair on top.
+
+**Beyond the spec — the money-critical risk the spec doesn't mention.** Even if the two calls *were* wrapped in a single DB transaction (they aren't here), this retry is still unsafe because it isn't idempotent. If the posting commits but the *acknowledgement* is lost (client timeout, connection drop after commit), the retry re-posts the entire repayment. The borrower's repayment gets recorded twice. That is a double-posting / over-credit bug: balanced by double-entry (two full pairs), but wrong by twice the amount. The spec is a floor, and this sails under it while corrupting real balances.
+
+A correct version needs both: a single transaction wrapping the debit/credit pair *and* an idempotency key (or dedupe on a transaction id) so a retry that lands after a successful-but-unacknowledged commit is a no-op, not a second posting.
+
+DECISION: BLOCK
+REASON: Retrying a non-atomic, non-idempotent debit/credit pair can leave an orphan debit leg (spec-violating imbalance) or double-post the whole repayment (money-critical over-credit), so it must be made transactional and idempotent first.
