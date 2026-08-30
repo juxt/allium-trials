@@ -1,0 +1,19 @@
+-- allium: 4
+-- Improved real-Fineract loan-schedule spec: structural invariants PLUS an ABSOLUTE interest invariant
+-- (interest = rate_factor * outstanding), expressible only now that v4 has division + reference defs.
+component LoanSchedule
+  entity Period
+  given disbursed : Money
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state rate_factor(Period) : Rate
+  observable state is_last(Period) : bool
+  invariant principal_split means every p :: principal(p) = emi(p) - interest(p)
+  invariant balance_rolls means every p :: every next :: follows(next, p) implies outstanding_start(next) = outstanding_start(p) - principal(p)
+  invariant conservation means sum p :: principal(p) = disbursed
+  invariant closes_to_zero means every p :: is_last(p) implies outstanding_start(p) - principal(p) = 0
+  -- ABSOLUTE value invariant (the new capability): interest is pinned to rate x balance, not just relations.
+  invariant interest_absolute means every p :: interest(p) = rate_factor(p) * outstanding_start(p)
+end

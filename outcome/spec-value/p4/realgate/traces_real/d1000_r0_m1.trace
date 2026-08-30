@@ -1,0 +1,2 @@
+period=0 emi=1000.00 interest=0.00 principal=1000.00 outstanding_start=1000.00 rate_factor=0.000000 is_last=T
+given disbursed=1000.00 annual_rate_pct=0.00

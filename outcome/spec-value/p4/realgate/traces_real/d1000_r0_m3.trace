@@ -1,0 +1,4 @@
+period=0 emi=333.33 interest=0.00 principal=333.33 outstanding_start=1000.00 rate_factor=0.000000 is_last=F
+period=1 emi=333.33 interest=0.00 principal=333.33 outstanding_start=666.67 rate_factor=0.000000 is_last=F
+period=2 emi=333.34 interest=0.00 principal=333.34 outstanding_start=333.34 rate_factor=0.000000 is_last=T
+given disbursed=1000.00 annual_rate_pct=0.00

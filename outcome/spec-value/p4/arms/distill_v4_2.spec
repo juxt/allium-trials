@@ -1,107 +1,71 @@
 -- allium: 4
---
--- SME term loan schedule (declining-balance) with a flat monthly service fee.
--- Load-bearing numeric conventions, in order of subtlety:
---   * monthly factor f = annual_rate_pct / 1200
---   * every money value is rounded to 2dp with banker's rounding (HALF_EVEN)
---   * service fee is FLAT: 0.25% of the ORIGINAL disbursed principal, on EVERY period
---   * the fee sits ON TOP of the amortising instalment; it never enters the
---     principal split or the interest-vs-principal calculation
---   * the reported "interest" line = pure interest + fee
---   * the reported "emi" (what the customer pays) = base instalment + fee
---   * the final period absorbs the residual so principal repays exactly to zero
 
-component sme_term_loan
+component LoanSchedule
+  entity Period
+    observable emi: decimal
+    observable interest: decimal
+    observable principal: decimal
+    observable outstanding_start: decimal
 
-entity loan
-  disbursed         -- original principal disbursed
-  annual_rate_pct   -- nominal annual rate, percent
-  months            -- number of monthly payments (>= 1)
+  given monthly_rate(annual_rate_pct) means 
+    annual_rate_pct / 1200
 
-entity period
-  belongs to loan
-  index                          -- 0-based, ranges 0 .. loan.months - 1
-  observable outstanding_start   -- balance at start of period, r2
-  observable pure_interest       -- declining-balance interest only, r2
-  observable principal           -- principal component of the payment, r2
-  observable interest            -- reported interest line = pure_interest + fee
-  observable emi                 -- reported customer payment = base instalment + fee
+  given base_emi_value(disbursed, rate, months) means
+    if rate == 0 then 
+      disbursed / months
+    else 
+      disbursed * rate * (1 + rate) ^ months / ((1 + rate) ^ months - 1)
 
--- r2: quantise to 0.01 using ROUND_HALF_EVEN (banker's rounding).
--- This exact rounding is applied at every step below and is load-bearing;
--- results differ from HALF_UP on .xx5 ties and from unrounded chaining.
-given r2(x) means banker_round(x, 2)
+  given service_fee(disbursed) means 
+    disbursed * 0.0025
 
--- Monthly interest factor. Note the /1200 (per-cent AND per-annum in one step).
-given monthly_factor(annual_rate_pct) means annual_rate_pct / 1200
+  invariant rounding ::
+    every monetary value in schedule :: 
+      value rounded HALF_EVEN to 2 decimal places
 
--- Flat service fee: 0.25% of the ORIGINAL disbursed amount, rounded once.
--- It does not shrink as the balance amortises; the same fee is added every period.
-given service_fee(disbursed) means r2(disbursed * 0.0025)
+  invariant monthly_factor ::
+    rate = monthly_rate(annual_rate_pct)
 
--- Base equated monthly instalment (fee-exclusive), computed once then rounded.
--- Zero-rate loans fall back to straight-line principal.
-given base_emi(disbursed, annual_rate_pct, months) means
-  let f = monthly_factor(annual_rate_pct) in
-    if f == 0
-      then r2(disbursed / months)
-      else r2(disbursed * f * (1 + f) ^ months / ((1 + f) ^ months - 1))
+  invariant fee_flat ::
+    every period p ::
+      fee = round(service_fee(original_disbursed), HALF_EVEN, 2dp)
 
--- There are exactly `months` periods per loan, indices 0 .. months-1.
-invariant period_count
-  every loan :: (count period :: period.loan == loan) == loan.months
+  invariant outstanding_start_balance ::
+    every period p ::
+      p.outstanding_start = round(balance_at_start, HALF_EVEN, 2dp)
 
--- The first period opens at the full disbursed principal.
-invariant opening_balance
-  every period :: period.index == 0 implies
-    period.outstanding_start == period.loan.disbursed
+  invariant interest_on_declining_balance ::
+    every period p ::
+      pure_interest = round(p.outstanding_start * rate, HALF_EVEN, 2dp)
 
--- Balance recurrence: next opens at this period's close, re-rounded to 2dp.
-invariant balance_rolls_forward
-  follows(next, period) ::
-    next.outstanding_start == r2(period.outstanding_start - period.principal)
+  invariant principal_regular_period ::
+    every period p where p.index < total_months - 1 ::
+      base_emi_amt = round(base_emi_value(original_disbursed, rate, total_months), HALF_EVEN, 2dp) and
+      p.principal = round(base_emi_amt - pure_interest, HALF_EVEN, 2dp)
 
--- Pure interest on the current balance, rounded before use.
-invariant pure_interest_calc
-  every period ::
-    period.pure_interest ==
-      r2(period.outstanding_start * monthly_factor(period.loan.annual_rate_pct))
+  invariant principal_final_period ::
+    every period p where p.index == total_months - 1 ::
+      p.principal = p.outstanding_start
 
--- Non-final periods: principal = base_emi - pure interest (fee excluded from the split).
-invariant principal_non_final
-  every period :: period.index < period.loan.months - 1 implies
-    period.principal ==
-      r2(base_emi(period.loan.disbursed, period.loan.annual_rate_pct, period.loan.months)
-         - period.pure_interest)
+  invariant emi_regular_period ::
+    every period p where p.index < total_months - 1 ::
+      base_emi_amt = round(base_emi_value(original_disbursed, rate, total_months), HALF_EVEN, 2dp) and
+      p.emi = round(base_emi_amt + fee, HALF_EVEN, 2dp)
 
--- Final period: principal is the entire remaining balance, so the loan closes exactly.
-invariant principal_final
-  every period :: period.index == period.loan.months - 1 implies
-    period.principal == period.outstanding_start
+  invariant emi_final_period ::
+    every period p where p.index == total_months - 1 ::
+      base_amt = round(pure_interest + p.principal, HALF_EVEN, 2dp) and
+      p.emi = round(base_amt + fee, HALF_EVEN, 2dp)
 
--- Loan repays to zero after the final principal is applied.
-invariant closes_exactly
-  every period :: period.index == period.loan.months - 1 implies
-    r2(period.outstanding_start - period.principal) == 0
+  invariant interest_includes_fee ::
+    every period p ::
+      p.interest = round(pure_interest + fee, HALF_EVEN, 2dp)
 
--- Reported interest line = pure interest + flat fee (every period).
-invariant reported_interest
-  every period ::
-    period.interest == r2(period.pure_interest + service_fee(period.loan.disbursed))
+  invariant balance_decay ::
+    follows(next, current) ::
+      next.outstanding_start = round(current.outstanding_start - current.principal, HALF_EVEN, 2dp)
 
--- Reported emi, non-final: base instalment (= base_emi) + fee.
-invariant reported_emi_non_final
-  every period :: period.index < period.loan.months - 1 implies
-    period.emi ==
-      r2(base_emi(period.loan.disbursed, period.loan.annual_rate_pct, period.loan.months)
-         + service_fee(period.loan.disbursed))
-
--- Reported emi, final: the base instalment is the closing amount r2(pure_interest + principal),
--- and the fee is added on top of that (note the nested rounding).
-invariant reported_emi_final
-  every period :: period.index == period.loan.months - 1 implies
-    period.emi ==
-      r2(r2(period.pure_interest + period.principal)
-         + service_fee(period.loan.disbursed))
+  invariant principal_exhausts_loan ::
+    sum(all periods, principal) == original_disbursed
 
 end

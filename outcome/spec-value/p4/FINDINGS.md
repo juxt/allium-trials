@@ -103,3 +103,19 @@ lacks: a v4 spec can be mechanically checked, monitored, and run as a regression
 - The regression-gate win requires the spec's invariants to be monitorable (reference inputs emitted in
   traces) — a real setup cost.
 - All on one behaviour family (loan schedules) + a strong model. See the weak-model probe next.
+
+## FINDING 6 — the shipped DIVISION feature closed a real value-blindness gap, at scale (144 real traces)
+P3 established the "desync law": a relational spec catches structure-breaking bugs but is BLIND to
+value bugs that keep the structure consistent (P3 E2: real-code arithmetic mutants 0/20 caught). Root
+cause: relational specs lack ABSOLUTE invariants tying an output to a reference input — and v4 could not
+even express one because it had no DIVISION operator (`interest = rate/1200 * balance` was inexpressible).
+This session shipped division (+ reference constants). Re-test on 144 REAL Fineract schedule traces:
+- value-consistent wrong-interest mutant (interest+emi bumped together; ALL relational invariants —
+  principal_split, balance_rolls, conservation, closes_to_zero — still hold):
+    RELATIONAL-only spec (P3-style)                     -> caught 0/144
+    IMPROVED spec (+ absolute `interest = rate_factor*outstanding`) -> caught 144/144
+- => a concrete, executable, at-scale demonstration that a LANGUAGE feature shipped this session
+  (division) delivered a MEASURABLE gate capability: value-drift catch on real code went 0 -> 144/144.
+  This is the P3 value-blindness gap CLOSED. (Faithfulness caveat: the absolute invariant holds on
+  144/150 real traces at tol 0.02; 6 miss due to Fineract's exact day-count vs the rate/1200
+  approximation — a real limit fixed by emitting Fineract's exact per-period rate factor.)

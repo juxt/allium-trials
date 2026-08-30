@@ -1,0 +1,4 @@
+period=0 emi=346.75 interest=20.00 principal=326.75 outstanding_start=1000.00 rate_factor=0.020000 is_last=F
+period=1 emi=346.75 interest=13.46 principal=333.29 outstanding_start=673.25 rate_factor=0.020000 is_last=F
+period=2 emi=346.76 interest=6.80 principal=339.96 outstanding_start=339.96 rate_factor=0.020000 is_last=T
+given disbursed=1000.00 annual_rate_pct=24.00

@@ -1,0 +1,25 @@
+period=0 emi=4.17 interest=0.00 principal=4.17 outstanding_start=100.00 rate_factor=0.000000 is_last=F
+period=1 emi=4.17 interest=0.00 principal=4.17 outstanding_start=95.83 rate_factor=0.000000 is_last=F
+period=2 emi=4.17 interest=0.00 principal=4.17 outstanding_start=91.66 rate_factor=0.000000 is_last=F
+period=3 emi=4.17 interest=0.00 principal=4.17 outstanding_start=87.49 rate_factor=0.000000 is_last=F
+period=4 emi=4.17 interest=0.00 principal=4.17 outstanding_start=83.32 rate_factor=0.000000 is_last=F
+period=5 emi=4.17 interest=0.00 principal=4.17 outstanding_start=79.15 rate_factor=0.000000 is_last=F
+period=6 emi=4.17 interest=0.00 principal=4.17 outstanding_start=74.98 rate_factor=0.000000 is_last=F
+period=7 emi=4.17 interest=0.00 principal=4.17 outstanding_start=70.81 rate_factor=0.000000 is_last=F
+period=8 emi=4.17 interest=0.00 principal=4.17 outstanding_start=66.64 rate_factor=0.000000 is_last=F
+period=9 emi=4.17 interest=0.00 principal=4.17 outstanding_start=62.47 rate_factor=0.000000 is_last=F
+period=10 emi=4.17 interest=0.00 principal=4.17 outstanding_start=58.30 rate_factor=0.000000 is_last=F
+period=11 emi=4.17 interest=0.00 principal=4.17 outstanding_start=54.13 rate_factor=0.000000 is_last=F
+period=12 emi=4.17 interest=0.00 principal=4.17 outstanding_start=49.96 rate_factor=0.000000 is_last=F
+period=13 emi=4.17 interest=0.00 principal=4.17 outstanding_start=45.79 rate_factor=0.000000 is_last=F
+period=14 emi=4.17 interest=0.00 principal=4.17 outstanding_start=41.62 rate_factor=0.000000 is_last=F
+period=15 emi=4.17 interest=0.00 principal=4.17 outstanding_start=37.45 rate_factor=0.000000 is_last=F
+period=16 emi=4.17 interest=0.00 principal=4.17 outstanding_start=33.28 rate_factor=0.000000 is_last=F
+period=17 emi=4.17 interest=0.00 principal=4.17 outstanding_start=29.11 rate_factor=0.000000 is_last=F
+period=18 emi=4.17 interest=0.00 principal=4.17 outstanding_start=24.94 rate_factor=0.000000 is_last=F
+period=19 emi=4.17 interest=0.00 principal=4.17 outstanding_start=20.77 rate_factor=0.000000 is_last=F
+period=20 emi=4.17 interest=0.00 principal=4.17 outstanding_start=16.60 rate_factor=0.000000 is_last=F
+period=21 emi=4.17 interest=0.00 principal=4.17 outstanding_start=12.43 rate_factor=0.000000 is_last=F
+period=22 emi=4.17 interest=0.00 principal=4.17 outstanding_start=8.26 rate_factor=0.000000 is_last=F
+period=23 emi=4.09 interest=0.00 principal=4.09 outstanding_start=4.09 rate_factor=0.000000 is_last=T
+given disbursed=100.00 annual_rate_pct=0.00

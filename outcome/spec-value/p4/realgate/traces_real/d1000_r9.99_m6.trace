@@ -1,0 +1,7 @@
+period=0 emi=171.56 interest=8.33 principal=163.23 outstanding_start=1000.00 rate_factor=0.008325 is_last=F
+period=1 emi=171.56 interest=6.97 principal=164.59 outstanding_start=836.77 rate_factor=0.008325 is_last=F
+period=2 emi=171.56 interest=5.60 principal=165.96 outstanding_start=672.18 rate_factor=0.008325 is_last=F
+period=3 emi=171.56 interest=4.21 principal=167.35 outstanding_start=506.22 rate_factor=0.008325 is_last=F
+period=4 emi=171.56 interest=2.82 principal=168.74 outstanding_start=338.87 rate_factor=0.008325 is_last=F
+period=5 emi=171.55 interest=1.42 principal=170.13 outstanding_start=170.13 rate_factor=0.008325 is_last=T
+given disbursed=1000.00 annual_rate_pct=9.99
