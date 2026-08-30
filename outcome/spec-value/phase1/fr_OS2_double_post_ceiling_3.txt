@@ -1,0 +1,12 @@
+This retry wraps the debit and credit as a unit, and the comment asserts "each attempt posts a balanced pair." That assertion is doing all the work, and nothing in the diff earns it.
+
+The spec constrains the *committed* state: for a posted transaction, sum of debits equals sum of credits. The retry is only safe if each attempt is atomic — all legs commit together or none do. But the two calls are separate, and no transaction boundary is visible. Consider the failure the retry exists to handle: a transient DB error. If it strikes *between* the two calls, the debit has already been created and the credit has not. That attempt leaves an unbalanced state, and `retry` then re-runs the whole block, adding another debit and (this time) a credit. Committed result: two debits, one credit. The invariant is broken precisely in the scenario the change was written for.
+
+Even the "successful" retry path is suspect. If the credit call throws *after* its write commits (error on the response, not the write), the retry double-posts both legs — balanced in aggregate but doubled, which is a different correctness problem and still a wrong posting.
+
+The change is safe only if `createDebitJournalEntryForLoan`/`createCreditJournalEntryForLoan` share a single transaction that rolls back fully on any failure, and the retry re-runs that whole transaction rather than replaying committed side effects. That guarantee has to be shown, not assumed. Existing tests passing means nothing here: they exercise the happy path, and the hazard lives entirely in the partial-failure path that transient-error retry is designed to trigger.
+
+Move the retry to wrap an atomic, rolling-back transaction (or make the postings idempotent on a transaction id), and it merges cleanly.
+
+DECISION: BLOCK
+REASON: Retrying a non-atomic debit+credit pair can commit one leg without the other or double-post on replay, violating double-entry balance in exactly the transient-failure case the change targets, and the diff shows no transaction that would make each attempt atomic.

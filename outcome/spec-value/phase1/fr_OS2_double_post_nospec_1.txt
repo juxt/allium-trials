@@ -1,0 +1,19 @@
+This retry is not safe. The problem is exactly the thing the comment waves away.
+
+`retry` re-runs the entire lambda on failure, but the two calls inside it are not atomic. Consider a transient DB error that hits *between* the debit and the credit:
+
+1. Attempt 1: `createDebitJournalEntryForLoan(cash, ...)` succeeds, the debit is now persisted.
+2. `createCreditJournalEntryForLoan(portfolio, ...)` throws.
+3. `retry` catches it and runs the whole block again.
+4. Attempt 2: posts a *fresh* balanced pair (debit + credit).
+
+Net result on the ledger: two debits to cash, one credit to portfolio. The first attempt's debit is orphaned. The books are now out of balance by `t.amount`, and cash is overstated.
+
+The comment "Each attempt posts a balanced pair" is true only for an attempt that runs to completion. It is precisely the *partial* attempt, the one retry exists to paper over, that leaves an unmatched entry behind. Retry converts a transient failure into a permanent double-entry violation. On a loan-servicing ledger that is a money-critical corruption, not a lost posting.
+
+Why the tests didn't catch it: existing tests almost certainly exercise the happy path where every attempt succeeds. The fault only appears on a mid-pair failure, which is the scenario retry is being added for.
+
+For this to be safe the retried unit must be atomic: wrap the pair in a database transaction that rolls back a failed attempt before retry runs (`retry(3, () -> tx(() -> { debit; credit; }))`), or make the posting idempotent with a transaction key so a replayed attempt cannot double-post. As written it has neither.
+
+DECISION: BLOCK
+REASON: Retrying a non-atomic debit/credit pair leaves the debit from a failed attempt in place while the retry posts a second full pair, breaking double-entry balance and overstating cash.

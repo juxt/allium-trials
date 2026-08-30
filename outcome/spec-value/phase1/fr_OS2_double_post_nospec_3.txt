@@ -1,0 +1,15 @@
+This retry wraps two separate, non-idempotent writes that have no shared transaction boundary. That breaks it in two ways.
+
+**Partial failure corrupts the ledger.** If the debit posts and then the credit hits the transient error, `retry` re-runs the *whole* lambda. The debit runs a second time. You now have two debit entries and one credit. The ledger is unbalanced and there's a duplicate posting, on a real customer's loan. The comment "each attempt posts a balanced pair" is only true for an attempt that runs to completion; the whole point of retry is to handle attempts that *don't*.
+
+**Post-commit failure detection double-posts.** Even if both calls succeed, a transient error surfacing after the DB commits (connection drop on the ack, timeout) makes `retry` believe the attempt failed. It re-runs and posts a second balanced pair. The repayment is now recorded twice.
+
+The safety of a retry depends on the retried unit being atomic and idempotent. This one is neither:
+
+- **Not atomic** — the debit and credit aren't in a shared transaction, so there's no rollback between them.
+- **Not idempotent** — each `create...JournalEntry` call unconditionally writes a new row; nothing dedupes on a transaction id.
+
+To make this safe you'd need both entries inside a single DB transaction that rolls back fully on any failure (so `retry` wraps the transaction, not the raw calls), plus an idempotency key on the posting so a re-run after a committed-but-unacknowledged attempt is a no-op rather than a duplicate. Neither is present here, and "existing tests pass" doesn't cover it — the failure only shows up on a mid-sequence or post-commit transient error, which unit tests almost never exercise.
+
+DECISION: BLOCK
+REASON: Retrying two non-atomic, non-idempotent journal writes can duplicate the debit on partial failure and double-post the whole pair on post-commit failure, violating the double-entry balance invariant on live loan accounts.

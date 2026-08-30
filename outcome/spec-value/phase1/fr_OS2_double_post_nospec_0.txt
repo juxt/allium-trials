@@ -1,0 +1,18 @@
+## Review
+
+The intent is reasonable, but the retry is wrapped around the wrong unit of work.
+
+The two journal entries are separate writes. The retry re-runs the whole lambda on any failure, and the failures worth retrying are exactly the ones that can occur *between* the two writes. Walk the transient-error case the comment is trying to defend against:
+
+1. Attempt 1: `createDebitJournalEntryForLoan(cash, ...)` commits.
+2. Attempt 1: `createCreditJournalEntryForLoan(portfolio, ...)` throws a transient DB error.
+3. Attempt 2: debit commits **again**, credit commits.
+
+Result: two debits to cash, one credit to portfolio. The ledger is now unbalanced and the cash side is double-counted. The comment "Each attempt posts a balanced pair" is the load-bearing false assumption. It's only true for attempts that run to completion; a *failed* attempt can leave a balanced pair minus one leg, and the retry stacks a full pair on top of that orphan.
+
+For this to be safe, both entries would need to sit inside a single database transaction that rolls back partial work on failure, and the posting would need to be idempotent (keyed on the txn) so a retry after an ambiguous commit outcome can't duplicate. Neither is present here. "Compiles and existing tests pass" doesn't cover it, because the tests exercise the happy path, and the whole point of the change is the failure path.
+
+This is the worst class of ledger bug: silent, money-critical, and triggered precisely by the condition the author added the code to handle. Retry belongs around an atomic, idempotent unit, not around two independent commits.
+
+DECISION: BLOCK
+REASON: Retrying a non-atomic, non-idempotent double-entry posting re-executes already-committed legs after a mid-sequence failure, producing duplicate/unbalanced journal entries.

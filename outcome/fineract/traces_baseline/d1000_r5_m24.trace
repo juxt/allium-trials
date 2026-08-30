@@ -1,0 +1,25 @@
+period=0 emi=43.87 interest=4.17 principal=39.70 outstanding_start=1000.00 is_last=F
+period=1 emi=43.87 interest=4.00 principal=39.87 outstanding_start=960.30 is_last=F
+period=2 emi=43.87 interest=3.84 principal=40.03 outstanding_start=920.43 is_last=F
+period=3 emi=43.87 interest=3.67 principal=40.20 outstanding_start=880.40 is_last=F
+period=4 emi=43.87 interest=3.50 principal=40.37 outstanding_start=840.20 is_last=F
+period=5 emi=43.87 interest=3.33 principal=40.54 outstanding_start=799.83 is_last=F
+period=6 emi=43.87 interest=3.16 principal=40.71 outstanding_start=759.29 is_last=F
+period=7 emi=43.87 interest=2.99 principal=40.88 outstanding_start=718.58 is_last=F
+period=8 emi=43.87 interest=2.82 principal=41.05 outstanding_start=677.70 is_last=F
+period=9 emi=43.87 interest=2.65 principal=41.22 outstanding_start=636.65 is_last=F
+period=10 emi=43.87 interest=2.48 principal=41.39 outstanding_start=595.43 is_last=F
+period=11 emi=43.87 interest=2.31 principal=41.56 outstanding_start=554.04 is_last=F
+period=12 emi=43.87 interest=2.14 principal=41.73 outstanding_start=512.48 is_last=F
+period=13 emi=43.87 interest=1.96 principal=41.91 outstanding_start=470.75 is_last=F
+period=14 emi=43.87 interest=1.79 principal=42.08 outstanding_start=428.84 is_last=F
+period=15 emi=43.87 interest=1.61 principal=42.26 outstanding_start=386.76 is_last=F
+period=16 emi=43.87 interest=1.44 principal=42.43 outstanding_start=344.50 is_last=F
+period=17 emi=43.87 interest=1.26 principal=42.61 outstanding_start=302.07 is_last=F
+period=18 emi=43.87 interest=1.08 principal=42.79 outstanding_start=259.46 is_last=F
+period=19 emi=43.87 interest=0.90 principal=42.97 outstanding_start=216.67 is_last=F
+period=20 emi=43.87 interest=0.72 principal=43.15 outstanding_start=173.70 is_last=F
+period=21 emi=43.87 interest=0.54 principal=43.33 outstanding_start=130.55 is_last=F
+period=22 emi=43.87 interest=0.36 principal=43.51 outstanding_start=87.22 is_last=F
+period=23 emi=43.89 interest=0.18 principal=43.71 outstanding_start=43.71 is_last=T
+given disbursed=1000.00

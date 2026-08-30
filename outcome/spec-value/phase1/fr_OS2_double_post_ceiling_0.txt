@@ -1,0 +1,32 @@
+## Analysis
+
+The spec is a per-transaction runtime invariant: for each posted loan transaction, Σ debits = Σ credits. The current code satisfies it trivially — one debit leg, one matching credit leg.
+
+The retry wraps both legs together, and the comment reassures us that "each attempt posts a balanced pair." That is true only for attempts that *complete*. The failure mode the retry exists to handle is precisely the one that breaks the invariant:
+
+**Partial-failure sequence**
+1. Attempt 1: `createDebitJournalEntryForLoan(cash)` succeeds, then `createCreditJournalEntryForLoan(portfolio)` throws a transient DB error.
+2. The retry *catches* that exception (it has to, in order to retry) and re-runs the whole lambda.
+3. Attempt 2: debit succeeds, credit succeeds.
+
+Net result: **two debit legs, one credit leg** for a single loan transaction. Debits ≠ credits. Spec violated.
+
+The journal-entry calls are non-idempotent side effects, and nothing in the change establishes a transaction boundary or rollback around each attempt. The fact that the retry swallows the exception to loop again means the orphaned debit from the failed attempt is *not* unwound. The comment's claim of balance holds per completed attempt but ignores the interrupted attempt, which is the whole reason retry was added.
+
+"Compiles and existing tests pass" doesn't cover this — the tests exercise the happy path, and the invariant only breaks on the mid-sequence transient failure that no unit test simulates.
+
+## What would make it safe
+
+Wrap each attempt in its own DB transaction that rolls back on failure, so a failed attempt leaves zero legs before the next one runs:
+
+```java
+retry(3, () -> transactional(() -> {
+    createDebitJournalEntryForLoan(cash, t.amount);
+    createCreditJournalEntryForLoan(portfolio, t.amount);
+}));
+```
+
+Then every attempt is all-or-nothing and the invariant holds. As written, it isn't.
+
+DECISION: BLOCK
+REASON: The retry re-runs non-idempotent posting legs without a per-attempt transaction, so a debit-succeeds/credit-fails error leaves an orphan debit and the retry adds a second balanced pair, yielding two debits against one credit and violating the double-entry invariant.

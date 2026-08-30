@@ -10,3 +10,11 @@
 [OS1_negative_payment floor 1] caught_oos=no decision=BLOCK
 [OS1_negative_payment floor 2] caught_oos=no decision=BLOCK
 [OS1_negative_payment floor 3] caught_oos=no decision=BLOCK
+[OS2_double_post nospec 0] caught_oos=YES decision=BLOCK
+[OS2_double_post nospec 1] caught_oos=no decision=BLOCK
+[OS2_double_post nospec 2] caught_oos=no decision=BLOCK
+[OS2_double_post nospec 3] caught_oos=no decision=BLOCK
+[OS2_double_post ceiling 0] caught_oos=no decision=BLOCK
+[OS2_double_post ceiling 1] caught_oos=YES decision=BLOCK
+[OS2_double_post ceiling 2] caught_oos=no decision=BLOCK
+[OS2_double_post ceiling 3] caught_oos=YES decision=BLOCK

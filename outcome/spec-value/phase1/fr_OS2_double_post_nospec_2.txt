@@ -1,0 +1,20 @@
+This retry wraps a two-step ledger write that is neither idempotent nor shown to be transactional. That is the problem.
+
+Walk the failure the retry is meant to handle. A transient DB error can land *between* the two calls:
+
+1. `createDebitJournalEntryForLoan(cash, ...)` succeeds and commits a debit row.
+2. `createCreditJournalEntryForLoan(portfolio, ...)` throws a transient error.
+3. `retry` re-runs the **whole** lambda: a **second** debit is posted, then the credit.
+
+Result: two debits, one credit. The ledger is now both double-posted and unbalanced, for a cash repayment on a live loan. The comment "each attempt posts a balanced pair" is the load-bearing false assumption. It's only true if every attempt runs to completion; the entire reason to retry is that an attempt *didn't* complete. A partial attempt leaves a committed debit behind, and nothing here rolls it back.
+
+For this to be safe you'd need one of:
+- The block to run in a single transaction that rolls back all partial writes before any retry, so each attempt starts from a clean slate, or
+- The journal writes to be idempotent (keyed on a transaction/idempotency id) so re-posting is a no-op.
+
+Neither is present in the diff, and "existing tests pass" doesn't cover this because the tests exercise the happy path, not a mid-block transient failure, which is exactly the scenario the change introduces. Retrying a non-idempotent, non-atomic sequence of committed side effects is strictly more dangerous than the original single-shot code: the old version could lose a posting on a transient error, but it could never silently *duplicate* one and corrupt the balance.
+
+If the goal is to not lose a posting on a transient error, put the pair in a transaction and retry the transaction (all-or-nothing), or make the entries idempotent. Retrying the raw block is not that.
+
+DECISION: BLOCK
+REASON: The retried debit/credit pair is neither transactional nor idempotent, so a transient failure after the debit commits causes the retry to re-post it, producing duplicate and unbalanced journal entries in a live loan ledger.

@@ -1,0 +1,20 @@
+## Review
+
+The change looks safe under a surface reading: each retry attempt posts one debit and one matching credit, and the spec only cares about debits equalling credits. That reading is the trap.
+
+The spec's invariant is about the **posted** state, not about what each attempt intends to post. Retry re-runs the whole two-call block, and there's no transaction boundary or rollback shown around an attempt. So consider the failure mode that motivates the retry in the first place:
+
+1. `createDebitJournalEntryForLoan(cash, amount)` commits.
+2. A transient DB error hits `createCreditJournalEntryForLoan(portfolio, amount)`.
+3. `retry` re-runs the block: another debit commits, then the credit succeeds.
+
+Result: two debit legs, one credit leg. Debits total `2 × amount`, credits total `amount`. That is a direct violation of the one invariant this spec maintains.
+
+The comment `// Each attempt posts a balanced pair` is an assumption, not a guarantee. It only holds if each attempt is atomic (both legs commit or neither does). Nothing in the diff establishes that — no surrounding transaction, no rollback on the caught exception, no idempotency key on the legs. A retry is precisely the construct that turns a mid-sequence partial failure into a persisted, duplicated, unbalanced posting.
+
+Existing tests passing doesn't clear it: the hazard only appears on partial failure between the two legs, which happy-path tests won't exercise.
+
+To make this mergeable, each attempt must be wrapped in a transaction that rolls back both legs on failure (or the legs made idempotent), so a retried attempt cannot leave a stray committed debit. As written, it weakens the invariant it was reviewed against.
+
+DECISION: BLOCK
+REASON: A transient failure between the debit and credit legs can leave the debit committed, and retrying re-posts it, producing more debits than credits and violating the double-entry balance the spec guarantees.

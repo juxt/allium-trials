@@ -1,0 +1,25 @@
+period=0 emi=49.92 interest=15.00 principal=34.92 outstanding_start=1000.00 is_last=F
+period=1 emi=49.92 interest=14.48 principal=35.44 outstanding_start=965.08 is_last=F
+period=2 emi=49.92 interest=13.94 principal=35.98 outstanding_start=929.64 is_last=F
+period=3 emi=49.92 interest=13.40 principal=36.52 outstanding_start=893.66 is_last=F
+period=4 emi=49.92 interest=12.86 principal=37.06 outstanding_start=857.14 is_last=F
+period=5 emi=49.92 interest=12.30 principal=37.62 outstanding_start=820.08 is_last=F
+period=6 emi=49.92 interest=11.74 principal=38.18 outstanding_start=782.46 is_last=F
+period=7 emi=49.92 interest=11.16 principal=38.76 outstanding_start=744.28 is_last=F
+period=8 emi=49.92 interest=10.58 principal=39.34 outstanding_start=705.52 is_last=F
+period=9 emi=49.92 interest=9.99 principal=39.93 outstanding_start=666.18 is_last=F
+period=10 emi=49.92 interest=9.39 principal=40.53 outstanding_start=626.25 is_last=F
+period=11 emi=49.92 interest=8.79 principal=41.13 outstanding_start=585.72 is_last=F
+period=12 emi=49.92 interest=8.17 principal=41.75 outstanding_start=544.59 is_last=F
+period=13 emi=49.92 interest=7.54 principal=42.38 outstanding_start=502.84 is_last=F
+period=14 emi=49.92 interest=6.91 principal=43.01 outstanding_start=460.46 is_last=F
+period=15 emi=49.92 interest=6.26 principal=43.66 outstanding_start=417.45 is_last=F
+period=16 emi=49.92 interest=5.61 principal=44.31 outstanding_start=373.79 is_last=F
+period=17 emi=49.92 interest=4.94 principal=44.98 outstanding_start=329.48 is_last=F
+period=18 emi=49.92 interest=4.27 principal=45.65 outstanding_start=284.50 is_last=F
+period=19 emi=49.92 interest=3.58 principal=46.34 outstanding_start=238.85 is_last=F
+period=20 emi=49.92 interest=2.89 principal=47.03 outstanding_start=192.51 is_last=F
+period=21 emi=49.92 interest=2.18 principal=47.74 outstanding_start=145.48 is_last=F
+period=22 emi=49.92 interest=1.47 principal=48.45 outstanding_start=97.74 is_last=F
+period=23 emi=50.03 interest=0.74 principal=49.29 outstanding_start=49.29 is_last=T
+given disbursed=1000.00

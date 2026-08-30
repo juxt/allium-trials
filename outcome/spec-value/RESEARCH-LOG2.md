@@ -24,3 +24,15 @@ instalments, interest on the balance, pays to zero"). Verified against the real 
   spec is blind tells you exactly where not to over-trust it. Completeness measurement mitigates
   overconfidence. Bug caught this iteration: monitor-schedule exits non-zero on failure, so the harness
   must read stdout from the thrown error (first run showed a false 0% for all — fixed, verified).
+
+## Iteration 2 — Phase 3 (specs -> tests / PBT) feasibility + faithfulness at scale
+- Pipeline CONFIRMED: `./gradlew :fineract-progressive-loan:test --tests ProgressiveEMITraceHarness`
+  regenerates 151 traces from the REAL ProgressiveEMICalculator (~1.5s test, <2min gradle). So I can
+  mutate the real calculator, regenerate, and monitor the spec.
+- FAITHFULNESS AT SCALE: the gold spec holds on **150/150** freshly-generated real traces. The spec is
+  a true relational property of the real code across the 5x5x6 input grid.
+- Mutant M1 (wrong interest rate, 1% low) in flight: predicted to keep the schedule INTERNALLY
+  CONSISTENT (EMI recomputed from the wrong rate), so all structural invariants (conservation, balance
+  roll, close, monotonic, principal-split, emi-constant) should still HOLD -> spec-oracle MISSES it;
+  the shipped fixed-value test should CATCH it. If so: spec invariants and value-oracle tests are
+  COMPLEMENTARY (relational vs absolute), not substitutes — a key refinement of the PBT claim.

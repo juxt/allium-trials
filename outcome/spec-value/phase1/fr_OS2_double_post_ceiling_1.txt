@@ -1,0 +1,16 @@
+This retry wraps the two journal entries but gives them no transaction boundary. The comment "each attempt posts a balanced pair" only holds if an attempt is atomic. It isn't.
+
+Failure mode against the spec:
+
+1. Attempt 1: `createDebitJournalEntryForLoan(cash, ...)` commits. Then `createCreditJournalEntryForLoan(portfolio, ...)` throws a transient DB error.
+2. `retry` catches it and re-runs the *whole* block.
+3. Attempt 2: debit posts again, credit posts.
+
+Net result for this transaction: two debit legs, one credit leg. Sum of debits ≠ sum of credits. That is a direct violation of DOUBLE-ENTRY BALANCE, and it lands precisely in the case the retry was added to handle (a transient error between the two legs).
+
+The change is safe only if the retried block is enclosed in a rollback boundary so a failed attempt commits nothing. No such boundary is present, and the fact that existing tests pass proves little: they don't exercise a debit-succeeds-then-credit-fails path.
+
+The fix is to make the unit atomic (single DB transaction around the pair, retried as a whole) or to move retry outside a transactional posting method, not to retry two independently-committing calls.
+
+DECISION: BLOCK
+REASON: The retried block has no rollback boundary, so a failure after the debit but before the credit re-posts the debit and leaves debit legs exceeding credit legs, violating double-entry balance.
