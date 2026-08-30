@@ -184,10 +184,12 @@ were shipped this programme, end-to-end with tests + executable gate demonstrati
   cap breach the relational spec can't see.
 - if / then / else — conditional/tiered values (`rate = if bal > 10000 then 5 else 10`). Catches a
   tiered-rate violation.
+- round(x, n) — banker's rounding, to pin exact monetary precision (`interest = round(bal*rate, 2)`).
+  (Honest limit: the f64 monitor's decimal tie-breaking can differ from BigDecimal; non-tie cases exact.)
 - => "Building a better language" is concrete and corpus-driven here: each construct was motivated by a
   real banking invariant it unlocked, and each measurably widened the executable gate's reach. v4 can
   now express the arithmetic of real loan/fee products (rates, caps, tiers) and gate against their drift.
-  Remaining gap noted: the day-count-exact rate factor for penny-perfect interest laws.
+  Remaining gaps: a RATIONAL (decimal) monitor for penny-perfect tie-exact rounding; day-count-exact rate factors.
 
 ## FINDING 10 — generality: the pattern holds in a SECOND domain (payment allocation)
 Payment allocation (split a partial payment across penalty/fee/interest/principal), 42 oracle cases:
