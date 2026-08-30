@@ -336,3 +336,112 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   v4/v3/prose/nospec numbers honestly (read the saved outputs to confirm the judge isn't over/under
   strict). Then iteration 5 = v4 (candidate: V5 wire vacuity into `check`, or V1 guard-combination
   reachability — but note the monotonic miss is an ENCODING loophole (skill), not only a check gap).
+
+---
+
+## FINAL SUMMARY
+
+Written at END_EPOCH (2026-08-30 ~07:37). The loop ran unattended over ~18 iterations, alternating
+harness ↔ v4. Honest throughout: negatives are logged as first-class findings, and every claim below
+was verified against saved artefacts, not surface numbers.
+
+### The one-line result
+
+v4 does everything v3 does and adds real NON-accuracy value, but it does NOT beat a frontier model on
+catch-rate — conflict-detection, regeneration and verification SATURATE at every scale I could build.
+v4's demonstrable edge is determinism, an auditable named core, an automatic `analyse` gate,
+dimensioned bite, and the elicit SURFACING disposition. On surfacing itself, v4 ties or marginally
+trails v3; the value is the elicit discipline both carry, not the v4 syntax.
+
+### Per-iteration (condensed early, detailed 14-18)
+
+- **1-3 (v4 + non-leading conflict eval):** added decimal/rational literals (fixed `0.02`-as-`0`
+  mis-lex that caused spurious contradictions); built the non-leading conflict harness (arms build a
+  spec, a catch = a SPONTANEOUS flag, never "are these consistent?"); coherent single analyse verdict.
+  Good: methodology no longer leads the witness. Bad: none material.
+- **4-6 (harness, strict judge, hard conflicts):** strict spontaneous-flag judge; harder
+  multi-constraint fixtures. **KEY HONEST FINDING (iter 6): conflict-detection SATURATES** — the model
+  catches buried multi-constraint conflicts in-head, including chains v4's linear spine cannot express.
+- **7-9 (SCALE probe):** 14-constraint buried-APR fixture. **DECISIVE (iter 9):** refutes any
+  catch-rate clear air — the model used COMPOUND effective APR my "clean" twin got wrong, i.e. I
+  cannot out-design a frontier model's domain knowledge in fixtures. Surfaced a v4 expressiveness
+  limit (nonlinear). Also shipped the analyse exit-code gate (iter 8).
+- **10-11 (v4 honesty):** PARTIAL coverage note when a term is nonlinear-and-not-checked; removed the
+  loan-specific rate-pinning that made Rate a constant — now Rate is a variable, general-purpose.
+- **12-13 (v4 + harness):** robustified the surfacing win across 4 features; negative literals
+  (unary minus).
+- **14 (surfacing robustness):** 4 features x 4 arms x reps. **Surfacing clear air CONFIRMED robust:**
+  elicit ~7/0.5 surfaced/guessed vs prose 3.8/5.1 (worse than none) vs nospec 5.0/4.4. Verified
+  genuine by reading outputs (v4 refuses to guess and lists OPEN questions; prose commits defaults as
+  recommendations). v4 ~= v3.
+- **15 (regression):** holistic re-run of every session change on the real demo specs — K55
+  cross-currency still caught, LoanSchedule SATISFIABLE PARTIAL + monotonic-not-entailed, fixed loan
+  exits 0, 47 tests pass. No regression from the session's many changes.
+- **16 (v4 soundness):** proved the polymorphic-literal generalisation is laundering-safe — a literal
+  adopts a NEIGHBOURING dimension but never bridges two incompatible ones (`money + mass` still errors
+  with a literal-0 present). Locked as `literal_does_not_launder_incompatible_dimensions` (48 tests).
+- **17 (judge robustness):** re-scored the 40 saved outputs with a SECOND, independently-worded judge
+  (ASKED/DECIDED/UNADDRESSED). **Every load-bearing ordering SURVIVES:** prose worse than none
+  (nospec surf 3.1 > prose 2.2; prose guesses more), elicit >> both, v4 ~= v3. Only ABSOLUTE
+  calibration is judge-dependent (~1-2 pt). The surfacing value is NOT a scoring artefact — but must
+  be reported as an ORDERING, never as "elicit scores 7/10".
+- **18 (v4 root-cause, BAD-for-v4 but honest):** on the stricter judge v4 ABSENT 2.1 > v3 1.5.
+  Root cause: the lean 114-line v4 elicit skill DROPPED V3's explicit coverage sweep ("are these
+  states complete? what else?"). v4 nails refuse-to-guess but doesn't force breadth, so more decisions
+  fall through unaddressed. Fix queued (port the sweep as ~3 lines), NOT shipped — unverified changes
+  in the final minutes violate the loop's own discipline.
+
+### v4 changes shipped this session (all with tests)
+
+Decimal/rational literals; contextual polymorphic literals (laundering-safe); non-vacuity /
+reachability check (force each guard true); requirement-feasibility (ground `some x :: C` into LRA);
+coherent single analyse verdict; analyse exit-code gate (non-zero on CONTRADICTORY / VACUOUS /
+INFEASIBLE); PARTIAL coverage honesty for nonlinear terms; rate-pin removal (Rate is a variable);
+negative literals (unary minus); polymorphic-literal soundness lock. v4 suite: 48 tests, 0 failures.
+
+### Settled findings
+
+1. **Accuracy saturates.** Conflict-detection, regeneration and verification all saturate against a
+   frontier model at every constructible scale — including conflicts requiring compound-interest math
+   v4's decidable linear spine cannot even express. Chasing catch-rate is a dead end.
+2. **v4's real value is non-accuracy:** determinism (same verdict every run), an auditable named core
+   (each diagnostic cites a named construct), an automatic gate (exit code for CI), v3-parity,
+   dimensioned bite (cross-currency/cross-dimension category errors), and the elicit SURFACING
+   disposition.
+3. **Surfacing is the one non-saturated axis, and it is judge-robust as an ORDERING:** any spec
+   process that forces refuse-to-guess beats prose and beats no-spec; PROSE IS WORSE THAN NONE
+   (asking for a spec licenses committing defaults as recommendations). Confirmed across 4 features
+   and 2 independent judges.
+4. **v4 ~= v3 on surfacing (marginally trails).** The win is the elicit discipline, not the v4
+   syntax. v4's edge over v3 must come from determinism / the gate / dimensioned types, not a higher
+   surfacing rate.
+5. **A spec does NOT make a frontier model more accurate.** The user's original hypothesis (a spec
+   constrains the model so less goes wrong) is not supported by these evals. What a spec does is
+   SURFACE the unknowable for a human to decide, and provide a deterministic, auditable, automatic
+   regression gate around the model's output.
+
+### Open backlog (ranked)
+
+1. **Port V3's coverage sweep into the v4 elicit skill** to cut ABSENT to <= v3 without raising
+   GUESSED (top item; verify with eval-elicit2 + eval-rejudge).
+2. Guard-combination reachability (DPLL(T)-lite) for conflicts needing 2+ guards simultaneously true
+   — note the monotonic miss is partly an ENCODING loophole (skill), not only a check gap.
+3. Scale-beyond-context probe (a spec too big to hold in one context) — still untested.
+4. v3-parity lifecycle gap.
+5. Nonlinear inexpressible — only NOTE it via PARTIAL; do not chase (undecidable; out of the spine).
+6. Token-efficiency test (banked): distillation via v4 may be more token-efficient than prose even if
+   not more accurate. Distill parked; returns as a seed-crystal spec over existing code.
+
+### Recommended next steps for the human sync
+
+- **Decide the pitch.** The evidence says: sell v4 as a deterministic, auditable regression GATE and
+  a decision-SURFACING front-end, NOT as a bug-catcher that beats the model. This is a positioning
+  decision, human-owned.
+- **Approve the elicit coverage-sweep fix** (backlog #1) — it is the only place v4 currently trails
+  v3, it is a skill edit not a syntax change, and it has a ready verification loop.
+- **Report surfacing as an ORDERING** in any external material, never as an absolute score — the
+  absolute numbers drift ~1-2 pt with the judge.
+- Consider whether the scale-beyond-context probe (#3) is worth building: it is the one untested place
+  a spec-as-external-memory could beat an unaided model on something other than disposition.
+
+END OF LOOP. No further iterations; wakeup not rescheduled.
