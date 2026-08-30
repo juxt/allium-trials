@@ -110,6 +110,20 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 16 — v4: close the polymorphic-literal laundering hole (regression test)
+- Probed the risk that generalising "0 is polymorphic" to ALL literals opened a laundering hole:
+  could a literal in an expression bridge two incompatible real dimensions? Tested 4 edges:
+  - `fee <= cap + 0` (money + literal-0) → clean. GOOD.
+  - `fee <= w` (money vs mass) → error. GOOD.
+  - `t <= fee + w` (money + mass, literal-0 elsewhere) → STILL errors "cannot add money(gbp) and
+    mass(kg)". GOOD — no laundering.
+  - `fee >= 0 - disc` (negative literal bridge, same dim) → clean. GOOD.
+- **=> The contextual-literal generalisation is SOUND: literals adopt a *neighbouring* dimension but
+  never launder two genuinely incompatible ones.** This is exactly the property the user's "look for
+  a general solution, not a money literal" pushed for — the general scalar mechanism holds without a
+  type hole. Locked as `literal_does_not_launder_incompatible_dimensions` (48 tests pass).
+  Commit: allium-tools.
+
 ### Iteration 15 — holistic regression of the session's v4 changes — CLEAN
 - After a session of many core changes (decimals, contextual literals, non-vacuity/reachability,
   requirement feasibility, coherent verdict, exit-code gate, PARTIAL coverage, rate-pin removal,
