@@ -110,6 +110,17 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 7 — harness: SCALE probe (the one place catch-rate clear air could remain)
+- Built a 14-constraint loan-product config with a conflict BURIED among distant constraints: base
+  1.75%/mo (=21%/yr, rule 4) + penalty 0.5%/mo (=6%/yr, rule 8), both counting toward APR (rule 11),
+  total 27% > the 24% APR cap (rule 3). The four clashing constraints are stated far apart among 14.
+  Plus a clean twin (cap 30%). Arms: v4 (encode all -> analyse) vs nospec (build, strict judge). 4 reps.
+- De-risked: analyse CATCHES the encoded conflict (CONTRADICTORY, core apr_counts+...). So the v4 side
+  is viable; the test is whether the MODEL misses the buried conflict while building.
+- Eval launched (runscale). HYPOTHESIS: if nospec < v4 on the buried conflict, that is the first
+  catch-rate clear air (scale beyond in-head composition). If nospec still 4/4, conflict-detection
+  saturates even at 14 constraints and the honest conclusion holds. Collect next wake. Commit: allium-trials.
+
 ### Iteration 6 — collected hard-conflict eval — MAJOR HONEST FINDING: conflict-detection saturates
 - Hard eval (runhard, strict judge, 2 reps): v4 6/6 caught 0 FA; nospec 6/6 (1 FA); prose 6/6 0 FA.
 - **Verified by reading outputs:** the model's hard_chain catch is GENUINE and deep — nospec
