@@ -62,3 +62,11 @@
 - Same law as solver E2 (value bugs 0/20). CONFIDENT, GENERAL: the relational spec catches DESYNC
   (relation-breaking) bugs ~100% and consistent-VALUE bugs ~0%, regardless of code type. Domains whose
   characteristic bugs are desyncs (double-entry/ledger/allocation) benefit; solver domains do not.
+
+## E6 (tolerance boundary) + solver deficiencies
+- desync detection threshold = the tol setting exactly: default 0.005 misses <=0.005 desync (0/15 at
+  +0.001), catches >0.005 (15/15 at +0.01); --tol 0 catches any nonzero desync (15/15 at +0.001).
+  => tolerance is a SETTING not a floor; but the default 0.005 is unsafe for exact domains (D2).
+- Solver deficiencies compiled in SOLVER-DEFICIENCIES.md (D1 reference-oracle = highest value; D2 per-
+  invariant tolerance; D3 skipped-invariant coverage; D4 vacuity/reachability; D5 trace coverage; D6
+  standard mutation operators). All fixable; several have prior art in TLA+/Alloy/model-based testing.

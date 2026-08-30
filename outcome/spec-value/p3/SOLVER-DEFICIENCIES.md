@@ -1,0 +1,53 @@
+# Solver / checker deficiencies found — and how to fix them (actionable)
+
+Framing (per the human): where the checker is weak is useful IF it is fixable — especially where other
+behavioural-spec languages already have the capability. Ranked by value.
+
+## D1 — No absolute-value / reference-oracle capability  [HIGHEST VALUE]
+Finding: the spec checks RELATIONAL invariants only, so it is blind to consistent-VALUE bugs — E2
+(0/20 solver arithmetic mutants), E5 (0/30 uniform-scale). This is the single biggest gap: it is why
+the spec adds no regression value on solver code and why golden/fixed-value tests are still needed.
+Fix: give a spec a way to pin ABSOLUTE behaviour, not just relations — a reference model / expected-
+value / refinement capability. Prior art: TLA+ refinement (implementation refines an abstract spec);
+model-based testing (assert the system against a reference model over generated inputs); QuickCheck
+"model" properties. With this, `interest = rate x balance` could be checked against an independently
+specified rate, catching the wrong-rate/mul mutants the current spec misses.
+
+## D2 — Single global monitor tolerance  [E6, easy fix]
+Finding: `monitor-schedule` uses one tolerance (default 0.005). At default, sub-0.005 desyncs escape
+(E6: +0.001 -> 0/15); at `--tol 0` any nonzero desync is caught (15/15). But different invariants need
+different tolerances in the SAME spec: double-entry must be EXACT (tol 0), floating schedule math needs
+an epsilon. One global tol cannot serve both, and the default 0.005 is unsafe for exact domains.
+Fix: per-invariant tolerance, or an `exact`/`approx(eps)` annotation on each invariant. Cheap.
+
+## D3 — Unmonitorable invariants silently skipped  [P2, correctness-of-confidence]
+Finding: `interest_on_balance` referenced a `given rate` absent from the traces, so the monitor SKIPPED
+it silently — an unchecked invariant reads as "fine" (false comfort). 
+Fix: (a) let the monitor bind givens / read them from the trace manifest so more invariants are
+checkable; (b) at minimum, LOUDLY report every skipped invariant as uncovered. Prior art: coverage
+reporting in most verification tools; "checked/total" summaries.
+
+## D4 — Weak vacuity / reachability / coverage detection  [P2]
+Finding: a pure vacuity (guard antecedent unreachable) was NOT caught by analyse; nothing flags "this
+guarded case never occurs in the traces". Vacuously-true invariants give false assurance.
+Fix: stronger vacuity + guard-reachability checks in analyse; in the monitor, report per-invariant how
+many times each guard's antecedent was actually exercised. Prior art: TLA+/Alloy vacuity checks; Alloy
+coverage; "trivially true" detection.
+
+## D5 — Trace-corpus coverage gaps  [E2]
+Finding: several E2 mutants showed changed=no because the 150-input grid never exercised the mutated
+site (the shipped test's targeted input did). The monitor only sees behaviour the corpus exercises, so
+under-sampled inputs are blind spots.
+Fix: coverage-guided trace generation (track which branches the traces hit), or PBT-style input
+generation aimed at maximising code/branch coverage. Prior art: coverage-guided fuzzing; PBT generators.
+
+## D6 — Completeness metric is battery-dependent  [P2, methodology]
+Finding: the "63% complete" number depends on the mutation operators I chose; not portable.
+Fix: adopt a standard mutation-operator set (e.g. PIT's operators) so completeness is a comparable,
+principled number rather than an artefact of the battery.
+
+## Net
+D1 is the load-bearing one: adding a reference/absolute-value capability would let Allium catch the
+value bugs that currently only golden tests catch — turning the "complementary" story into a fuller
+regression gate. D2-D6 are smaller, mostly-known fixes that raise the trustworthiness of the checks
+themselves (exactness, coverage honesty, vacuity). None is a fundamental barrier; all have prior art.
