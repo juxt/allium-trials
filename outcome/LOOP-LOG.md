@@ -110,6 +110,20 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 15 — holistic regression of the session's v4 changes — CLEAN
+- After a session of many core changes (decimals, contextual literals, non-vacuity/reachability,
+  requirement feasibility, coherent verdict, exit-code gate, PARTIAL coverage, rate-pin removal,
+  negative literals), re-ran the real demo specs end-to-end:
+  - K55-money `check`: still catches `cannot add money(gbp) and money(usd)` (1 error). GOOD.
+  - LoanScheduleInvariants `analyse`: SATISFIABLE over 3 periods **PARTIAL (1 nonlinear not checked)**;
+    `balance_monotonic` NOT entailed (counterexample); `closes_to_zero` independent. GOOD — PARTIAL
+    honesty and rate-pin removal both visible on a real spec.
+  - LoanScheduleInvariants-fixed `analyse`: exit=0 (monotonic now entailed). GOOD.
+  - Full v4 suite: 47 passed / 0 failed.
+- **=> No regression; the session's changes compose correctly on the real specimens, not just unit
+  fixtures.** rate-pin removal + PARTIAL are the load-bearing honesty upgrades; both behave on
+  LoanSchedule. Verification only, nothing to commit.
+
 ### Iteration 14 — collected 4-feature surfacing eval — SURFACING WIN CONFIRMED ROBUST
 - 4 features (late-fee, dormancy, overdraft, multi-currency) x 4 arms x 2 reps:
   nospec 5.0 surfaced / 4.4 guessed; prose 3.8 / 5.1 (WORSE than none, again); v3elicit 7.3 / 0.9;
