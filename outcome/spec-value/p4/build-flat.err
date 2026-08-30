@@ -2,3 +2,8 @@
 [nospec 1] match0.5=54/150 struct=150 closes=150 crashes=0 medres=6.21 | $0.081 21k
 [nospec 2] match0.5=54/150 struct=150 closes=150 crashes=0 medres=6.2167 | $0.061 21k
 [prose 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.087 21k
+[prose 1] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.071 21k
+[prose 2] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.089 21k
+[v4 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.099 22k
+[v4 1] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.105 22k
+[v4 2] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.119 22k

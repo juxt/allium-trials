@@ -109,6 +109,143 @@
           "maxres": 0.05
         }
       ]
+    },
+    {
+      "rep": 1,
+      "cost": 0.07121799999999999,
+      "tok": 21236,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 150,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d100_r0_m1",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m2",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m3",
+          "maxres": 0
+        }
+      ]
+    },
+    {
+      "rep": 2,
+      "cost": 0.08886649999999999,
+      "tok": 21001,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 150,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d100_r0_m1",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m2",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m3",
+          "maxres": 0
+        }
+      ]
+    }
+  ],
+  "v4": [
+    {
+      "rep": 0,
+      "cost": 0.09921749999999999,
+      "tok": 21552,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 144,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
+    },
+    {
+      "rep": 1,
+      "cost": 0.1052985,
+      "tok": 21809,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 137,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
+    },
+    {
+      "rep": 2,
+      "cost": 0.1187035,
+      "tok": 22354,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 137,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
     }
   ]
 }
