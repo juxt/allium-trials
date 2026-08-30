@@ -121,3 +121,18 @@ find_witness), and I could not pin it precisely by inspection in the time availa
 outcome/spec-value/p3/temporal/{some.allium,iso.allium,uniq.allium,*.trace}. Recommended: add a
 relational-monitor correctness test-suite (every/some/no/exists-one x single/multi-quantifier x
 identity) FIRST, then fix eval_quant/eval_rel to pass it. This is the top checker-correctness item.
+
+## D8 — *** RETRACTED (my error, not a bug) ***
+D8 was a FALSE ALARM caused by a malformed trace format on my part. `parse_trace` names entities via
+`entity=<name>` and SKIPS tokens without `=`. My repro traces used `event a is_open=T`, so "event" and
+"a" were skipped and EVERY line got `entity=""` — collapsing all events into one entity. That single
+last-write entity produced every phantom symptom (some "false-flag", uniqueness "false-pass").
+Re-tested with correct `entity=` format: the relational quantified monitor is CORRECT —
+  - `some a :: is_open(a)`: holds when one open, violates when none. ✓
+  - `every a :: every b :: (is_open(a) and is_open(b)) implies (a=b)` (at-most-one/uniqueness): VIOLATES
+    on two open, holds on one. ✓  -> uniqueness/replay IS checkable.
+  - `every a :: every b :: a = b`: violates on distinct entities. ✓
+No fix needed; nothing was changed in the tool (the earlier attempted change was reverted). Lesson:
+verify the trace format before diagnosing the checker. GOOD NEWS for the capability map: relational
+quantified invariants (some/every/no/exists-one, entity identity, uniqueness/at-most-one) WORK — so
+replay/no-duplicate/single-active is already a catchable class.
