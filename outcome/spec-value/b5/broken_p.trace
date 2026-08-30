@@ -1,0 +1,4 @@
+period=0 debit=700.00 credit=0.00
+period=1 debit=300.00 credit=0.00
+period=2 debit=0.00 credit=1000.00
+period=3 debit=50.00 credit=0.00

@@ -1,0 +1,42 @@
+-- allium: 4
+-- Distilled behavioural spec of the LOAN ACCOUNTING subsystem: how a posted loan transaction
+-- becomes balanced journal entries. This is the artefact a team maintains beside the code. It
+-- speaks the domain, names NO implementation identifiers (no files, classes, methods), and is the
+-- crystallised result of one past exploration. Modelled over the legs of one posted transaction.
+--
+-- The behavioural map (what a reader learns without touching the code):
+--   * A posted loan transaction is split into TYPED LEGS: principal, interest, fee, penalty,
+--     overpayment. Each leg posts a debit amount and a credit amount to the general ledger, chosen
+--     by a per-type general-ledger account mapping.
+--   * TWO POSTING REGIMES exist: cash basis and accrual basis. They differ in WHEN interest and
+--     fees reach the ledger. On cash basis a leg posts when cash moves (at repayment). On accrual
+--     basis interest and fees post when they ACCRUE, ahead of payment, and repayment then clears
+--     the accrued receivable. Principal postings are the same shape on both.
+--   * BALANCE IS EMERGENT, NOT ENFORCED. Over all legs of one posted transaction total debits equal
+--     total credits, but nothing on the loan posting path asserts it. It holds only because each
+--     regime's per-type branch is hand-written to post a matching debit and credit. A single leg is
+--     one-sided; balance is invisible at any one posting site and only appears across all legs.
+--   * The debit=credit assertion that DOES exist in the wider ledger guards a different entry route
+--     (operator-submitted manual entries), not the loan-generated path. A loan-path leg added on
+--     one side without its matching counterpart posts unbalanced, silently, with nothing to catch it.
+--   * CHARGE-OFF repayment posting is the sharpest hazard: its two sides are accumulated separately
+--     and never reconciled against each other.
+
+component LoanPosting
+  entity Leg                          -- the legs of one posted loan transaction
+
+  observable state debit(Leg) : Money(gbp)      -- debit this leg posts to the general ledger
+  observable state credit(Leg) : Money(gbp)     -- credit this leg posts to the general ledger
+
+  -- No leg posts a negative amount to either side.
+  invariant legs_nonneg means every l ::
+    debit(l) >= 0 and credit(l) >= 0
+
+  -- THE load-bearing invariant: over all legs of the transaction, total debits = total credits.
+  invariant double_entry_balances means
+    sum l :: debit(l) = sum l :: credit(l)
+
+  -- A single leg may be one-sided (pure debit or pure credit); only the whole must balance.
+  requirement leg_may_be_one_sided means some l ::
+    debit(l) > 0 and credit(l) = 0
+end
