@@ -1,0 +1,34 @@
+## Specification
+
+When a payment becomes overdue, the system charges a single late fee against the overdue amount. That fee is made of two parts: a base charge and a surcharge. The base charge is 2% of the overdue amount. The surcharge is a further 1% of the same overdue amount. The two parts are applied to the same base figure, not compounded, so the total late fee is 3% of the overdue amount.
+
+The 3% total is not an independent input. It is what the two components sum to, and the operator answers confirm the arithmetic holds: 2% plus 1% is 3%. That agreement matters for implementation. The components are the source of truth and the total is a derived consequence, so the code should never carry 3% as its own separate constant that could drift out of step with the parts.
+
+Worked example: an overdue amount of £100 attracts a £2 base charge and a £1 surcharge, for a £3 late fee.
+
+A few points the operator answers leave open, which I would confirm before or during build rather than guess at:
+
+- **Rounding.** Percentages of arbitrary amounts produce fractions of a penny. I would round the final fee to the currency's minor unit, and decide whether each component rounds independently or only the total does. Rounding the total once avoids the two parts summing to something a penny off 3%.
+- **The overdue amount itself.** Whether that is principal only, or principal plus any accrued interest, and whether a fee already applied is excluded from a later overdue calculation.
+- **Application cadence.** Whether this is a one-off charge when payment tips overdue, or recurs.
+
+## Implementation outline
+
+I would model the fee as a small pure calculation with the two rates as named constants and the total expressed as their sum, so the invariant lives in one place:
+
+```
+BASE_RATE      = 0.02
+SURCHARGE_RATE = 0.01
+LATE_FEE_RATE  = BASE_RATE + SURCHARGE_RATE   // 0.03, derived not hard-coded
+
+lateFee(overdue):
+    base      = round(overdue * BASE_RATE)
+    surcharge = round(overdue * SURCHARGE_RATE)
+    return base + surcharge
+```
+
+Using currency-safe arithmetic throughout, so integer minor units or a decimal type rather than binary floating point. That removes the 0.02 and 0.01 representation errors that would otherwise creep into the totals.
+
+For tests I would assert the property directly: for any non-negative overdue amount, `lateFee(x)` equals 3% of `x` within the rounding tolerance, and the returned base and surcharge sum to the fee. I would pin the worked example (£100 to £3) as a regression case, and add edge cases for zero, sub-penny amounts, and a large amount where rounding behaviour is visible.
+
+Persisting the two components separately, rather than only the combined fee, keeps the charge auditable and lets a statement show the customer where the 3% came from.

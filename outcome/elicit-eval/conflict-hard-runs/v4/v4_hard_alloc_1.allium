@@ -1,0 +1,36 @@
+-- allium: 4
+--
+-- Decision record (elicit-v4)
+-- Q: How is each repayment split across buckets?
+-- A: Split across five buckets — principal, interest, fees, escrow, insurance —
+--    which together must account for the ENTIRE payment.
+-- Q: What fraction goes to each bucket?
+-- A: principal 41.5%, interest 28.5%, fees 18.5%, escrow 8.5%, insurance 4.5%.
+--
+-- Encoded literally, NOT reconciled: the "accounts for the whole payment" answer and
+-- the five share answers are stated in the same terms over the same subject r and left
+-- for `analyse` to judge. (The five stated shares sum to 101.5%, not 100%; this is not
+-- smoothed away here.) `a_real_repayment` asserts the constrained case is reachable so
+-- the split invariants cannot pass vacuously by every payment being zero.
+
+component RepaymentSplit
+  entity Repayment
+
+  observable state payment(Repayment) : Money
+  observable state principal(Repayment) : Money
+  observable state interest(Repayment) : Money
+  observable state fees(Repayment) : Money
+  observable state escrow(Repayment) : Money
+  observable state insurance(Repayment) : Money
+
+  invariant principal_share means every r :: principal(r) = 0.415 * payment(r)
+  invariant interest_share  means every r :: interest(r)  = 0.285 * payment(r)
+  invariant fees_share      means every r :: fees(r)      = 0.185 * payment(r)
+  invariant escrow_share    means every r :: escrow(r)    = 0.085 * payment(r)
+  invariant insurance_share means every r :: insurance(r) = 0.045 * payment(r)
+
+  invariant buckets_account_for_whole means every r ::
+    principal(r) + interest(r) + fees(r) + escrow(r) + insurance(r) = payment(r)
+
+  requirement a_real_repayment means some r :: payment(r) > 0
+end

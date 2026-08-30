@@ -1,0 +1,23 @@
+Short version: as stated these four facts are consistent (2% + 1% = 3%), so there's no arithmetic conflict to resolve. The work isn't the maths, it's the decisions the four bullets leave open. Here's how I'd build it and what I'd pin down.
+
+## Plan
+
+The fee is two line items, base and surcharge, because that's the structure the operators specified. I compute each from the overdue amount, and the total is their sum by construction. I do not independently compute "3% of overdue" at runtime, so there is nothing to reconcile in production. The 3% figure is a statement of intent, and I capture it as a test, not as a second code path.
+
+## Concrete decisions
+
+**"3%" is derived, not an input.** The total is `base + surcharge`, always. If I also computed `0.03 × overdue` separately and displayed that, the two could disagree by a minor unit once rounding enters, and then the invoice line items wouldn't add up to the stated total. So the component sum is authoritative and the 3% is asserted in a test (`base + surcharge` within one minor unit of `round(0.03 × overdue)`) to catch future drift if someone changes a rate.
+
+**Money is never a float.** Integer minor units (pence) or a fixed-precision Decimal. `0.02`, `0.01` and any intermediate are exact-decimal, so a repeated `2.0 + 1.0 == 3.0`-style float surprise can't happen. Rate constants are declared once.
+
+**Rounding is defined and applied once per line item.** Each of base and surcharge is rounded to the minor unit as it's produced, half-up by default (I'd confirm the operator's preferred mode, banker's rounding is the other common choice for finance). I round components, not the total, because the components are what appear on the invoice and get charged. This is the one place the "2% + 1% vs 3%" distinction actually bites: `round(2%) + round(1%)` can differ from `round(3%)` for some amounts. Choosing the component sum as truth resolves it deterministically.
+
+**"Overdue amount" needs a definition and I'll assume the narrow one.** I take it as the outstanding principal at the moment of assessment, excluding any previously applied late fees, so fees don't compound on fees unless that's explicitly wanted. Currency is single and fixed for now.
+
+**Boundaries.** Zero or negative overdue produces a zero fee, not a negative one. No cap or floor is specified, so I apply none but leave the seam for a minimum fee if the operator adds one. Assessment timing (what makes an amount "overdue", grace period, timezone of the due date) is out of scope for this calculation and lives upstream.
+
+## What I'd confirm before shipping
+
+Rounding mode (half-up vs banker's), whether "overdue amount" includes prior fees, and whether there's an intended minimum or maximum fee. None of these block implementation; they change at most a constant or a rounding call, and each has a sensible default above.
+
+If you'd rather I treat 3% as the authoritative total and back out the split from it (total first, then apportion base and surcharge to sum exactly to it), that's a one-line change of which value is derived. I've defaulted to component-first because the operators described the fee as base-plus-surcharge, so those are the numbers that should be exact.

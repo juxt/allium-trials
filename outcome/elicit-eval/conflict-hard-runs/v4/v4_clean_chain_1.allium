@@ -1,0 +1,43 @@
+-- allium: 4
+--
+-- Elicitation record (confirmed operator answers)
+--   Q: How is the late fee composed?
+--     A: The late fee is a base charge plus a surcharge.
+--   Q: What is the base?
+--     A: The base is 2% of the overdue amount.
+--   Q: What is the surcharge?
+--     A: The surcharge is 1% of the overdue amount.
+--   Q: What should the late fee total?
+--     A: The late fee should come out to 3% of the overdue amount.
+--
+-- Each answer is encoded literally as its own invariant; no reconciliation.
+-- base, surcharge, late_fee and overdue are four distinct observable
+-- quantities (one predicate per concept), all quantified over the same
+-- account so their constraints compose on a single instance. The ratios
+-- 0.02/0.01/0.03 are dimensionless and multiply Money to yield Money.
+
+component LateFee
+  entity Account
+
+  observable state overdue(Account) : Money
+  observable state base(Account) : Money
+  observable state surcharge(Account) : Money
+  observable state late_fee(Account) : Money
+
+  invariant base_is_2pct
+    means every a :: base(a) = 0.02 * overdue(a)
+
+  invariant surcharge_is_1pct
+    means every a :: surcharge(a) = 0.01 * overdue(a)
+
+  invariant fee_is_base_plus_surcharge
+    means every a :: late_fee(a) = base(a) + surcharge(a)
+
+  invariant fee_is_3pct
+    means every a :: late_fee(a) = 0.03 * overdue(a)
+
+  -- Reachability: a real overdue charge must be able to occur, so none of
+  -- the invariants above can pass vacuously by overdue never being positive.
+  requirement a_real_charge
+    means some a :: overdue(a) > 0
+end

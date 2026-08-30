@@ -1,0 +1,54 @@
+-- allium: 4
+--
+-- Late-fee elicitation record (confirmed operator answers)
+--   Q1: How is the late fee composed?
+--     A1: The late fee is a base charge plus a surcharge.
+--   Q2: What is the base charge?
+--     A2: The base charge is 2% of the overdue amount.
+--   Q3: What is the surcharge?
+--     A3: The surcharge is 1% of the total outstanding balance.
+--   Q4: How does the total outstanding balance relate to the overdue amount?
+--     A4: For an overdue instalment, the total outstanding balance is
+--         five times the overdue amount.
+--   Q5: What should the late fee come out to overall?
+--     A5: The late fee should come out to 4% of the overdue amount.
+--
+-- Each answer is encoded literally, in the same terms, over the same subject.
+-- Nothing is reconciled: A1–A4 fix the late fee at 0.02*overdue + 0.01*(5*overdue)
+-- = 0.07*overdue, while A5 fixes it at 0.04*overdue. These are encoded as they
+-- were stated and left for `allium analyse` to judge.
+
+component LateFee
+  entity Instalment
+
+  observable state overdue_amount(Instalment)      : Money
+  observable state outstanding_balance(Instalment) : Money
+  observable state base_charge(Instalment)         : Money
+  observable state surcharge(Instalment)           : Money
+  observable state late_fee(Instalment)            : Money
+
+  -- A1: late fee = base charge + surcharge
+  invariant fee_is_base_plus_surcharge means
+    every i :: late_fee(i) = base_charge(i) + surcharge(i)
+
+  -- A2: base charge = 2% of the overdue amount
+  invariant base_is_2pct_of_overdue means
+    every i :: base_charge(i) = 0.02 * overdue_amount(i)
+
+  -- A3: surcharge = 1% of the total outstanding balance
+  invariant surcharge_is_1pct_of_balance means
+    every i :: surcharge(i) = 0.01 * outstanding_balance(i)
+
+  -- A4: for an overdue instalment, balance = 5 * overdue amount
+  invariant balance_is_5x_overdue means
+    every i :: outstanding_balance(i) = 5 * overdue_amount(i)
+
+  -- A5: late fee = 4% of the overdue amount
+  invariant fee_is_4pct_of_overdue means
+    every i :: late_fee(i) = 0.04 * overdue_amount(i)
+
+  -- Reachability: the constrained case must actually occur, so the rule set
+  -- cannot pass vacuously via overdue_amount = 0 (where 0.07*0 = 0.04*0 holds).
+  requirement a_real_overdue_instalment means
+    some i :: overdue_amount(i) > 0
+end

@@ -1,0 +1,20 @@
+These three facts can't all hold at once, so I can't write a spec that honours all of them. Before any prose, the arithmetic needs resolving.
+
+3% of a 500 instalment is 15. The confirmed cap says the fee must land between 10 and 12 inclusive. 15 sits outside that range, so the rate rule and the bound contradict each other on the very instalment amount you've given me.
+
+It's not a rounding gap either. For a 3% rate to produce a fee in [10, 12], the instalment would have to be between 333.33 and 400. For a 500 instalment to yield a fee in [10, 12], the rate would have to be between 2% and 2.4%. At 500 and 3%, the only consistent fee is 15.
+
+So one of the three inputs is wrong or I'm missing a step. The likely candidates:
+
+- **The bound is really a clamp.** The fee is 3% but capped, so anything above 12 is pulled down to 12 and anything below 10 pushed up to 10. On a 500 instalment every fee would then be 12 flat, which makes the 3% rate almost decorative. Worth confirming that's intended.
+- **The rate is wrong.** If the fee genuinely must be 10 to 12 on a 500 instalment, the rate is nearer 2% to 2.4%, not 3%.
+- **The instalment is wrong, or varies.** If instalments actually range roughly 333 to 400, then 3% lands in [10, 12] naturally and the bound is just a sanity check on that range. In that case "500 each" is the input to fix.
+- **The bound is a validation guard, not a formula constraint**, meant for a different, smaller instalment tier than the 500 one.
+
+Tell me which of those is the real intent and I'll write the spec against it. My guess, going on how these features usually work, is the second reading: the bound is the true business rule and 3% is an approximation someone wrote down. But I don't want to guess a rate into a payments feature.
+
+Once the resolution is fixed, the spec and implementation are short:
+
+The fee is a pure function of the instalment amount. Compute rate times amount, apply the clamp if that's the agreed behaviour, round to whole currency units, and reject or log any result that falls outside the agreed bound as a data error rather than silently emitting it. The bound then doubles as a runtime assertion: if a future instalment amount ever drives the fee out of [10, 12], the code raises rather than charging a number nobody signed off on. Money maths stays in integer minor units or decimals throughout, never floats. That guard is the whole reason the contradiction matters. Ship it as written and the assertion fires on the first real 500 instalment.
+
+Which input should I hold fixed?

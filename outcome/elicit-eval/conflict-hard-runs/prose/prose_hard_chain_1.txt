@@ -1,0 +1,32 @@
+I can't write this spec as it stands, because the numbers don't reconcile. Let me show why before proposing anything.
+
+## The conflict
+
+Take the overdue amount as `D`. The four numeric facts give:
+
+- Base charge = 2% of `D` = `0.02D`
+- Total outstanding balance = 5 × `D` = `5D`
+- Surcharge = 1% of `5D` = `0.05D`
+- Late fee = base + surcharge = `0.02D + 0.05D` = `0.07D`
+
+So the components force the late fee to **7% of the overdue amount**. The fifth fact says it should be **4%**. Those can't both be true. This isn't a rounding gap or an edge case, it's a straight arithmetic contradiction, and any spec I write would have to silently drop one of the five confirmed answers to look coherent. That's the wrong move.
+
+## What's likely wrong
+
+The 4% target and the 2%+1% component structure are the parts most likely to be firm (they read like policy). The two derived multipliers are the softer links. Any one of these single changes makes everything consistent:
+
+- **Multiplier is 2, not 5.** Then surcharge = 1% of `2D` = `0.02D`, and total = `0.02D + 0.02D` = 4%. This is my lead guess: "five times" may be a mis-stated relationship, or the surcharge base isn't meant to be the whole outstanding balance.
+- **Surcharge rate is 0.4%, not 1%.** Then `0.004 × 5D` = `0.02D`, total 4%.
+- **The 4% figure is stale and 7% is correct.** The components are right and the summary target is the error.
+
+I'd rank the first as most plausible, but I'm guessing at intent, which is exactly what a spec shouldn't do.
+
+## What I need
+
+One of these, confirmed by the operator:
+
+1. Is the intended late fee **4%** or **7%** of the overdue amount?
+2. If 4%, which lever is wrong: the **5× multiplier**, the **1% surcharge rate**, or the **base the surcharge applies to** (whole outstanding balance vs something narrower)?
+3. Is "five times the overdue amount" a fixed definitional fact for an overdue instalment, or an estimate that varies by schedule?
+
+Once I have those, the spec is a few lines and the implementation is trivial: compute base and surcharge from confirmed rates, sum, and assert the result matches the stated target as a guard so this class of drift is caught in a test rather than in production. I'd rather resolve the contradiction now than encode it and have the guard fail on the first run.

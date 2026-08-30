@@ -1,0 +1,34 @@
+-- allium: 4
+-- Q: How is the late fee calculated?
+-- A: The late fee is 3% of the instalment amount.
+-- Q: What is the instalment amount?
+-- A: Instalments are 500 each.
+-- Q: What band must the late fee fall within?
+-- A: The late fee must land between 10 and 12 inclusive.
+component LateFee
+  entity Instalment
+
+  -- One predicate per concept: the instalment's amount and its late fee,
+  -- both money, so the literals below take the money dimension.
+  observable state amount(Instalment) : Money
+  observable state late_fee(Instalment) : Money
+
+  -- "Instalments are 500 each."
+  invariant instalment_is_500 means every x :: amount(x) = 500
+
+  -- "The late fee is 3% of the instalment amount."
+  -- Written as fee * 100 = amount * 3 to keep it in whole money terms
+  -- (i.e. fee = amount * 3 / 100), no decimal literal.
+  invariant fee_is_three_percent means every x :: late_fee(x) * 100 = amount(x) * 3
+
+  -- "The late fee must land between 10 and 12 inclusive."
+  invariant fee_within_band means every x :: late_fee(x) >= 10 and late_fee(x) <= 12
+
+  -- Reachability: the system must actually be able to emit an instalment whose
+  -- late fee sits in the mandated band. Without this, the three invariants above
+  -- are satisfiable only VACUOUSLY (no instalment ever exists), hiding the clash.
+  -- With it, feasibility must witness one instalment: amount = 500 forces
+  -- late_fee = 15, which cannot also lie in [10, 12]. The requirement is
+  -- INFEASIBLE, blocked by instalment_is_500 + fee_is_three_percent + fee_within_band.
+  requirement a_late_fee_in_band means exists x :: late_fee(x) >= 10 and late_fee(x) <= 12
+end

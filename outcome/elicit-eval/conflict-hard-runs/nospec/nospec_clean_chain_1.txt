@@ -1,0 +1,21 @@
+The three statements are consistent, so there's nothing to reconcile: base 2% plus surcharge 1% is 3% of the overdue amount, and the stated total agrees. I'll implement it as given. The real work is in the decisions the prose leaves open, and the one genuine trap is rounding.
+
+## Plan
+
+A single pure function, `lateFee(overdueAmount)`, returning a fee broken into base, surcharge and total. It sits in the billing/charges module alongside existing money handling, with unit tests covering the rounding boundaries and the edge inputs below. No I/O, no clock, no side effects, so it's trivially testable and the callers decide when to apply it.
+
+## Concrete decisions
+
+**Money type and precision.** Compute on the existing money representation (minor units as integers, or `Decimal`, whichever the codebase already uses), never binary floats. If the surrounding code passes floats, I convert to the exact type at the boundary and reject anything I can't represent exactly.
+
+**Rounding is the one decision that actually matters here.** "Base + surcharge" and "comes out to 3%" are two descriptions of the same fee, and they can diverge by a cent if each component is rounded independently. My rule: compute the total as a single 3% calculation and round once (banker's rounding / half-to-even by default, or half-up if that's the house convention already in the billing code). Then derive the components so they reconcile exactly: base = round(2%), surcharge = total − base. That guarantees three invariants hold for every input: base + surcharge == total, total == round(3% × overdue), and no phantom cent appears from double rounding. I'll assert these in tests over a sweep of amounts, including ones where naive per-component rounding would drift (values near the half-cent, e.g. an overdue amount whose 1% lands on x.5 minor units).
+
+**"Overdue amount" is the principal in arrears at the moment the fee is assessed**, before any prior fees. I will not compound the late fee on top of an earlier late fee unless a rule says so, and no such rule was given.
+
+**Zero and negative.** Zero overdue yields a zero fee, all three components zero. Negative or non-finite input is a programmer error, not a business case, so it raises rather than silently returning a credit.
+
+**Currency.** The function is currency-agnostic and operates in the amount's own minor unit, so a zero-decimal currency (JPY) and a two-decimal one (GBP) both round correctly against their own smallest unit rather than a hardcoded 100.
+
+**What I'm not doing without a further answer:** no cap or floor on the fee, no grace period, no tax treatment, no persistence or ledger posting. Those weren't specified, and I'd rather ship the arithmetic correctly and ask than invent policy. If any of those exist, point me at the rule and I'll fold it in.
+
+One flag for the record: nothing here conflicts, so I've built it as stated. The only place a bug could hide is the rounding reconciliation, which is why the components are derived from the rounded total rather than rounded independently.

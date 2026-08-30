@@ -1,0 +1,40 @@
+-- allium: 4
+--
+-- Elicitation record (v4). Each firm answer encoded literally; nothing reconciled.
+--
+-- Q: How is the late fee calculated?
+-- A: The late fee is 3% of the instalment amount.
+--
+-- Q: What is the instalment amount?
+-- A: Instalments are 500 each.
+--
+-- Q: What bounds must the late fee satisfy?
+-- A: The late fee must land between 10 and 12 inclusive.
+
+component LateFee
+  entity Instalment
+
+  observable state instalment_amount(Instalment) : Money
+  observable state late_fee(Instalment) : Money
+
+  -- 3% of the instalment amount. One predicate for the fee; 0.03 is a
+  -- dimensionless multiplier, so late_fee stays Money (Money = Money * scalar).
+  invariant fee_is_three_percent means
+    every i :: late_fee(i) = instalment_amount(i) * 0.03
+
+  -- 500 each. Money literal against the Money amount.
+  invariant instalment_is_500 means
+    every i :: instalment_amount(i) = 500
+
+  -- Between 10 and 12 inclusive. Money band against the Money fee.
+  invariant fee_in_band means
+    every i :: late_fee(i) >= 10 and late_fee(i) <= 12
+
+  -- The invariants are `every`-quantified and so hold vacuously over the empty
+  -- model. Assert that an instalment actually occurs, so the band, the 3% rule
+  -- and the 500 amount must compose on one real instance rather than passing on
+  -- nothing. This is what forces analyse to bite: fee = 500 * 0.03 = 15, which
+  -- cannot lie in [10, 12].
+  requirement instalments_occur means
+    some i :: instalment_amount(i) = 500
+end

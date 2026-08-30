@@ -1,0 +1,47 @@
+Before I write the spec, there's a blocking inconsistency in the confirmed answers that I can't paper over.
+
+## The problem
+
+The five buckets are required to "together account for the entire payment", i.e. sum to 100%. The stated percentages sum to **101.5%**:
+
+```
+principal   41.5
+interest    28.5
+fees        18.5
+escrow       8.5
+insurance    4.5
+           ------
+total      101.5
+```
+
+So the allocation is over-subscribed by 1.5 points. As written it's not implementable: any code that splits a payment across these five buckets either exceeds the payment total by 1.5%, or has to silently drop/normalise the surplus, which means the real behaviour would differ from what the answers say. I don't want to invent that decision.
+
+There's also a naming mismatch worth flagging: the feature is called "late-payment-fee", but the answers actually describe a **repayment allocation waterfall** across five buckets. The fee is only one of the five destinations. I'll assume the allocation is the real subject, but tell me if a distinct late-fee *assessment* rule is also in scope.
+
+## What I need from you
+
+One number has to move by 1.5 points (or the constraint has to change). I can't guess which bucket is wrong, because every option is a single clean edit and each is equally plausible:
+
+- **principal** 41.5 → 40.0
+- **fees** 18.5 → 17.0
+- **escrow** 8.5 → 7.0
+- or drop the "must sum to 100%" constraint and let a residual bucket (usually principal) absorb the remainder.
+
+The last option is a genuinely different design, so it's your call, not mine.
+
+## The spec, once a number is fixed
+
+Assuming the percentages are corrected to sum to 100%, the intended behaviour is:
+
+Every repayment received against a loan is divided into five destinations in fixed proportions: principal, interest, fees, escrow and insurance. The proportions are constant and do not depend on the amount, the loan state, or how late the payment is. The five allocated amounts must sum exactly to the payment received, with no money created or lost.
+
+The one part the answers don't settle is **rounding**. Percentages of a currency amount rarely land on whole cents, so the spec has to say what happens to the fractional remainder. The standard rule: compute each bucket by its percentage, round each down to the minor unit (pence/cents), then assign the leftover remainder to a single designated bucket (typically principal) so the five parts still sum to the exact payment. I'll write it that way unless you prefer largest-remainder or a different residual bucket.
+
+## Implementation outline
+
+- Represent money as integer minor units (pence), never floats. Percentages become a rational split, not floating-point multiplication, to avoid drift.
+- A single `allocate(payment)` function: multiply the payment by each bucket's basis points, integer-divide by 10,000, sum the five, then add `payment − sum(parts)` to the residual bucket. This guarantees exact conservation by construction.
+- Keep the bucket table (name → basis points) as data, validated at load time with an assertion that the basis points sum to exactly 10,000. That assertion is what would have caught this 101.5% problem before it reached code.
+- Property test: for any non-negative payment, the five parts are non-negative and sum to exactly the payment. Example tests pin the rounding behaviour on amounts that don't divide cleanly.
+
+Tell me which bucket to correct (or that principal should absorb a residual), and confirm the rounding rule, and I'll turn the prose above into the final spec.

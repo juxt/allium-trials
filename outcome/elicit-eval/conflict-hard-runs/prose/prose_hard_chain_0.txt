@@ -1,0 +1,46 @@
+Before writing the spec, I need to flag a conflict in the numbers, because as stated they can't all hold at once.
+
+## The arithmetic doesn't close
+
+Take the four mechanical rules and follow them through for an overdue instalment:
+
+- Base charge: 2% of the overdue amount → `0.02 × overdue`
+- Total outstanding balance: five times the overdue amount → `5 × overdue`
+- Surcharge: 1% of that balance → `0.01 × 5 × overdue = 0.05 × overdue`
+- Late fee: base + surcharge → `0.02 × overdue + 0.05 × overdue = 0.07 × overdue`
+
+So the rules produce a late fee of **7% of the overdue amount**. The fifth statement says it should come out to **4%**. Those can't both be true. One of the five inputs is wrong, and I can't tell which from what I have.
+
+This matters because whichever constraint I silently drop, I ship a different fee. If I honour the component rules I overcharge relative to the 4% target; if I honour the 4% target I have to change one of the rates or the balance multiple. Picking for you would bury the disagreement in code.
+
+## What I need decided
+
+The "should come out to 4%" line reads like an expected-outcome check rather than a separate rule, which suggests one of the component figures is the typo. The plausible corrections, each of which *does* close to 4%:
+
+- **Surcharge is 0.5%, not 1%** → `0.02 + 0.005×5 = 0.02 + 0.025 = 0.045`. Close but gives 4.5%, not 4%. Doesn't quite land.
+- **Base is 1% and surcharge 0.6%**, or similar re-rating. Arbitrary; unlikely.
+- **Balance is 2× the overdue amount, not 5×** → `0.02 + 0.01×2 = 0.04`. Lands exactly on 4%.
+- **Surcharge applies to the overdue amount at 2%, base at 2%**, i.e. the "outstanding balance" wording is wrong → `0.02 + 0.02 = 0.04`. Also lands on 4%.
+
+Two of these hit 4% exactly (balance = 2× overdue, or the surcharge base is the overdue amount at 2%). The 4% target itself might also be the mistaken figure, in which case 7% stands. I won't guess between them.
+
+So the one question is: **which of these is authoritative — the component rules (7%) or the 4% total?** And if the total, is it the balance multiple (5×) or the surcharge base that's wrong?
+
+## The spec, written against the resolution
+
+I'll give it in a form that's correct once you tell me which constraint gives. The structure is stable regardless; only two constants and one reference move.
+
+> When an instalment becomes overdue, the system charges a late fee composed of two parts. The **base charge** is a fixed percentage of the overdue amount. The **surcharge** is a fixed percentage of a reference balance, where for an overdue instalment that reference balance is a fixed multiple of the overdue amount. The late fee is the sum of the two, rounded to the account's minor currency unit. The fee is computed once at the moment the instalment is marked overdue and does not compound.
+
+The tunable values are: base rate (2% as stated), surcharge rate (1% as stated), and balance multiple (5× as stated, but the prime suspect for the typo). With the numbers as given these yield 7%; with the balance multiple at 2× they yield the stated 4% target.
+
+## Implementation outline
+
+Independent of the resolution, the shape is the same:
+
+- **Pure calculation function.** `lateFee(overdueAmount, outstandingBalance)` returning base + surcharge. Keep the three rates and the instalment balance-multiple as named constants (or config), not literals, precisely because one of them is in dispute. `outstandingBalance` is passed in rather than derived inside, so the "5× overdue for an instalment" rule lives at the caller and the function stays general for non-instalment cases.
+- **Money handling.** Do the percentage maths in integer minor units or a decimal type, not floats, and round once at the end to avoid half-penny drift. Fix the rounding mode explicitly (banker's vs. half-up) since a fee calculation will get audited.
+- **A guard test that encodes the target.** One test asserts that for an overdue instalment the total equals the agreed percentage of the overdue amount. That test is exactly where today's contradiction would have surfaced: with the rules as written it asserts 4% and computes 7%, and fails. That's the point — it turns the disagreement into a red test rather than a silent overcharge.
+- **Edge cases to pin down with you:** zero or negative overdue amount, a fee below a minimum charge, currency rounding per account, and whether the fee is ever recomputed if the overdue amount changes before payment.
+
+Tell me which constraint is authoritative and I'll collapse this to a single concrete spec with fixed constants.

@@ -1,0 +1,33 @@
+Before I write any code, two things about these "confirmed answers" need flagging, because shipping on them as-is would be a mistake.
+
+## The numbers are consistent, but they don't describe the feature
+
+The split sums cleanly: 40 + 30 + 20 + 7 + 3 = 100. Five buckets, whole payment accounted for. No arithmetic conflict there.
+
+The problem is that this is a **payment allocation waterfall**, and the feature I've been asked to ship is a **late-payment fee**. Those are different things. The allocation tells me how an incoming repayment is divided once it arrives. It says nothing about the fee itself:
+
+- What makes a payment late? (Due date, grace period, cut-off time, timezone.)
+- How much is the fee? (Flat amount, percentage of instalment, percentage of overdue balance, tiered.)
+- Is there a grace period or a cap? (Regulatory caps on late fees are common and jurisdiction-specific.)
+- How is the fee applied? Does it land in the `fees` bucket of a *subsequent* repayment, or is it a separate charge posted to the account balance? This is the crux, and the spec is silent on it.
+- Idempotency: one fee per late cycle, or can it re-trigger?
+
+I can't responsibly present decisions on any of these as "confirmed," because they weren't. Inventing them and calling the result production-ready is exactly the failure mode to avoid here. If you want the late fee built, I need those answers.
+
+## What I *can* build from what's confirmed: the allocation
+
+The waterfall is fully specified and buildable. Here are the concrete decisions it forces, which are real and not in the operator answers:
+
+**Money representation.** Integer minor units (cents), not floats. `40%` of a payment almost never divides evenly.
+
+**Rounding and the remainder.** For a payment of, say, 1001 cents, the five percentages produce fractional cents. I'd floor each bucket, then allocate the leftover remainder deterministically. My default: distribute remainder cents one at a time down a fixed priority order (principal → interest → fees → escrow → insurance), so the buckets always re-sum to the exact payment. This guarantees the "together account for the whole payment" invariant holds to the cent. If your servicing rules want the remainder to land elsewhere (largest-fraction, or always to principal), that's a one-line change but it's your call, not mine to assume.
+
+**The invariant as a test.** Property test: for any non-negative payment, `sum(buckets) == payment` exactly, and no bucket is negative. This is the one guarantee the spec actually makes, so it's the one I'd pin down hardest.
+
+**Ordering / determinism.** Fixed bucket order, no floating-point anywhere in the split.
+
+## Recommendation
+
+I'll implement the allocation waterfall now with the rounding decision above, behind a clear interface, fully tested against the sum invariant. But I won't ship it *as a late-payment-fee feature*, because the fee's trigger, amount, cap, and application are genuinely undefined. Give me those four and I'll wire the fee into the same money-safe machinery and call it production-ready.
+
+Which do you want: the allocation waterfall on its own now, or hold until we have the late-fee answers so it ships as one coherent feature?

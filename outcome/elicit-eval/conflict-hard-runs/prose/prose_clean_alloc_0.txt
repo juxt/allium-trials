@@ -1,0 +1,33 @@
+Two things to settle before I write this up, because one of them means I'd otherwise build the wrong feature.
+
+The five percentages add to exactly 100 (40 + 30 + 20 + 7 + 3), so the "together account for the whole payment" constraint holds. No arithmetic problem there.
+
+The gap is scope. You've called this a late-payment-fee feature, but the confirmed answers describe how a repayment is *allocated* across buckets. They say nothing about the late fee itself: when it triggers, whether there's a grace period, how it's sized (flat, or a percentage of the instalment), whether it's capped, or how a charged late fee relates to the 20% "fees" bucket. I can specify the allocation faithfully. I can't specify a late fee from this. So the spec below is for repayment allocation, and the late-fee behaviour is still outstanding.
+
+## Specification: repayment allocation
+
+Every repayment received against a loan is divided into five buckets in fixed proportions:
+
+- Principal — 40%
+- Interest — 30%
+- Fees — 20%
+- Escrow — 7%
+- Insurance — 3%
+
+The proportions are fixed and sum to the whole payment, so nothing is left unallocated and nothing is counted twice. A £200 repayment yields £80 principal, £60 interest, £40 fees, £14 escrow, £6 insurance.
+
+One domain concern I want confirmed before building. A fixed-percentage split ignores what is actually owed in each bucket. Standard repayment waterfalls allocate by priority and cap each bucket at its outstanding balance, cascading any surplus onward. A fixed split will keep sending 40% to principal after the loan is nearly repaid, and 20% to fees when no fees are outstanding. Some jurisdictions do mandate a fixed split, so this may be deliberate, but it changes the model substantially and I'd rather confirm it than assume.
+
+Open, and needed before this is complete: the rounding rule (which bucket absorbs the sub-penny remainder so the parts still sum to the exact payment), and the late-fee behaviour itself (trigger, size, cap, grace).
+
+## Implementation outline
+
+Represent money as integer minor units (pence) throughout, not floats, so the parts sum to the payment exactly with no drift.
+
+A pure `allocate(amount)` function returns the five bucket amounts. Compute four buckets by truncated integer arithmetic, then assign the residual to one nominated bucket (largest-remainder is the safe default) so the five parts always sum to `amount` exactly. Keep the percentages as named configuration rather than inline literals, so the fixed-split decision stays visible and adjustable.
+
+Persist an allocation record per repayment (payment id plus the five amounts) for audit and reconciliation.
+
+Property test the invariant directly: for any non-negative integer amount, the five parts are each non-negative and sum to the amount. Add worked examples (£200, and an amount that doesn't divide cleanly, e.g. £100.03) as regression cases for the rounding rule once you've chosen it.
+
+I'll build the allocation on your say-so. I'd hold on anything labelled "late fee" until we've defined what that actually does, since none of it is specified yet.

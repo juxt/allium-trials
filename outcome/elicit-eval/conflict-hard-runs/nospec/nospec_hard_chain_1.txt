@@ -1,0 +1,45 @@
+The requirements as written can't all be true at once, so I'm not going to ship any single number until that's resolved. Here's the arithmetic that forces the issue.
+
+## The conflict
+
+Take the four constructive rules and follow them through, with `O` = overdue amount:
+
+- Base charge = 2% of `O` = `0.02·O`
+- Total outstanding balance `B` = 5 × `O`
+- Surcharge = 1% of `B` = `0.01 × 5·O` = `0.05·O` (i.e. 5% of the overdue amount)
+- Late fee = base + surcharge = `0.02·O + 0.05·O` = **`0.07·O` = 7% of the overdue amount**
+
+The fifth statement says the fee "should come out to 4% of the overdue amount." The mechanics produce 7%. Those two are incompatible, and it's not a rounding gap, it's 7 vs 4.
+
+The four mechanical rules over-determine the result on their own: once base is 2%, surcharge is 1%-of-balance, and balance is 5× overdue, the fee *is* 7% with no freedom left. The "4%" can only hold if one of the other inputs is different from what's stated:
+
+- If the balance were **2×** the overdue amount (not 5×): surcharge = 2%, fee = 4%. ✓
+- If the surcharge rate were **0.4%** of a 5× balance: surcharge = 2%, fee = 4%. ✓
+- If the base were **−1%**… (not real).
+
+So the realistic readings are "the 5× multiplier is wrong" or "the 4% target is wrong." I can't tell which from here, and picking one silently is exactly how the wrong charge reaches a customer's statement.
+
+## Why I weight the 4% as a real signal, not noise
+
+"Should come out to 4%" reads like an expected-output sanity check the operator carries in their head. That's the kind of check that exists *because* it catches this class of bug. It may be telling us the intended surcharge is 2% of the overdue amount (base 2% + surcharge 2% = 4%), which would mean the outstanding-balance rule or the 5× multiplier is misstated. I'd confirm before treating either as authoritative.
+
+## The decision I need resolved
+
+Which of these is the single source of truth for an overdue instalment?
+
+- **(A)** The mechanics are correct (base 2% + 1% of a 5× balance) and the fee is genuinely **7%** — the "4%" note is stale. Then I implement 7% and update the note.
+- **(B)** The fee target of **4%** is correct — then the surcharge inputs are wrong, most plausibly balance = 2× overdue (surcharge 2%), and I implement to 4%.
+
+My recommendation: don't default. This is a money path; a wrong constant is silent and compounding. Get one line of confirmation on A vs B. If forced to ship without an answer, I'd hold to the explicit mechanical rules (7%) and raise the 4% as a discrepancy ticket, because the mechanics are specified precisely while the 4% is an unshown-working assertion — but I'd flag it as a guess, not a decision.
+
+## What I'll build once A or B is confirmed
+
+The structure is the same either way, so the resolution only changes constants:
+
+- A `LateFee` computation taking `overdueAmount` and `outstandingBalance` as explicit inputs, not deriving the balance from a hard-coded 5× inside the fee logic. The "balance = 5× overdue" relationship is a property of instalment scheduling, not of the fee formula; baking it in is what let the inconsistency hide. The fee function charges 1% of whatever balance it's handed.
+- Rates (`BASE_RATE = 0.02`, `SURCHARGE_RATE = 0.01`) as named constants in one place.
+- Decimal/money arithmetic, not floats — currency minor units or a decimal type — with a defined rounding rule (I'll assume round-half-up to the smallest currency unit unless told otherwise) applied once to the final fee, not per component.
+- Guards: non-negative overdue and balance; zero overdue → zero fee; balance ≥ overdue as an invariant (assert or reject, since balance < overdue shouldn't occur for an overdue instalment).
+- A regression test that pins the agreed total: `fee == 0.04·O` (B) or `0.07·O` (A) for a representative instalment, plus a test asserting `base + surcharge == fee` so the components and total can never silently drift apart again. That second test is the one that would have caught this.
+
+Tell me A or B and I'll write it.

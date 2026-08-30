@@ -1,0 +1,36 @@
+-- allium: 4
+-- Q1: How is each repayment split?
+--     A: Across five buckets that together account for the whole payment.
+-- Q2: What proportion goes to each bucket?
+--     A: 40% principal, 30% interest, 20% fees, 7% escrow, 3% insurance.
+component RepaymentAllocation
+  entity Repayment
+
+  observable state amount(Repayment)    : Money
+  observable state principal(Repayment) : Money
+  observable state interest(Repayment)  : Money
+  observable state fees(Repayment)      : Money
+  observable state escrow(Repayment)    : Money
+  observable state insurance(Repayment) : Money
+
+  -- Q1: the five buckets together account for the whole payment
+  invariant buckets_cover_payment means
+    every r :: principal(r) + interest(r) + fees(r) + escrow(r) + insurance(r) = amount(r)
+
+  -- Q2: each bucket is exactly its stated proportion of the whole payment
+  invariant principal_share means every r :: principal(r) = amount(r) * 0.40
+  invariant interest_share  means every r :: interest(r)  = amount(r) * 0.30
+  invariant fees_share      means every r :: fees(r)      = amount(r) * 0.20
+  invariant escrow_share    means every r :: escrow(r)    = amount(r) * 0.07
+  invariant insurance_share means every r :: insurance(r) = amount(r) * 0.03
+
+  -- reachability: a real repayment with a positive amount and these splits can occur,
+  -- so the invariants above do not pass vacuously
+  requirement a_split_repayment means
+    some r :: amount(r) > 0
+      and principal(r) = amount(r) * 0.40
+      and interest(r)  = amount(r) * 0.30
+      and fees(r)      = amount(r) * 0.20
+      and escrow(r)    = amount(r) * 0.07
+      and insurance(r) = amount(r) * 0.03
+end

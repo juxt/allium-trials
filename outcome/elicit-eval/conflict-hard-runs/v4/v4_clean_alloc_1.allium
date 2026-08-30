@@ -1,0 +1,31 @@
+-- allium: 4
+-- Q1: How is each repayment allocated?
+--     A: Split across five buckets that together account for the whole payment.
+-- Q2: What proportion goes to each bucket?
+--     A: 40% principal, 30% interest, 20% fees, 7% escrow, 3% insurance.
+component RepaymentAllocation
+  entity Repayment
+
+  observable state payment(Repayment) : Money
+  observable state principal(Repayment) : Money
+  observable state interest(Repayment) : Money
+  observable state fees(Repayment) : Money
+  observable state escrow(Repayment) : Money
+  observable state insurance(Repayment) : Money
+
+  -- Q1 encoded literally: the five buckets sum to the whole payment.
+  invariant buckets_account_for_whole_payment means
+    every r :: principal(r) + interest(r) + fees(r) + escrow(r) + insurance(r) = payment(r)
+
+  -- Q2 encoded literally: each share is a fixed proportion of the same payment.
+  -- Written in the quantity's own terms (money = money): share * 100 = pct * payment.
+  invariant principal_is_40pct means every r :: principal(r) * 100 = 40 * payment(r)
+  invariant interest_is_30pct  means every r :: interest(r)  * 100 = 30 * payment(r)
+  invariant fees_is_20pct      means every r :: fees(r)      * 100 = 20 * payment(r)
+  invariant escrow_is_7pct     means every r :: escrow(r)    * 100 =  7 * payment(r)
+  invariant insurance_is_3pct  means every r :: insurance(r) * 100 =  3 * payment(r)
+
+  -- Reachability: assert a real, non-zero repayment can occur, so the invariants
+  -- above are not satisfied only by the vacuous "no repayment exists" model.
+  requirement a_repayment_is_split means some r :: payment(r) > 0
+end

@@ -1,0 +1,44 @@
+-- allium: 4
+--
+-- Elicitation record — late fee composition
+--   Q: How is the late fee composed?
+--   A: A base charge plus a surcharge.
+--   Q: What is the base?
+--   A: 2% of the overdue amount.
+--   Q: What is the surcharge?
+--   A: 1% of the overdue amount.
+--   Q: What should the late fee come out to?
+--   A: 3% of the overdue amount.
+--
+-- Each answer is encoded literally, in the same terms (money against money),
+-- as its own invariant. base, surcharge and late_fee are distinct quantities,
+-- each modelled once — the late fee is NOT split into a "charged" flag and an
+-- "amount", so any clash between the composed fee and the stated 3% total must
+-- surface rather than slip through a gap. Percentages are written multiplied
+-- out (100 * fee = pct * overdue) to keep money-against-money and avoid mixing
+-- a bare ratio with a currency amount.
+
+component LateFee
+  entity Invoice
+
+  observable state overdue(Invoice) : Money
+  observable state base(Invoice) : Money
+  observable state surcharge(Invoice) : Money
+  observable state late_fee(Invoice) : Money
+
+  -- "The base is 2% of the overdue amount."
+  invariant base_is_2pct means every i :: 100 * base(i) = 2 * overdue(i)
+
+  -- "The surcharge is 1% of the overdue amount."
+  invariant surcharge_is_1pct means every i :: 100 * surcharge(i) = 1 * overdue(i)
+
+  -- "The late fee is a base charge plus a surcharge."
+  invariant fee_is_base_plus_surcharge means every i :: late_fee(i) = base(i) + surcharge(i)
+
+  -- "The late fee should come out to 3% of the overdue amount."
+  invariant fee_is_3pct means every i :: 100 * late_fee(i) = 3 * overdue(i)
+
+  -- Reachability: a real, non-zero overdue with a non-zero fee must be possible,
+  -- so the invariants above cannot pass vacuously by every overdue being zero.
+  requirement a_nonzero_late_fee means some i :: overdue(i) > 0 and late_fee(i) > 0
+end

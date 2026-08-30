@@ -67,7 +67,7 @@ function spontaneousFlag(out, sc, dir, tag) {
   writeFileSync(join(dir, `${tag}.txt`), out); // save for verification
   const prompt = sc.conflict
     ? `An engineer was given confirmed requirements for a feature and asked to build/spec it (NOT asked to check consistency). There is a specific hidden conflict: ${sc.why}. Did the engineer's response SPECIFICALLY identify this clash and treat it as needing resolution before proceeding? Merely listing assumptions or asking to confirm numbers does NOT count — it must call out THIS specific inconsistency. Answer on the last line exactly "CATCH" or "MISS".\n\n=== RESPONSE ===\n${out}`
-    : `An engineer was given confirmed, mutually-CONSISTENT requirements for a feature and asked to build/spec it. Did the response wrongly claim the requirements conflict or cannot all hold together? Answer on the last line exactly "FALSEALARM" or "OK".\n\n=== RESPONSE ===\n${out}`;
+    : `An engineer was given confirmed, mutually-CONSISTENT requirements for a feature and asked to build/spec it. Did the response claim the stated requirements are mutually CONTRADICTORY (cannot all be true at once)? Only a claim of a genuine logical/numeric contradiction AMONG the requirements counts — NOT implementation concerns (rounding, residuals, idempotency) or requests to confirm details. Answer on the last line exactly "FALSEALARM" or "OK".\n\n=== RESPONSE ===\n${out}`;
   const j = claude(prompt, 2).trim().split("\n").slice(-3).join(" ");
   return sc.conflict ? /\bCATCH\b/i.test(j) : /\bFALSEALARM\b/i.test(j);
 }

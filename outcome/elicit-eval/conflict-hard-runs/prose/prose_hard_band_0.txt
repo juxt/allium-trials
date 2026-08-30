@@ -1,0 +1,33 @@
+These three facts can't all hold at once, so I can't write a spec that honours all of them. Before anything else, that needs flagging.
+
+## The conflict
+
+A 3% fee on a 500 instalment is 15. The third rule says the fee must land between 10 and 12 inclusive. 15 sits outside that band, so the rate rule and the bound rule contradict each other on the only instalment amount you've given me. Any spec I write would have to quietly break one of them, and picking which one to break is your call, not mine.
+
+Concretely, at least one of these is wrong or incomplete:
+
+- **The rate.** If the fee genuinely must be 10–12 on a 500 instalment, 3% is the wrong number. A rate of 2% gives 10, and 2.4% gives 12. The band 10–12 corresponds to 2%–2.4%.
+- **The bound.** If 3% is correct, the fee is 15 and the 10–12 window is wrong, or it was written for a different instalment amount. A 500 instalment reaches a 10–12 fee only at those lower rates; to get 10–12 at 3% the instalment would need to be roughly 333–400.
+- **The band's role.** Maybe 10–12 isn't a validation invariant but a clamp: compute 3%, then cap the result into [10, 12]. That would make 15 collapse to 12. This is a real product decision (a floor-and-ceiling on the fee) and behaves very differently from the other two readings, so I won't assume it silently.
+
+## What I need from you
+
+One decision resolves it: which of the three is the source of truth?
+
+1. **Rate is truth** → drop or correct the 10–12 bound; fee is a flat 3% (15 here).
+2. **Bound is truth** → the 3% rate is wrong; tell me the intended rate, or confirm 10–12 is a hard validation range and I'll treat a computed 15 as a spec violation to reject.
+3. **Both are truth, band is a clamp** → compute 3%, then clamp into [10, 12]; 500 yields 12.
+
+## The spec and implementation, once resolved
+
+I'll write it against whichever you pick. The shape is the same in all three cases, so here's the skeleton with the contested rule marked:
+
+> **Late fee.** When an instalment is late, a late fee is charged. The fee is derived from the instalment amount at a fixed rate. *[Rate = 3%, pending confirmation.]* The resulting fee **[must fall within / is clamped to]** 10–12 inclusive. *[This clause is either a validation invariant that a valid configuration must satisfy, or a clamp applied to the computed fee — these are different behaviours.]*
+
+Implementation outline:
+
+- A single `lateFee(instalment)` function so the rule lives in one place. It computes `instalment * rate`, then applies the 10–12 clause per your choice (either as a clamp via `min(max(fee, 10), 12)`, or as a post-condition assertion that fails loudly if the fee leaves the band).
+- Money handled in minor units (integer pence/cents), not floats, to avoid the 3%-of-an-odd-amount rounding drift that bites fee calculations. Rounding rule stated explicitly (round half up, to the penny) since 3% won't always land on a whole unit.
+- A property test asserting the chosen invariant across a range of instalment amounts, plus explicit cases at the boundaries (whatever instalment produces exactly 10 and exactly 12) and the 500 case that surfaced this conflict. If you pick option 2 as a hard validation range, the test also asserts that a 500 instalment at 3% is rejected rather than charged.
+
+Tell me which rule wins and I'll turn the skeleton into the full prose spec and the implementation.

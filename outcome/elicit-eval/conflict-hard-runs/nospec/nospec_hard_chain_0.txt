@@ -1,0 +1,25 @@
+The five statements don't hold together, so I'm not going to quietly implement one reading of them and call it production-ready. Here's the problem.
+
+Rules 1 to 4 fully determine the fee with no freedom left over. Take the overdue amount as `D`:
+
+- base = 2% of `D` = `0.02·D`
+- outstanding balance = 5 × `D` = `5·D`
+- surcharge = 1% of outstanding = `0.01 · 5·D` = `0.05·D`
+- fee = base + surcharge = `0.02·D + 0.05·D` = **`0.07·D`, i.e. 7% of the overdue amount**
+
+Rule 5 says the fee should come out to **4%**. Seven is not four. The mechanics and the stated result contradict each other, and there's no spare parameter to reconcile them: rules 1 to 4 already pin the answer at 7%. So at least one of the five statements is wrong, and I can't tell which from the numbers alone.
+
+For what it's worth, no gentle reinterpretation lands on 4% either. Reading the surcharge as 1% of the overdue amount rather than the balance gives 3%. Reaching 4% would need the surcharge to be 2% of `D`, which means an outstanding balance of `2·D`, contradicting the stated 5×. The "4%" doesn't fall out of any obvious partial reading, which makes me think it's a stale or hand-computed headline rather than a fifth independent constraint.
+
+**Why I won't just pick one.** Whichever I choose, I'd be overriding an operator statement on money owed by customers. If I ship 7% and 4% was the intended, contractually-communicated fee, that's an overcharge on every late payer. If I ship 4% and the formula was right, the accounting won't reconcile against the documented breakdown. Both are the kind of error that surfaces as a customer complaint or an audit finding, not a failing test. That's a decision for the operator, not a default I should guess.
+
+**What I need answered:** which is authoritative, the breakdown (2% base + 1% of a 5× balance → 7%) or the 4% headline? And if it's 4%, which underlying number is wrong: the base rate, the surcharge rate, or the 5× balance multiplier?
+
+**What I'd build once that's settled**, and the decisions baked in regardless:
+
+- Fee computed from an explicit formula with the two rates and the balance multiplier as named, configurable constants, not magic numbers scattered in code. `fee = base_rate·overdue + surcharge_rate·(balance_multiplier·overdue)`.
+- The operator's "should be 4%" stated as an executable invariant, a test asserting the computed fee equals `0.04·D`. Against the current inputs that test fails loudly, which is the point: the contradiction lives in CI, not in a customer's statement.
+- Money handled as minor units or `Decimal`, never binary floats. Rounding rule (half-up to the smallest currency unit, applied once to the final fee rather than per component) confirmed before launch, since 2%/1% of arbitrary balances will routinely produce sub-cent fractions.
+- Defined behaviour for the edges: zero or negative overdue amount yields no fee, and I'd confirm whether "total outstanding balance" is genuinely always 5× the overdue instalment or whether that's a simplification that breaks for part-payments or multi-instalment arrears.
+
+Tell me which figure is the source of truth and I'll have it ready. As written, the spec can't be implemented faithfully because it asks for two different fees at once.

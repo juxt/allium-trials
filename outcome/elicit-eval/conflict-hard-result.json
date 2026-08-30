@@ -1,0 +1,68 @@
+{
+  "v4": {
+    "hard_chain": [
+      1,
+      1
+    ],
+    "hard_alloc": [
+      1,
+      1
+    ],
+    "hard_band": [
+      1,
+      1
+    ],
+    "clean_chain": [
+      0,
+      0
+    ],
+    "clean_alloc": [
+      0,
+      0
+    ]
+  },
+  "nospec": {
+    "hard_chain": [
+      1,
+      1
+    ],
+    "hard_alloc": [
+      1,
+      1
+    ],
+    "hard_band": [
+      1,
+      1
+    ],
+    "clean_chain": [
+      0,
+      0
+    ],
+    "clean_alloc": [
+      0,
+      1
+    ]
+  },
+  "prose": {
+    "hard_chain": [
+      1,
+      1
+    ],
+    "hard_alloc": [
+      1,
+      1
+    ],
+    "hard_band": [
+      1,
+      1
+    ],
+    "clean_chain": [
+      0,
+      0
+    ],
+    "clean_alloc": [
+      0,
+      0
+    ]
+  }
+}

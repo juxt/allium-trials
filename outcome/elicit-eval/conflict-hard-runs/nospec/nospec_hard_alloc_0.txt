@@ -1,0 +1,41 @@
+I'm not going to implement this as written, because the numbers don't close and that's not a detail I should paper over.
+
+## The blocker
+
+The five percentages sum to **101.5%**, not 100%:
+
+41.5 + 28.5 + 18.5 + 8.5 + 4.5 = **101.5**
+
+That directly contradicts the stated constraint that the buckets "together must account for the entire payment." As specified, this is not implementable: any code I write has to resolve the extra 1.5 points somehow, and every way of doing that is a product decision, not an engineering one.
+
+- Allocate each bucket at its stated percentage and you distribute 101.5% of the money, so the split either overdraws the payment or leaves the last bucket negative.
+- Silently rescale everything by 1/1.015 and every bucket changes to an odd figure (principal becomes 40.887%, etc.), which almost certainly isn't what anyone signed off, and it buries what looks like a data-entry error.
+- Cap the final bucket to force the total to 100% and you've quietly made insurance (or whichever runs last) the dumping ground for the discrepancy.
+
+None of those is mine to choose. This looks like a single mistyped figure rather than a design intent, because several one-field corrections each close the gap cleanly:
+
+- interest 28.5 → **27.0**
+- fees 18.5 → **17.0**
+- principal 41.5 → **40.0**
+- escrow 8.5 → **7.0**
+- insurance 4.5 → **3.0**
+
+I can't tell which one is intended, and guessing risks misdirecting real money. I need the corrected split before I write allocation logic.
+
+There's a second, smaller mismatch worth confirming: this is described as a "late-payment-fee feature," but the substance is a repayment waterfall that splits a payment across principal/interest/fees/escrow/insurance. If there's meant to be an actual late fee (assessed, then fed into the "fees" bucket or charged separately) that's a distinct piece of behaviour I don't have rules for. Tell me if it's just the split, or if fee assessment is also in scope.
+
+## The plan, once the split closes to 100%
+
+Assuming a corrected set of weights summing to exactly 100%:
+
+**Money type and rounding.** Work in integer minor units (cents/pence), never floats, to avoid the decimal-literal drift that bites these calculations. Compute each bucket as `floor(payment_minor * weight)` using integer or exact-decimal arithmetic, not IEEE floating point.
+
+**The residual.** Percentage splits of an integer amount almost never divide evenly. `sum(floor(...))` will fall a few minor units short of the payment. I'll allocate that remainder deterministically rather than let it vanish, using largest-remainder (Hamilton) apportionment: hand the leftover units one at a time to the buckets with the largest fractional parts. That guarantees the five buckets sum to the payment exactly, to the minor unit, which is the real meaning of "account for the entire payment." I'd want sign-off that principal is the acceptable tie-break winner if fractional parts are equal, since that's the most defensible default for a loan.
+
+**Invariant, enforced in code.** A post-condition assertion that the five buckets sum to the input payment exactly, plus a startup/config check that the weights sum to 100% (100.000%, with a defined precision). If the weights are ever misconfigured again like this, it fails loudly at load time, not silently in production.
+
+**Edge cases I'll handle explicitly:** zero payment (all buckets zero), the smallest non-zero payment (1 minor unit goes to a single bucket by the remainder rule, the rest zero), and negative or reversed amounts (reject unless refunds/reversals are in scope, which they currently aren't).
+
+**Precision and representation.** Weights stored as exact decimals or integer basis points (bps), not floats: e.g. 4150 / 2850 / 1850 / 850 / 450 bps summing to 10000. This also makes the 101.5% error impossible to reintroduce unnoticed.
+
+Give me the corrected split (and a yes/no on whether late-fee assessment is in scope) and I'll implement it against exactly these decisions.

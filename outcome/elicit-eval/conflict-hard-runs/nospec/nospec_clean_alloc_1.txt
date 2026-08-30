@@ -1,0 +1,31 @@
+I'm going to give you a plan, but I have to lead with a problem, because shipping this as written would put a defect into loan servicing.
+
+## The confirmed answers don't describe the feature I was asked to build
+
+You asked for a late-payment-fee feature. The operator answers describe something different: a fixed-percentage allocation of every repayment across five buckets. Those are orthogonal. Nothing here tells me what actually defines a late fee: the trigger (how many days past due), the grace period, the amount or rate, any cap or floor, whether it compounds, whether it's per missed instalment or per billing cycle, and how it's reversed or waived. I can't build the requested feature from an allocation table.
+
+## Worse, the allocation rule and a late fee are logically incompatible
+
+A late fee is a variable amount that becomes owed on a specific event and then has to be collected in full. A fixed split sends exactly 20% of every payment to "fees" whether or not any fee is owed. If no fee has been charged, 20% of the payment still lands in a fees bucket with nothing to pay. If a fee larger than 20% of the payment is owed, the split can never clear it, so the account stays delinquent while principal is being paid down. The two mechanisms can't coexist as stated. Real servicers use a payment waterfall (typically fees, then interest, then principal, then escrow), applying each payment against what is actually owed in priority order, precisely so a fee gets collected before principal. A fixed percentage split breaks amortisation and will misreport to credit bureaus.
+
+## Even as a pure allocation spec, "account for the whole payment" is an unsatisfiable invariant without a rounding rule
+
+40/30/20/7/3 of a real payment in cents almost never divides into whole cents. Take £100.01: the raw shares are 4000.4p, 3000.3p, 2000.2p, 700.07p, 300.03p. Rounded independently they won't sum back to 10001p. You've stated a hard invariant (the buckets "together account for the whole payment") that the percentages can't satisfy on their own. That needs an explicit residual rule, and choosing one is a decision, not an implementation detail.
+
+There are two more real-world gaps: escrow and insurance as a fixed percentage of every payment is wrong (escrow is normally a fixed monthly figure derived from tax and insurance disbursements, not a slice of the payment), and the spec says nothing about what happens when a bucket's balance is already zero (does its share overflow to the next bucket, or get created as a credit?).
+
+## What I'd need before this is production-ready
+
+The actual late-fee parameters: trigger days, grace period, fee amount or rate, cap, per-instalment vs per-cycle, and waiver/reversal rules. And a decision on whether allocation is a waterfall against amounts owed (my strong recommendation) or a genuine fixed split.
+
+## The plan, and the concrete decisions I'd make
+
+If the intent really is the fixed split (and you confirm the late-fee logic separately), here is what I'd implement and the decisions baked in:
+
+I'd model allocation as a pure function `allocate(paymentMinor: bigint, buckets) -> Allocation` working in integer minor units (pence/cents) throughout, never floats, so the invariant is enforceable. Percentages become integer ratios (40, 30, 20, 7, 3 out of 100). For the residual I'd use the largest-remainder method: compute each floored share, then hand the leftover minor units one at a time to the buckets with the largest fractional remainders, so the total always reconciles to the payment exactly and the distribution stays as close to the ratios as integer arithmetic allows. I'd assert `sum(shares) == payment` before returning and fail closed if it doesn't.
+
+For zero-balance buckets I'd default to skipping the bucket and redistributing its share across the remaining buckets by the same largest-remainder pass, rather than creating overpayment credits, because a fixed split into an already-satisfied bucket is almost certainly not what an operator wants. I'd make that behaviour a named, documented policy rather than an accident.
+
+I'd make the operation idempotent on a payment id so a retried webhook or a double-submitted payment can't allocate twice, and I'd record the allocation as an immutable ledger entry (payment id, timestamp, per-bucket amounts, the ratio version used) so allocations are auditable and reproducible. Ratios would be versioned config, not hard-coded, since they will change.
+
+But I want to be clear: the fixed-split behaviour above is me making the invariant satisfiable, not me endorsing it for a lending product. My recommendation is a waterfall keyed to amounts actually owed, which is what makes a late-payment-fee feature coherent in the first place. Tell me which of the two you actually want, and give me the fee parameters, and I'll build it properly.

@@ -1,0 +1,21 @@
+The three answers can't all hold at once, so before any plan there's a contradiction to settle.
+
+The arithmetic: 3% of 500 is 15. The rule says the fee must land in [10, 12]. 15 sits above that band by three whole units. There's no rounding, no truncation, no currency-minor-unit trick that turns 15 into something ≤ 12. So a straight reading of "3% of the instalment" is incompatible with "between 10 and 12 inclusive" at an instalment of 500.
+
+I'm not going to silently reconcile that by picking one rule and quietly bending the others, because each reconciliation is a real product decision with different consequences:
+
+- Treat 3% as the truth and drop the band. Fee is a flat 15. The [10, 12] rule was then either wrong or describes a different instalment size.
+- Treat the band as a hard cap and clamp. Fee is `min(max(round(0.03 × amount), 10), 12)`, so 12 here. But then the "3%" wording is misleading for any instalment above 400, and you've built a cap the operator may not have meant.
+- Treat the band as the truth and the rate as approximate. To land 3% inside [10, 12] you need an instalment between roughly 334 and 400, so the "500" figure is the thing that's wrong.
+
+Those give three different fees (15, 12, or "the 500 is incorrect"), and I can't tell which the operator actually wants from what's written. Each answer was given as confirmed, but they were confirmed in isolation, and together they over-determine the fee.
+
+What I'd need to ship: which of the three is authoritative? Concretely:
+
+1. Is the fee a percentage, or is the [10, 12] band the real spec and the percentage just a rough gloss? 
+2. Is [10, 12] a hard clamp applied on top of the percentage, or a sanity range that was supposed to already contain 3%?
+3. Is 500 the right instalment, or a placeholder? If instalments vary, the band and the rate can only agree for a narrow slice of instalment sizes, so I need the intended behaviour across the whole range, not just at 500.
+
+Give me one of those and I'll implement it cleanly, with the fee logic, rounding-to-currency-minor-units, and the boundary tests written against whichever rule wins. Until then, coding it would just be me guessing which confirmed answer to discard.
+
+One concrete decision I'll make regardless: the fee computation belongs in one place with the three constraints encoded as explicit checks, so that if the rate, the instalment, and the band ever disagree again the code fails loudly at definition time rather than shipping a wrong charge to a customer.

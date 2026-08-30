@@ -1,0 +1,24 @@
+The four statements are consistent: the base at 2% and the surcharge at 1% sum to the stated 3% total. So there is nothing to reconcile here, and the specification can treat the total as a derived quantity rather than an independent input.
+
+## Intended behaviour
+
+When a payment becomes overdue, the system charges a late fee calculated from the overdue amount. The fee has two components. The base charge is 2% of the overdue amount. The surcharge is 1% of the overdue amount. The total late fee is the sum of the two, which comes to 3% of the overdue amount.
+
+Because the components are defined as fractions of the same overdue amount, the total is always exactly their sum. This is worth stating as an invariant rather than a separate rule: the fee is `base + surcharge`, and the "3% of the overdue amount" figure is a consequence of the two rates, not an independent constraint that could drift out of step with them. If a future change alters either rate, the total should follow automatically, so the total must never be hard-coded as a third rate.
+
+A few boundaries the operator answers leave open, which I would confirm before building but will assume sensible defaults for:
+
+- **Rounding.** Percentages of arbitrary amounts produce fractional currency. I would round each component to the currency's minor unit, or compute the total first and round once. The two approaches can disagree by a minor unit, so the choice needs to be pinned down. My default is to round the total once, keeping the fee exactly 3% before rounding.
+- **Zero or negative overdue amounts.** A non-positive overdue amount should yield a zero fee, not a negative charge.
+- **What counts as the overdue amount.** I assume it is the outstanding principal at the point the fee is assessed, excluding any previously applied late fees, so fees do not compound unless that is explicitly wanted.
+
+## Implementation outline
+
+I would model the fee as a single function of the overdue amount that returns the base, the surcharge and the total, so callers see the breakdown rather than an opaque figure.
+
+- Define the two rates as named constants, `BASE_RATE = 0.02` and `SURCHARGE_RATE = 0.01`. Do not define a total-rate constant; derive the total from the components.
+- Compute `base = round(amount * BASE_RATE)` and `surcharge = round(amount * SURCHARGE_RATE)`, or compute both unrounded and round the total once, per the rounding decision above. Use a decimal or integer-minor-unit representation for money rather than binary floating point, to avoid representation error on the percentages.
+- Guard the input: return a zero fee for a non-positive overdue amount.
+- Return a small structured result carrying `base`, `surcharge` and `total`, so downstream code (invoices, statements, audit logs) can show the components.
+
+For tests I would assert the invariant directly rather than only checking worked examples: for any non-negative amount, `base + surcharge == total`, and the total equals 3% of the amount within the rounding tolerance. I would add cases at zero, a small amount where rounding bites (for example an amount whose 1% falls below half a minor unit), and a large amount, plus a check that the total is never hard-coded independently of the two rates.

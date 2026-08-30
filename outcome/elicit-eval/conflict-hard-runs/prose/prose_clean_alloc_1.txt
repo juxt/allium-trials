@@ -1,0 +1,29 @@
+Before writing the spec, one thing needs flagging, because it changes what this document can honestly claim to cover.
+
+The feature is a late-payment fee, but the confirmed answers describe something different: how a repayment is divided across accounting buckets. Nothing here defines a late fee at all. No trigger, no grace period, no rate or flat amount, no rule for how a fee interacts with the split. So I can specify the allocation precisely, but I cannot write the late-fee behaviour from these answers. I'll spec what's confirmed and mark the gap rather than invent the missing half.
+
+The allocation numbers themselves are sound: five buckets, and 40 + 30 + 20 + 7 + 3 sums to exactly 100%, so the split does account for the whole payment as stated. No conflict there.
+
+## Specification: repayment allocation
+
+When a repayment is received, the full amount is divided across five buckets in fixed proportions. Every payment is allocated in the same way regardless of size, and the five shares always sum to the whole payment with nothing left unallocated.
+
+The proportions are principal 40%, interest 30%, fees 20%, escrow 7%, and insurance 3%. A £100 payment therefore posts £40 to principal, £30 to interest, £20 to fees, £7 to escrow, and £3 to insurance.
+
+Two behaviours are implied but not yet confirmed by the operator, and I'd want them pinned down before this ships. First, rounding: real payments won't divide cleanly at these percentages, so the spec needs a rule for where the residual pence lands (typically the largest bucket, or a fixed priority order) so the parts still reconcile to the total to the penny. Second, this is a fixed-proportion split, not a waterfall. It does not pay off interest before principal, and it does not skip a bucket that is already satisfied. If the intended behaviour is actually a priority waterfall, these percentages mean something quite different and the spec would need rewriting.
+
+## What's missing for the late-payment fee
+
+The feature name promises fee behaviour these answers don't contain. To specify it I need: what triggers the fee (days past due, a grace period), how it's calculated (flat amount, percentage of the overdue instalment, capped or not), when it's assessed relative to a payment, and how it flows through the split above. In particular, does an assessed late fee land in the existing 20% fees bucket, or is it a separate charge added on top before the percentages apply. That last point matters because it decides whether the fee is subject to the split or sits outside it.
+
+## Implementation outline
+
+I'd build the allocation as a small, pure function and treat the late-fee logic as a separate concern layered on top once it's specified.
+
+The core is an `allocate(amount)` that returns the five bucket amounts. Percentages live in a single named constant so the split is defined in one place and validated at load time to sum to 100%. Money is handled in minor units (integer pence) throughout, never floats, and the function applies the agreed rounding rule so the returned parts always sum back to the input. This is exhaustively unit-testable: property tests asserting parts-sum-equals-total across a wide range of amounts, plus fixed cases for the awkward rounding boundaries.
+
+Posting is kept distinct from calculation. `allocate` decides the numbers, a separate step writes the five ledger entries inside one transaction so a payment can never be half-posted. Each entry carries the payment id so allocation is auditable and reversible.
+
+The late-fee half stays stubbed until confirmed. I'd sketch the seam now, a fee-assessment step that runs against a schedule and produces a charge, but leave it unimplemented rather than guess the trigger and rate. Once the operator answers the questions above, the fee either feeds an amount into the fees bucket or becomes a separate charge ahead of allocation, and only then is there a real late-payment-fee feature to build.
+
+If you can get me the fee's trigger, amount, and where it sits relative to the split, I'll fold the second half into this and we'll have a complete spec.

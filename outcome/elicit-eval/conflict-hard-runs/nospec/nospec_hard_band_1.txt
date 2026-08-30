@@ -1,0 +1,39 @@
+## The requirements don't hold together. I'm not shipping until one of them changes.
+
+Before any code, the arithmetic:
+
+- Stated rule: fee = 3% × instalment = 0.03 × 500 = **15**.
+- Stated band: 10 ≤ fee ≤ 12.
+- 15 is not in [10, 12].
+
+All three "confirmed" facts cannot be true at once. Confirmed doesn't mean consistent, and the specific clash is between the rate (3% at an instalment of 500) and the ceiling (12). This isn't a rounding artefact or a decimal-literal issue: 3% of 500 is exactly 15, three whole units above the cap.
+
+For the 3% rule and the 10–12 band to coexist, one of the three numbers has to move:
+
+- **Rate is wrong.** To land in [10, 12] at an instalment of 500, the rate has to be 2%–2.4%.
+- **Instalment is wrong.** For 3% to land in [10, 12], the instalment has to be 333.33–400, not 500.
+- **Band is wrong.** If 3% × 500 = 15 is the intended fee, the band has to include 15.
+
+## The decision I will *not* make silently
+
+There are two readings of "must land between 10 and 12 inclusive", and they produce completely different systems. A naive implementation picks one and buries the conflict. I won't.
+
+**Reading A — it's an invariant.** The fee produced by the rules is expected to fall in that range naturally, and the band is a validation guard. Under this reading the given inputs are simply contradictory and there is nothing correct to build. Stop.
+
+**Reading B — it's a clamp** (min 10, max 12 applied after the percentage). Then fee = min(max(0.03 × amount, 10), 12). At an instalment of 500 this is `min(max(15, 10), 12)` = **12 for every instalment**, and the 3% rule never actually bites, it's dead weight documentation. The band only starts doing interesting work below an instalment of ~400 (floor at 333.33) and the 3% only matters between 333.33 and 400. If B is intended, the "3% of 500" framing is actively misleading and should be dropped or re-scoped, because at the quoted instalment the percentage is irrelevant.
+
+I can't tell A from B from what you've given me, and the choice isn't mine to invent. It's the difference between "these requirements are broken, fix them" and "ship a clamp where the headline rule is inert".
+
+## What I need to proceed
+
+One line back from the operator:
+
+1. Is 10–12 a **validation invariant** (A) or a **min/max clamp** (B)?
+2. If A: which number is wrong, the 3%, the 500, or the band? Give me the corrected one.
+3. If B: confirm you accept that at an instalment of 500 the fee is always 12 and the 3% figure doesn't apply, or give the instalment range where 3% is meant to govern.
+
+## Once resolved, the shape is small
+
+Either way the implementation is a handful of lines: a pure `lateFee(instalment)` function, the rate and bounds as named constants (not inline literals), exact/decimal arithmetic rather than binary floats for money, and a test that pins the boundary cases plus a property that the returned fee respects whatever [10, 12] turns out to mean. The engineering is trivial. The reason I'm stopping is that shipping any of it now would encode a guess about a contradiction you've labelled "confirmed", and that guess would be wrong two times out of three.
+
+Give me the one clarification and I'll have it production-ready in the same reply.

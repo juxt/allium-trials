@@ -1,0 +1,34 @@
+I'm going to stop before writing code, because the confirmed answers don't hold together.
+
+**The blocker: the buckets sum to 101.5%, not 100%.**
+
+```
+principal   41.5
+interest    28.5
+fees        18.5
+escrow       8.5
+insurance    4.5
+            -----
+            101.5
+```
+
+The spec states the five buckets "together must account for the entire payment." These five rates account for 101.5% of it. That invariant and these numbers cannot both be true, so there is no faithful implementation. Any code I write here would have to silently pick a number to shave, and that is an allocation decision about real money (and, for principal and escrow, likely a regulated one). I won't guess it.
+
+I also want to flag a smaller mismatch: the feature is described as a "late-payment-fee" feature, but every confirmed answer is about a repayment waterfall splitting a payment across principal, interest, fees, escrow and insurance. Those are different mechanisms. Before building, I want to be sure I'm implementing the right thing, not just the thing the answers happen to describe.
+
+**What I need from the operator**
+
+Which single fact is authoritative? The likely resolutions, none of which I should choose unilaterally:
+
+- One rate is a typo and should be 1.5 points lower. Fees at 17% or principal at 40% both land the total at 100. These are not equivalent; principal versus fees changes what the borrower owes and what we can recognise as revenue.
+- The 101.5% is real and one "bucket" isn't part of the 100% split (for example insurance is billed on top, not carved out). Then the waterfall is a four-way split and insurance is handled separately.
+- The percentages are targets and a defined bucket absorbs the residual, in which case I need to know which one and drop the fixed rate on it.
+
+**The plan, once that's resolved**
+
+1. Represent rates as exact decimals or basis points, never floats, and assert at construction that they sum to exactly 100%. That assertion is what would have caught this input.
+2. Split each payment by working in the smallest currency unit (pennies). Compute each bucket as `floor(payment_minor * rate)`, then apply a deterministic remainder policy so the parts sum back to the payment exactly with no lost or invented penny. My default is largest-remainder allocation; if the domain wants it, residual-to-principal is the common banking choice. This is a real decision I'd want confirmed, because it's observable on statements.
+3. Order the waterfall explicitly (principal, interest, fees, escrow, insurance as listed) so the remainder policy is reproducible.
+4. Property test: for any non-negative payment, the five buckets are non-negative and sum exactly to the input. That property is currently unsatisfiable, which is the point.
+
+Give me the one authoritative correction to the rates (and confirm this is the repayment-split feature, not a separate late-fee calculation) and I'll implement it straight through, tests included.

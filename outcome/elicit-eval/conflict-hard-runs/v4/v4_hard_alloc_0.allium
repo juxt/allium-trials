@@ -1,0 +1,42 @@
+-- allium: 4
+-- Repayment allocation across five buckets.
+--
+-- Q: How is each repayment split?
+-- A: Across five buckets which together must account for the entire payment.
+-- Q: What share goes to principal?   A: 41.5%
+-- Q: What share goes to interest?    A: 28.5%
+-- Q: What share goes to fees?        A: 18.5%
+-- Q: What share goes to escrow?      A: 8.5%
+-- Q: What share goes to insurance?   A: 4.5%
+--
+-- Each answer is encoded literally, in the same terms (a bucket amount as a
+-- fixed fraction of the same total), with no reconciliation. The five shares
+-- are stated as given; the "account for the entire payment" answer is stated
+-- as given. `analyse` judges whether they can jointly hold.
+
+component RepaymentAllocation
+  entity Repayment
+
+  observable state total(Repayment)     : Money
+  observable state principal(Repayment) : Money
+  observable state interest(Repayment)  : Money
+  observable state fees(Repayment)      : Money
+  observable state escrow(Repayment)    : Money
+  observable state insurance(Repayment) : Money
+
+  -- "together must account for the entire payment"
+  invariant buckets_account_for_whole means
+    every p :: principal(p) + interest(p) + fees(p) + escrow(p) + insurance(p) = total(p)
+
+  -- the five stated shares, each of the same total
+  invariant principal_share means every p :: principal(p) = 0.415 * total(p)
+  invariant interest_share  means every p :: interest(p)  = 0.285 * total(p)
+  invariant fees_share      means every p :: fees(p)      = 0.185 * total(p)
+  invariant escrow_share    means every p :: escrow(p)    = 0.085 * total(p)
+  invariant insurance_share means every p :: insurance(p) = 0.045 * total(p)
+
+  -- Guard reachability: without this, the shares (summing to 1.015) reconcile
+  -- with the whole-payment rule only when total(p) = 0 — a vacuous pass. A real
+  -- repayment moves money, so assert the constrained case actually occurs.
+  requirement a_real_repayment means some p :: total(p) > 0
+end

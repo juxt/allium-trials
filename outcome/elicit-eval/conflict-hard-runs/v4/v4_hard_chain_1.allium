@@ -1,0 +1,55 @@
+-- allium: 4
+-- Elicitation record (v4) — late fee composition
+--
+-- Q1: How is the late fee made up?
+-- A1: A base charge plus a surcharge.                         -> fee_composition
+-- Q2: What is the base charge?
+-- A2: 2% of the overdue amount.                               -> base_is_2pct_of_overdue
+-- Q3: What is the surcharge?
+-- A3: 1% of the total outstanding balance.                    -> surcharge_is_1pct_of_outstanding
+-- Q4: How does the outstanding balance relate to the overdue amount?
+-- A4: For an overdue instalment, outstanding = 5 x overdue.   -> outstanding_is_5x_overdue
+-- Q5: What should the late fee come out to?
+-- A5: 4% of the overdue amount.                               -> fee_is_4pct_of_overdue
+--
+-- Each answer encoded literally, one predicate per concept, all over the same
+-- instalment so the constraints compose on one instance. Percentages cleared to
+-- integers (x100) so the money quantities stay in their own terms with no decimal
+-- literals. No reconciliation: A2+A3+A4 imply the fee is 2% + 5% = 7% of overdue,
+-- while A5 says 4%; both are written as stated for `analyse` to judge.
+
+component LateFee
+  entity Instalment
+
+  observable state overdue_amount(Instalment) : Money
+  observable state outstanding_balance(Instalment) : Money
+  observable state base_charge(Instalment) : Money
+  observable state surcharge(Instalment) : Money
+  observable state late_fee(Instalment) : Money
+
+  -- A1: the fee is exactly its two parts
+  invariant fee_composition means
+    every i :: late_fee(i) = base_charge(i) + surcharge(i)
+
+  -- A2: base = 2% of overdue        (100 * base = 2 * overdue)
+  invariant base_is_2pct_of_overdue means
+    every i :: 100 * base_charge(i) = 2 * overdue_amount(i)
+
+  -- A3: surcharge = 1% of outstanding   (100 * surcharge = outstanding)
+  invariant surcharge_is_1pct_of_outstanding means
+    every i :: 100 * surcharge(i) = outstanding_balance(i)
+
+  -- A4: outstanding = 5 * overdue
+  invariant outstanding_is_5x_overdue means
+    every i :: outstanding_balance(i) = 5 * overdue_amount(i)
+
+  -- A5: fee = 4% of overdue         (100 * fee = 4 * overdue)
+  invariant fee_is_4pct_of_overdue means
+    every i :: 100 * late_fee(i) = 4 * overdue_amount(i)
+
+  -- Reachability: a genuine overdue instalment (overdue > 0) must be possible.
+  -- Without this the rule set is satisfiable only at overdue_amount = 0, i.e. it
+  -- would pass VACUOUSLY and hide the 7%-vs-4% clash.
+  requirement a_real_overdue_instalment means
+    some i :: overdue_amount(i) > 0
+end

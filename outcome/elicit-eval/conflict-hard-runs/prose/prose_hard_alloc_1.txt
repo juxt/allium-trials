@@ -1,0 +1,27 @@
+Before I write anything, the numbers don't hold together, and this is the kind of defect that has to be resolved before a specification exists rather than papered over inside one.
+
+You've stated two things that can't both be true. The invariant is that the five buckets together account for the entire payment, so the split must sum to 100%. The five figures you've given sum to 101.5%:
+
+- 41.5 + 28.5 = 70.0
+- + 18.5 = 88.5
+- + 8.5 = 97.0
+- + 4.5 = 101.5
+
+So the allocation over-commits every repayment by 1.5 percentage points. There's no implementation that satisfies both the per-bucket percentages and the "must account for the entire payment" rule as written. Any code I wrote would either allocate 101.5% of the payment (breaking the total), or silently scale/clip one bucket to force the sum to 100% (breaking one of the stated percentages), and I'd be choosing which of your confirmed answers to quietly overrule. That's not my call to make.
+
+I can't infer the intended fix, because 1.5% could come out of any bucket and each choice is a different product decision:
+
+- Principal 40.0% (rest unchanged) sums to 100.
+- Fees 17.0% sums to 100.
+- Or the intent was a different figure entirely on a bucket I'd never guess.
+
+Each of these is a materially different amortisation behaviour, so I need you to say which.
+
+A couple of things worth pinning down at the same time, since they'll shape the spec regardless of how the sum is fixed:
+
+- **Rounding and the residual.** Percentages of a currency amount rarely divide cleanly. When 41.5% of a payment lands on a fraction of a penny, where does the rounding residual go? The usual pattern is to compute four buckets by rounding and let one nominated bucket (commonly principal) absorb the remainder so the parts always re-sum to the exact payment to the penny. I'd want to confirm the residual bucket rather than assume it.
+- **The feature's actual subject.** This is described as a late-payment-fee feature, but the answers only describe a fixed repayment split. Where does the late fee itself enter? Is it assessed before the split (increasing the amount owed), taken out of the "fees" bucket, or added as a sixth line that sits outside the five-way split? The split rules alone don't tell me, and it changes the shape of the whole thing.
+
+Once you confirm the corrected split (summing to 100%), the residual/rounding bucket, and how the late fee relates to the split, I'll write the prose spec and the implementation outline against numbers that actually close. If it's useful, I'd capture this as an Allium spec so the "buckets sum to the whole payment" invariant is an explicit contract the tests enforce, which is exactly the sort of thing that would have caught this 101.5% before it reached code.
+
+I've deliberately not drafted a spec around the current figures, because the most useful thing I can do here is stop at the contradiction rather than encode it.
