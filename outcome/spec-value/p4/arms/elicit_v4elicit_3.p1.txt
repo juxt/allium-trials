@@ -1,0 +1,43 @@
+Before I write any spec, one thing has to be settled, because the request reads as if it fully specifies the calculation and it does not. "Equal monthly instalments over a fixed term" is satisfied by two completely different products that produce the *same instalment amount* but a *completely different schedule*. The schedule is exactly the breakdown they disagree on. So I will not guess it.
+
+Here is everything I need you to confirm, grouped by whether I am proposing a default for you to correct, or refusing to guess.
+
+## The one decision that defines the product
+
+**1. Interest method: amortising (reducing balance) or flat rate?**
+
+Both give equal monthly instalments, so the brief does not settle this.
+
+- *Amortising / annuity:* interest each month is charged on the outstanding balance. `instalment = P·r / (1 − (1+r)^−n)`. Early instalments are mostly interest, later ones mostly principal.
+- *Flat rate:* interest is `P · annual_rate · years` on the original principal, added up front, then `(P + interest) / n`. Every month's interest portion is identical.
+
+For a £10,000 loan the total interest differs by a large factor, and the per-row interest/principal split that `schedule` returns is entirely different. I recommend amortising as the consumer-lending default, but I am flagging it rather than encoding it silently. Which is it?
+
+## Defaults I am proposing — confirm or correct
+
+These are settled enough by standard practice that I will encode them unless you say otherwise:
+
+- **Payments in arrears.** First instalment falls one month after disbursement (ordinary annuity, not annuity due).
+- **Monthly rate = `annual_rate_pct / 100 / 12`** (nominal, simple division). Not the effective `(1+a)^(1/12)−1`. Say if your `annual_rate_pct` is meant to be an effective APR.
+- **Zero-rate case:** when `annual_rate_pct = 0`, `instalment = disbursed / months`. The annuity formula divides by zero here, so this is a real branch.
+- **Input domain:** `disbursed > 0`, `months` a positive integer, `annual_rate_pct >= 0`.
+
+## Refusing to guess — I need your answer (`-- OPEN`)
+
+These depend on your product and your money handling. I cannot infer them and will not fabricate them.
+
+**2. Rounding, and whether "equal" is literal.** Instalments in real money are whole pence. You cannot have *all* instalments exactly equal *and* the loan close at exactly zero *and* amounts in whole pence, in general. Something gives. Standard practice is to let the final instalment differ by the rounding residual. Do you accept a final adjusting instalment, or must every instalment be identical to the penny? (This is a genuine contradiction the checker will bite on if you assert all three.)
+
+**3. Currency and minor unit.** GBP at 2 decimal places? This fixes the rounding precision. And rounding mode: half-up or banker's rounding?
+
+**4. Fees.** The signature has none and the brief mentions none, so I will treat arrangement or service fees as out of scope. Confirm there is no fee folded into the instalment, since a fee would break "equal instalments" unless amortised in.
+
+**5. Product limits.** Minimum and maximum `disbursed`, minimum and maximum `months`, maximum `annual_rate_pct`. These become validation requirements. I have no way to know your caps.
+
+**6. Output shape.** I am assuming `schedule` returns one row per period: `period_number`, `opening_balance`, `instalment`, `interest_portion`, `principal_portion`, `closing_balance`, with `closing_balance = 0` on the final row. No calendar dates, since no start date is in the signature. Confirm the fields, and whether you need a summary row (total interest, total paid, APR).
+
+## What happens once you answer
+
+I will capture each firm answer as an `observable state` plus `invariant`/`requirement`, recording the question against it, then run `allium analyse`. The constraints I expect to make the spec *bite*: `sum of principal_portions = disbursed`, `final closing_balance = 0`, and the interest-method identity, composed over the *same* schedule so they cannot drift apart. If you answer question 2 with "all instalments identical" plus "closes to exactly zero in whole pence," `analyse` should return CONTRADICTORY, and I will bring the conflicting core back to you rather than smoothing it over.
+
+Answer question 1 and question 2 first. They change the shape of everything else.

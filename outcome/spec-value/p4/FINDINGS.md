@@ -17,8 +17,9 @@ Build-to-oracle: model writes `schedule()` from its arm's input; graded vs the o
 ## FINDING 2 — ELICITATION is necessary for correct builds of underspecified requests (clear air over no-spec)
 Elicit->build: vague request; the process surfaces decisions; a simulated operator answers ONLY
 surfaced decisions (deterministic keyword match); build graded vs flat oracle.
-- **nospec 54/150** (surfaces nothing -> guesses declining). prose/v3elicit/v4elicit **150/150** (surface
-  the convention -> operator answers -> correct build). 4 reps each.
+- FINAL (4 reps): **nospec 54/150** (0/4 ever surfaced the interest-basis decision). **prose 150/150**
+  (3/4 surfaced), **v3elicit 150/150** (4/4), **v4elicit 150/150** (4/4). v3/v4 elicit surface the
+  load-bearing decision slightly more reliably than free prose, but all reach a correct build.
 - => Eliciting converts a vague request into a correct build by surfacing the load-bearing decision;
   skipping it -> silent wrong guess. v4 ~= v3 ~= prose (surfacing is the act of eliciting, not the
   notation). Caveat: my planted decisions leak into each other (answering "instalment" implies flat), so

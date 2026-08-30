@@ -1,0 +1,35 @@
+Here is where the elicitation stands after the first pass over the brief. I have separated what standard loan practice settles (which I state as constraints for you to confirm or correct, rather than pester you with) from what genuinely depends on your product policy and which I refuse to guess.
+
+## What I am treating as settled (confirm or correct)
+
+These follow from "equal monthly instalments over a fixed term" and standard amortisation. I will encode them; tell me if any is wrong.
+
+- The instalment is the level payment that amortises `disbursed` over `months` at the monthly rate: `M = P·r·(1+r)^n / ((1+r)^n − 1)`, with `n = months`.
+- There are exactly `months` instalments, one per period.
+- Each period's interest portion is the opening balance times the monthly rate; the principal portion is the instalment minus that interest; the closing balance is the opening balance minus the principal portion.
+- The principal portions sum to `disbursed`, and the balance reaches exactly zero after the final instalment.
+- No fees, insurance, or other add-ons are folded into the amount or the schedule (the brief mentions none).
+- Inputs are otherwise well-formed real numbers; `months` is a positive whole number.
+
+## Open questions I will not answer for you
+
+Each of these changes the numbers or the behaviour, and each depends on your product or your regulator, not on domain convention. I have left them as unresolved decisions rather than filling them with a plausible default.
+
+**1. Interest convention.** Is `annual_rate_pct` a nominal rate divided by twelve to get the monthly rate (`r = annual_rate_pct/100/12`), or an effective annual rate converted geometrically (`r = (1+annual_rate_pct/100)^(1/12) − 1`)? Nominal/12 is the common consumer-loan convention and my default, but this shifts every figure and jurisdictions differ, so I want it confirmed rather than assumed.
+
+**2. Rounding — three parts, all yours.** Instalments are money and must be rounded, but the residual then never quite reconciles.
+   - To what minor unit? (Two decimal places for cents/pence, or something else — what currency?)
+   - Which rounding mode? Half-up, or banker's/half-even, or a regulator-mandated one?
+   - Where does the residual go? The rounded instalments will not sum exactly to principal-plus-interest. Do you absorb the difference in the final instalment (the usual choice), the first, or spread it? Until this is fixed, "balance reaches exactly zero" cannot be encoded honestly.
+
+**3. Zero (and near-zero) rate.** Is a `0%` product a valid input? The standard formula divides by zero there and must fall back to `disbursed/months`. I can encode that fallback, but whether interest-free is even an allowed input is your policy.
+
+**4. Validation scope and bounds.** Does `schedule` validate its inputs or trust the caller? If it validates: what are the limits — minimum and maximum loan amount, maximum term, permitted rate range, rejection of negative or non-integer `months`? These are policy numbers I cannot invent.
+
+**5. Period regularity and first payment.** I am assuming regular monthly periods, the first payment falling exactly one month after disbursement, with no grace period and no odd/stub first period charging broken-days interest. Consumer products sometimes do exactly that. Confirm there is no irregular first period.
+
+**6. Output shape.** I propose each row carries: instalment number, payment amount, interest portion, principal portion, and closing balance. Do you also need opening balance, cumulative interest, or a due date? The field set is a product decision.
+
+## Next step
+
+Answer 1–6 (even "trust the caller, out of scope" is an answer for 4) and I will encode the settled constraints plus your answers into a v4 spec, run `allium analyse`, and make sure it actually bites — for instance that a rounding rule which lets the final balance drift from zero, or a fee cap below your stated minimum, is reported rather than silently smoothed over. The spec is not finished while any of these remain open.
