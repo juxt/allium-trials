@@ -20,6 +20,8 @@ const ELICIT_V3 = readFileSync("/Users/hgarner/code/allium/skills/elicit/SKILL.m
 const TASKS = [
   { id: "A", task: readFileSync(join(HERE, "TASK.md"), "utf8"), rubric: readFileSync(join(HERE, "RUBRIC.md"), "utf8") },
   { id: "B", task: readFileSync(join(HERE, "taskB.md"), "utf8"), rubric: readFileSync(join(HERE, "rubricB.md"), "utf8") },
+  { id: "C", task: readFileSync(join(HERE, "taskC.md"), "utf8"), rubric: readFileSync(join(HERE, "rubricC.md"), "utf8") },
+  { id: "D", task: readFileSync(join(HERE, "taskD.md"), "utf8"), rubric: readFileSync(join(HERE, "rubricD.md"), "utf8") },
 ];
 
 const SUFFIX = `\n\nRespond directly in prose in this single reply. Do not use any tools; write your full answer as text now.`;
