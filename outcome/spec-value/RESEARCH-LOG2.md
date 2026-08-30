@@ -69,3 +69,13 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
   mechanical VALIDATION REPORT}. Tests whether the validation report (monitor+mutation) helps a reviewer
   catch the flaws better than eyeballing — i.e. whether the confidence-builder is the validation, not
   the explanation.
+
+## Iteration 8 — Phase 4 INCONCLUSIVE (session limit) + budget reached -> synthesis
+- Phase 4 explain-back is CONTAMINATED: the `validated` arm outputs are "You've hit your session
+  limit" errors (the run hit the API session cap partway through). The judged 0/3 for `validated` is an
+  artefact of empty error outputs, not a real miss. The `spec_only`/`prose` arms (run before the cap)
+  caught F1/F2 by eyeballing (frontier-model saturation on these particular flaws). => Phase 4 does not
+  isolate whether a validation report aids review; INCONCLUSIVE. Do NOT rely on it. (Verified by reading
+  eb_validated_0.txt = the session-limit error string.)
+- Past END_EPOCH (16:30) and API session limit reached. Terminating with the synthesis. All three
+  gates were closed on solid, verified evidence independent of Phase 4.

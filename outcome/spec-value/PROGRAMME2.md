@@ -1,6 +1,6 @@
 # Programme 2 — is the spec the RIGHT spec? overconfidence, completeness, and specs-as-tests
 
-Budget: 4h. START_EPOCH 1788089451, END_EPOCH 1788103851 (16:30). Autonomous; reconvene at the end
+Budget: 4h. START_EPOCH 1788089451, END_EPOCH 1788112800 (19:00, extended). Autonomous; reconvene at the end
 with a revised, defensible value proposition.
 
 ## Why this programme
