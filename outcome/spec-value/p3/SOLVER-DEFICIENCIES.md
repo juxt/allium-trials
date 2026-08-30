@@ -27,6 +27,8 @@ Fix: (a) let the monitor bind givens / read them from the trace manifest so more
 checkable; (b) at minimum, LOUDLY report every skipped invariant as uncovered. Prior art: coverage
 reporting in most verification tools; "checked/total" summaries.
 
+DEMONSTRATED FIX (E7): with rate_factor added to the trace, interest_on_outstanding is evaluated and CATCHES the wrong-rate value bug (resid 10.0) that E2's rate-less traces missed. The fix (emit reference inputs into traces + never silently skip) directly converts value-blind into value-catching for computable absolute invariants.
+
 ## D4 — Weak vacuity / reachability / coverage detection  [P2]
 Finding: a pure vacuity (guard antecedent unreachable) was NOT caught by analyse; nothing flags "this
 guarded case never occurs in the traces". Vacuously-true invariants give false assurance.

@@ -86,3 +86,21 @@ Not from catch-rate: accuracy saturates everywhere (P1, even ~1M LOC).
 2. Always pair specs with golden/fixed-value tests (relational + absolute).
 3. Next: big-n real-code accounting mutation suite; a second solver to confirm solver-blindness;
    genuine beyond-context (full-subsystem) mutation at scale.
+
+## E7 — the value-blindness is largely FIXABLE (constructive, demonstrated)
+E2's spec missed value bugs because its traces omitted the reference input (rate), so the one ABSOLUTE
+invariant (interest = rate x outstanding) was SILENTLY SKIPPED (deficiency D3). Fix it — put the
+reference rate in the trace, keep the absolute invariant — and the monitor CATCHES the canonical
+wrong-rate value bug that every structural invariant misses:
+- correct schedule -> all 7 invariants hold.
+- wrong-rate consistent value bug (E2's exact missed class) -> structural invariants all hold, but
+  interest_on_outstanding FAILS, resid 10.0. CAUGHT.
+The monitor evaluates rate x outstanding on concrete values with no trouble; the nonlinear limit is
+only for STATIC analyse, not runtime monitoring. So the DESIGN LESSON and the fix:
+**a spec-gate catches value bugs iff it (a) includes ABSOLUTE invariants tying outputs to reference
+INPUTS (not only inter-output relations) and (b) the traces carry those inputs.** A relations-only
+spec is value-blind (E2/E5); add input-anchored absolutes + emit the inputs, and value bugs become
+catchable. This upgrades the earlier "complementary only" conclusion: the gate CAN cover value bugs
+where the absolute law is computable and the reference inputs are known (e.g. contracted rate).
+Residual fundamental limit: bugs where the checked output re-derives consistently from a WRONG value
+that is ALSO not pinned by any reference (need a fuller golden oracle).
