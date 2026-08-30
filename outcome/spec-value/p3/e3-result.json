@@ -1,0 +1,50 @@
+{
+  "STRUCTURAL": {
+    "detected": 600,
+    "applicable": 600,
+    "byop": {
+      "no_close": {
+        "d": 150,
+        "n": 150
+      },
+      "emi_bump": {
+        "d": 100,
+        "n": 100
+      },
+      "principal_bump": {
+        "d": 100,
+        "n": 100
+      },
+      "rollforward": {
+        "d": 75,
+        "n": 75
+      },
+      "monotonic": {
+        "d": 75,
+        "n": 75
+      },
+      "conservation": {
+        "d": 100,
+        "n": 100
+      }
+    }
+  },
+  "VALUE_ONLY": {
+    "detected": 304,
+    "applicable": 450,
+    "byop": {
+      "scale_1_10": {
+        "d": 100,
+        "n": 150
+      },
+      "scale_0_90": {
+        "d": 102,
+        "n": 150
+      },
+      "scale_1_25": {
+        "d": 102,
+        "n": 150
+      }
+    }
+  }
+}
