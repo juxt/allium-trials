@@ -1,0 +1,45 @@
+The change request reads like a one-number configuration addition. It is not. "Don't penalise the instant they're a day late" silently commits to a resolution of about ten independent policy questions, and at least two of them can be answered in ways that contradict constraints the existing system already relies on. My job here is to refuse to guess the org-specific ones, state the domain-standard ones back for confirmation, and name the contradiction before anyone writes code. I have not run `allium analyse` (no tools this turn), so where I say "this is where the checker bites" I mean the constraint I would encode so that it *can*.
+
+## What I can state as constraints, for you to confirm or correct
+
+These follow from domain practice and the brief, so I encode them rather than asking:
+
+- Grace affects **only the late-payment penalty charge**. Interest accrual, other charges, and instalment scheduling are unchanged. (`invariant`: for every instalment, grace changes `penalty_accrued` and nothing else.)
+- Grace is configured **per loan product**, alongside the existing penalty configuration, because that is where the penalty already lives in Fineract. A product with `grace_period = 0` must reproduce today's behaviour exactly. (`requirement`: the zero-grace case is reachable and equals current output — this is your backwards-compatibility guarantee.)
+- Grace is measured **from the instalment due date**, and paying the full instalment on or before `due_date + grace` yields **zero** late-payment penalty. That is the literal intent, so I encode it as an invariant rather than asking whether it is true.
+
+If any of those three is wrong, correct it; I will not treat silence as agreement.
+
+## The decisions I will not guess — these are OPEN
+
+Each of these changes the design, and each depends on your policy, not on domain convention. I will not fill them with a plausible default.
+
+1. `-- OPEN:` **Grace length.** How many days? There is no defensible default.
+2. `-- OPEN:` **Retroactive or forward accrual after grace expires.** This is the sharpest fork and the brief does not settle it. If a borrower pays on day `N+2` with a grace of `N`, do they owe penalty for days `1..N+2` (grace is a *waiver window* that is lost once breached) or only for days `N+1..N+2` (grace is a *deferral*, penalty never backdated)? These produce different money on the same loan. I will encode whichever you choose literally; I will not harmonise them into "the first month of the recurring charge" or similar.
+3. `-- OPEN:` **Does grace also move delinquency and arrears reporting, or only the money?** The existing system keys delinquency classification and days-past-due off the due date. If you want the borrower "not delinquent" during grace, that touches regulatory arrears/NPL reporting, which is often legally required to run from the due date regardless of any commercial grace. See the contradiction below.
+4. `-- OPEN:` **Calendar days or business days**, and how weekends/holidays count.
+5. `-- OPEN:` **Per instalment or once per loan.** Does each instalment get its own grace, or does one late instalment consume a single per-loan allowance?
+6. `-- OPEN:` **Partial payment within grace.** If part of the instalment is paid inside the window and part after, is the remainder penalised, and from the due date or from grace expiry?
+7. `-- OPEN:` **Boundary inclusivity.** Is a payment landing exactly on `due_date + grace` inside or outside the window? (I lean inclusive, but this is a one-off-by-one with real money on it, so I want it stated, not assumed.)
+8. `-- OPEN:` **Effective date and existing loans.** Does grace apply to instalments already overdue at rollout, only to instalments falling due after rollout, or to all future evaluations of any loan?
+9. `-- OPEN:` **Default for existing products.** Do existing loan products get grace automatically (and at what value), or must each be opted in? This decides whether the change is silent or requires product-by-product action.
+10. `-- OPEN:` **Waiver of already-accrued penalties.** For loans currently mid-delinquency, does introducing grace claw back penalties already posted to the ledger, or apply only going forward?
+
+The spec is not finished while any of these remains open.
+
+## The contradiction I expect to surface
+
+Decision 3 is where I expect `analyse` to report a **minimal conflicting core**, and I will not resolve it by picking a side. If you answer "no penalty *and* not classified delinquent during grace," that is:
+
+- new invariant: `days_late <= grace ⇒ ¬instalment.delinquent`
+- existing invariant (already in the system): `instalment.delinquent ⇔ days_past_due_from_due_date > 0`
+
+Both quantified over the same instalment and the same `delinquent` predicate (one concept, one flag, so the loophole cannot slip through a second flag). For any instalment with `0 < days_late <= grace`, these cannot both hold. The checker reports `CONTRADICTORY`, and I bring you the core: *"You said not delinquent during grace, and the system says delinquent whenever past due from the due date. Which holds, and does regulatory reporting follow the same rule as the customer-facing status?"* The common real answer is that the *penalty* waits but the *classification* does not, in which case grace must be modelled as touching only `penalty_accrued`, and decision 3 collapses to "money only." But that is your call to make explicitly.
+
+## The library-contract check I will run against Fineract
+
+If decision 2 comes back as **retroactive** ("miss the grace, owe from the due date"), that is not automatically feasible. I will import Fineract's charge-posting behaviour as `axiom` items and encode the design's need to post a penalty dated back to the due date, after grace has already elapsed, as a `requirement`. If Fineract's charge engine only accrues forward from the evaluation date, `analyse` shows that requirement infeasible against the axiom, and we learn before implementation that "retroactive to due date" needs a back-dated adjustment mechanism rather than the ordinary penalty accrual. An operator confident the integration is trivial gets shown the exact combination that fails.
+
+## What "done" needs
+
+Answers to the ten OPEN lines, a resolution to the decision-3 contradiction taken back with its core rather than silently chosen, and an `analyse` run that reports the constraints jointly satisfiable, the zero-grace and retroactive-posting requirements feasible (or the latter explicitly infeasible and rerouted), and no invariant passing only vacuously. Until then I have a precise map of what must be decided, not a spec to build on. That map, rather than a confident-looking spec that guessed nine of these, is the deliverable at this stage.

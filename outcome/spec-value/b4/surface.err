@@ -1,0 +1,9 @@
+[nospec 0] surfaced=2 guessed=7 absent=1
+[nospec 1] surfaced=4 guessed=5 absent=1
+[nospec 2] surfaced=8 guessed=1 absent=1
+[prose 0] surfaced=9 guessed=0 absent=1
+[prose 1] surfaced=7 guessed=2 absent=1
+[prose 2] surfaced=8 guessed=1 absent=1
+[v4elicit 0] surfaced=8 guessed=0 absent=2
+[v4elicit 1] surfaced=7 guessed=2 absent=1
+[v4elicit 2] surfaced=8 guessed=0 absent=2

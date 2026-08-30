@@ -1,0 +1,48 @@
+Before writing the spec I want to be honest about what the request actually pins down, because "add a grace period" is one sentence hiding at least ten decisions, several with money or regulatory reporting attached. I'll split them into ones I'm comfortable defaulting as an engineer and ones that are genuinely the product team's call and should be signed off before this ships. I'll write the spec against my recommended defaults, but the decisions marked **needs sign-off** can flip the behaviour materially.
+
+## Decisions the request doesn't settle
+
+**1. The big one: waiver vs shifted clock after grace expires.** "So borrowers aren't penalised the instant they're a day late" reads cleanly when the borrower pays *inside* the grace window: no penalty. It says nothing about what happens when they blow past it. Two incompatible readings:
+
+- *Shifted clock:* the penalty simply starts accruing at due date + grace, and is never backdated. Pay on day 10 with a 5-day grace, and you owe penalty for days 6 to 10.
+- *Waiver window:* grace only helps if you pay inside it. Miss it, and the penalty is computed from the original due date as it is today. Pay on day 10, and you owe penalty for all 10 days (or the full fixed penalty).
+
+For a fixed-amount penalty this only moves the trigger date. For a percentage or per-day penalty it changes the amount charged. I recommend the **shifted clock**: it matches the plain reading of the request, it's easy to explain to a borrower, and "grace" that silently evaporates the moment you're one day late is the behaviour the product team is trying to get away from. But this is **needs sign-off** because it's a pricing decision, not an engineering one.
+
+**2. Does grace cover only the penalty, or also delinquency and days-past-due reporting?** The request says "penalised," which literally means the monetary charge. But today delinquency classification and reporting key off days-past-due from the due date, and many institutions expect a grace period to hold off delinquency flagging too (it feeds provisioning, arrears reports, and sometimes credit bureau submissions). I recommend defaulting to **penalty-only**: DPD and delinquency continue to count from the original due date, untouched. This is the narrowest change that satisfies the request and avoids quietly altering regulatory reporting. **Needs sign-off**, because aligning delinquency to the grace period is a defensible and common alternative, and it's the product/risk team's call, not mine. Worth noting: Fineract already has `graceOnArrearsAgeing`, which delays arrears ageing for both penalty and delinquency purposes. Part of what's being asked for may already exist, and we should confirm we're not building a second, conflicting knob. If the answer to this decision is "grace should cover delinquency too," `graceOnArrearsAgeing` may be most or all of the feature.
+
+**3. Configuration scope and default.** I'll default to: grace period configured **per loan product**, alongside the existing penalty charge configuration, as an integer number of days, defaulting to **0**, which preserves today's behaviour exactly. Per-loan override can come later if wanted. This one I'm comfortable defaulting; flagging only so it's visible.
+
+**4. Day unit and boundary.** Calendar days, measured from the due date, penalty beginning on due date + grace + 1. Calendar days match how days-past-due is counted today, so the two stay consistent. If the institution runs arrears on business days, that's a different default; I'll assume calendar unless told otherwise.
+
+**5. Retroactivity on existing overdue loans.** Applies to instalments that become overdue after the feature is enabled. It does **not** reverse or recompute penalties already posted on loans currently in arrears. Flagging because "apply to the existing book" is a plausible ask with a very different blast radius.
+
+The remaining smaller ones I'll just default and note in the spec: grace applies per instalment against its own due date; only charges configured as late/overdue penalties are affected (manual and non-penalty charges are untouched); partial payments follow the same rule on the still-outstanding portion.
+
+## Specification (against the recommended defaults above)
+
+**Configuration.** Each loan product gains a `latePaymentGracePeriodDays`, a non-negative integer, default 0. Zero reproduces current behaviour with no code path differences observable to existing products.
+
+**Penalty accrual.** For an instalment with due date `D` and product grace `G`:
+- The late-payment penalty does not begin to accrue until `D + G`. No penalty exists for the window `D` to `D + G` inclusive.
+- On or after `D + G + 1`, the penalty accrues under the product's existing penalty configuration (fixed or percentage), computed **from `D + G`, not from `D`** (shifted clock). It is never backdated to `D`.
+- If the instalment is paid in full on or before `D + G`, no late-payment penalty is ever charged for that instalment.
+- If paid after `D + G`, the penalty applies to the amount outstanding as at each accrual point, exactly as today but with the shifted start.
+
+**Scope.** Only charges whose type marks them as late/overdue penalties are affected. Interest, fees, and manually added charges are unchanged. Delinquency classification and days-past-due reporting continue to count from `D`, unchanged.
+
+**Batch job.** The scheduled job that applies overdue penalties must treat an instalment as eligible only once it is past `D + G`, and must be idempotent so re-runs don't double-post. An instalment inside its grace window is skipped.
+
+**Backward compatibility.** Products with `G = 0` (including every existing product after migration) behave identically to today.
+
+**Edge cases.** Grace is evaluated per instalment against its own due date. A payment covering an instalment partly within grace and partly after leaves any residual subject to the shifted-clock rule. Changing a product's grace value affects future accrual only, not penalties already posted.
+
+## Implementation summary
+
+1. **Schema and product config.** Add `late_payment_grace_period_days` to the loan product (and its related-detail / template payloads, validation for non-negative integer, default 0). Surface it in the product create/update API and admin UI next to penalty charge settings. Migration backfills 0 for existing products.
+2. **Accrual logic.** Locate the single point where an instalment's overdue penalty start date is derived from the due date (this is where days-past-due and penalty triggering are computed). Introduce the effective penalty-start date `D + G` there, and thread the product's grace value through to it. Keep delinquency/DPD computations reading from `D` so scope stays penalty-only.
+3. **Batch overdue job.** Update the overdue-charge job's eligibility predicate to use `D + G`, and confirm idempotency so grace-window instalments are skipped rather than deferred-then-double-charged.
+4. **Reuse check first.** Before adding a new field, confirm whether `graceOnArrearsAgeing` already gives us this behaviour or collides with it. If decision 2 comes back as "cover delinquency too," we likely lean on the existing mechanism instead of adding a parallel one, which changes steps 1 to 3 substantially.
+5. **Tests.** Product config validation and default; paid-within-grace posts no penalty; paid-just-after-grace posts a penalty starting from `D + G` not `D` (this test encodes decision 1, so it's the one to review if product picks the waiver reading instead); `G = 0` reproduces current behaviour exactly; DPD/delinquency unaffected by grace; batch-job idempotency across grace boundary; per-instalment independence.
+
+I'd want decisions 1 and 2 confirmed before merging, since both are cheap to change in the spec now and expensive to change once penalties are posting against real ledgers and reports.

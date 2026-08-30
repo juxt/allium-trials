@@ -1,0 +1,63 @@
+I'm not going to hand back a spec for this yet, because the request as written hides more decisions than it settles. "Don't penalise them the instant they're a day late" tells me a grace period exists and roughly why, but almost every constraint that would actually go into the spec is org policy I can't derive. Here's how I'd run the cycle.
+
+## What the change collides with
+
+The existing system is my starting `axiom` set, the Fineract contract as it behaves today. Three facts matter:
+
+```
+axiom penalty_starts_at_due_date ::
+  every instalment :: instalment.penalty_accrual_start = instalment.due_date
+axiom dpd_counts_from_due_date ::
+  every instalment :: instalment.dpd_reference = instalment.due_date
+axiom penalty_posts_to_ledger ::
+  every instalment :: instalment.penalty_charged implies instalment.posted_to_ledger
+```
+
+The new requirement, encoded faithfully, is roughly:
+
+```
+observable state grace_days : days
+invariant penalty_after_grace ::
+  every instalment ::
+    instalment.penalty_accrual_start = instalment.due_date + instalment.grace_days
+```
+
+Run `allium analyse` on those together and it reports the set jointly satisfiable **only when `grace_days = 0`**, i.e. `penalty_after_grace` holds only vacuously against the existing axiom. That is the point of encoding both literally rather than smoothing them: it makes explicit that the change *replaces* today's accrual rule rather than sitting beside it, and it forces the question of whether delinquency's `dpd_reference` moves with the penalty or stays pinned to the due date. Those two were welded together before. The change may or may not intend to split them, and that is not mine to decide.
+
+## What I'll state as constraints, for you to confirm or correct
+
+These I can settle from domain practice and the brief, so I'll encode them as my answer rather than ask:
+
+- Grace suppresses the **late-payment penalty charge only**. Scheduled interest continues to accrue through the grace window. "Penalised" in the brief reads as the penalty charge, not the price of the loan.
+- Grace applies regardless of whether the product's penalty is a fixed amount or a percentage. Same rule, both charge types.
+- If an instalment is cured (paid in full) before grace expires, no penalty is charged for that instalment.
+
+If any of those is wrong, it changes the encoding, so tell me.
+
+## OPEN — I will not guess these
+
+Each of these is this org's policy or a specific of your Fineract deployment. Guessing one and encoding it as fact is exactly the failure this process exists to prevent, so each stays an `-- OPEN:` line and the spec is not done until you answer.
+
+1. **Grace length, and where it lives.** How many days, and is it a global setting, per loan product, per loan, or per borrower segment? The number and its scope both change the state model.
+
+2. **The retroactivity fork — the one that actually costs money.** When a borrower blows the grace and pays late, does the penalty accrue from the **original due date** (grace is a waiver you forfeit by not curing in time) or from the **end of the grace period** (grace shifts the clock permanently)? For a borrower who pays on day 7 of a 5-day grace, reading A charges 7 days of penalty and reading B charges 2. I'd encode both as competing invariants and let `analyse` confirm they're mutually exclusive, but only you can say which is the policy.
+
+3. **Does delinquency move with the penalty?** Today `dpd_reference` and penalty start are the same date. Does the grace shift days-past-due classification and reporting too, or does delinquency still count from the due date while only the charge is delayed? Regulatory or bureau reporting often forbids shifting the DPD clock, which would mean the two deliberately diverge. Org-specific.
+
+4. **Calendar or business days**, and does grace extend across weekends and holidays.
+
+5. **Per instalment or once per loan.** Does every late instalment get its own grace, or is there one grace allowance per loan?
+
+6. **Partial payment inside grace.** If a borrower pays part of the instalment within grace, does grace still cover the remainder, and does the penalty (if any) compute on the full instalment or the residual?
+
+7. **Rollout scope.** Does grace apply only to instalments due after go-live, or retroactively to instalments already late at deployment?
+
+8. **Already-posted penalties.** If grace applies retroactively, do penalties already posted to the ledger within what is now a grace window get reversed, and by what mechanism? This is where the Fineract library check earns its place: `penalty_posts_to_ledger` says a charge, once made, is on the ledger, so "suppress the penalty" and "reverse the penalty" are different operations against the contract and I need to know which you mean before I encode it.
+
+9. **Waiver interaction.** Fineract already supports manual charge waivers. Is grace an automatic waiver that stacks with manual ones, or a distinct new concept? If it reuses the waiver path there are existing axioms it must satisfy.
+
+10. **Reporting and downstream consumers.** Anything keyed off penalty timing or DPD, credit bureau files, collections triggers, dashboards, that would silently shift when the accrual date moves.
+
+## Next step
+
+Give me the grace length and scope (1), the retroactivity fork (2), and the delinquency-clock decision (3) and I can stand up a spec that bites: it will reject the "grace also silently moves DPD" scenario if you say it shouldn't, and reject a `grace_days` of zero as vacuous. The other seven can follow, but I won't encode a plausible default for any of them and present it as though you'd decided it.

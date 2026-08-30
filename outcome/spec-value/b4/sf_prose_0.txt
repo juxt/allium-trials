@@ -1,0 +1,52 @@
+# Specification: late-payment grace period
+
+## Intent
+
+A borrower who misses an instalment due date should not incur a late-payment penalty immediately. Instead a configurable grace period runs from the due date, during which no penalty accrues. The penalty behaviour outside grace, and everything else about the loan, stays as it is today.
+
+That single sentence hides several policy decisions the change request does not settle. Below I state the behaviour I propose, mark my default choices, and separate out the decisions that are genuinely the product team's to make rather than mine to guess.
+
+## Behaviour
+
+**Configuration.** A grace period of N days is configured on the loan product, alongside the existing penalty charge configuration, since that is where penalty behaviour already lives. N defaults to 0, which reproduces today's behaviour exactly (penalty from the due date). Existing products are unaffected until someone sets a non-zero value.
+
+**Suppression during grace.** For an unpaid instalment, no late-payment penalty accrues or posts while `today <= due_date + N`. On the first day past the grace threshold, the penalty engine treats the instalment as it does today.
+
+**The load-bearing decision — what happens when grace lapses.** There are two coherent readings and they produce materially different borrower outcomes:
+
+- *Forgiveness within grace, penalty forward-only.* Once grace lapses the penalty accrues from the end of grace, so the grace days are permanently free. A 5% penalty on a 10-day-late payment with a 3-day grace charges for 7 days.
+- *Grace as a deferral only.* Once grace lapses the penalty accrues from the original due date, back-dated, as if there had been no grace. The same case charges for 10 days; the grace only delayed the posting, it did not waive anything.
+
+For a fixed-amount penalty the distinction collapses to a simpler question: does crossing the threshold charge the full fixed amount, or nothing because the grace absolved it? Both are defensible. "So borrowers aren't penalised the instant they're a day late" reads to me as forgiveness within grace, so my default is *forward-only*, but this is the decision I would not ship without an explicit product answer.
+
+**Delinquency classification and days-past-due.** The request names penalties only, but the system keys delinquency classification and reporting off days-past-due from the due date. Three options: leave DPD measured from the due date so a borrower inside grace still shows as delinquent (grace affects only money, not status); measure DPD from the grace end so grace shifts classification too; or decouple them and expose both. My default is to leave DPD and delinquency measured from the original due date and change only penalty accrual, because classification drives risk reporting and provisioning that the product team probably does not intend to move silently. This needs confirming.
+
+**Scope of charges.** Grace suppresses the late-payment penalty only. Other penalty charges, interest accrual, and fees are untouched. Interest continues to accrue through the grace window as normal.
+
+**Grace unit and boundaries.** Grace is measured in calendar days, and the threshold is inclusive: a payment arriving on `due_date + N` is still within grace. If the product team works in business days, that is a different rule and changes the implementation.
+
+**Per instalment.** Grace applies independently to each instalment from its own due date, matching how penalties already attach per instalment.
+
+**Existing overdue loans.** My default is that the change applies to penalty accrual going forward only and does not retroactively reverse penalties already posted to the ledger on currently-late loans. Reversing posted charges is a migration with accounting consequences and should be a deliberate, separate decision.
+
+## Open decisions I need from product
+
+Four of these I would not resolve unilaterally: whether penalty after grace is forward-only or back-dated to the due date; whether grace also shifts delinquency classification and DPD reporting or only suppresses money; calendar versus business days; and whether existing overdue loans are touched. The rest I have defaulted and flagged. The first is the one that changes what a borrower actually pays.
+
+## Implementation summary
+
+Assuming the defaults above (forward-only penalty, DPD unchanged, calendar days, forward-looking only):
+
+1. **Data model.** Add a `grace_period_days` column to the loan product penalty configuration, defaulting to 0, with the value copied onto the loan at disbursement so in-flight loans keep the terms they were written under. Surface it in the product create/edit API and admin UI next to the penalty charge settings.
+
+2. **Penalty accrual.** Find the code path that decides an instalment is late and begins penalty accrual from the due date. Introduce an effective penalty-start date of `due_date + grace_period_days` and gate accrual on `today > due_date + grace_period_days`. For a forward-only percentage penalty, compute the penalty basis from the effective start date rather than the due date; for a fixed penalty, post it once the threshold is crossed. Keep the `grace = 0` path identical to today so existing behaviour and tests are unchanged.
+
+3. **Leave delinquency and DPD untouched** in this change, so classification and reporting continue to key off the due date. If product later wants grace to shift status, that is a follow-up against the delinquency bucket logic.
+
+4. **Idempotency and re-runs.** The penalty job typically runs daily and must be safe to re-run; ensure that introducing the offset does not double-post or post-then-reverse around the threshold day.
+
+5. **Tests.** Cover the boundaries explicitly: payment on the last grace day (no penalty), payment one day after (penalty from the effective start), `grace = 0` (unchanged from today), fixed versus percentage penalty, and multiple overdue instalments each with their own grace. Add a regression test asserting delinquency classification is unmoved by grace.
+
+6. **Backwards compatibility and migration.** The column default of 0 means no existing product changes behaviour on deploy. No back-dated reversal of already-posted penalties. Document the new field and the forgiveness semantics for support staff, since "why was I still charged after the grace period" is a predictable question.
+
+I would build this once the four open decisions are answered, because the second step's logic depends directly on the forward-only-versus-back-dated choice.

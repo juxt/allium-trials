@@ -1,0 +1,54 @@
+Before I can write a spec I have to name the thing that "add a grace period" quietly leaves open, because the phrase has at least two incompatible meanings and the rest of the design hangs off which one we pick.
+
+## The decision that dominates everything: what does grace *do* to the penalty?
+
+There are two readings, and the product team almost certainly has one in mind without realising the other exists.
+
+**Reading A, waiver.** If the borrower pays within the grace window, no penalty is ever charged. If they miss the window, the penalty applies as it does today, accruing from the original due date. Grace is a "we won't punish a genuinely-almost-on-time payment" gesture, and a payment on day six of a five-day grace is treated exactly as it is now: penalised back to day one.
+
+**Reading B, deferred start.** The penalty clock simply starts later. Nothing accrues during grace; once grace expires, penalty accrues from the end of the grace window forward, never retroactively. A payment on day six incurs one day of penalty, not six.
+
+These produce materially different amounts owed and different borrower behaviour, and you cannot implement both from one sentence. The request "so borrowers aren't penalised the instant they're a day late" leans slightly towards A (it is about the *instant*, the near-on-time case), but that is me reading tea leaves. This is the first thing I would put back to the product team. My recommended default, absent an answer, is **Reading A (waiver)**: it is the more common interpretation of "grace period" in lending, it is simpler to reason about for borrowers, and it keeps the penalty maths unchanged once you cross the line. The rest of the spec assumes A and flags where B would differ.
+
+## A second decision hiding behind the first: does grace touch delinquency and reporting, or only money?
+
+Today delinquency classification, days-past-due, and everything that keys off them are computed from the due date. A grace period could mean any of:
+
+- Grace suppresses **only** the penalty charge. Days-past-due, delinquency buckets, PAR, and regulatory arrears reporting all continue to count from the true due date. A loan one day late is one day past due and may be flagged, it just is not charged yet.
+- Grace shifts the **effective due date** for all downstream purposes, so a loan within grace reads as current everywhere.
+
+I strongly recommend the first: **grace is a charging concession, not a reclassification of risk.** Supervisory reporting (IFRS 9 staging, NPL, days-past-due disclosures) generally must reflect the contractual due date, and quietly moving loans out of arrears buckets because of an internal grace policy is the kind of change that looks trivial in a ticket and becomes an audit finding. But this is a policy call the product and compliance teams must make explicitly, not one I should bury in an implementation. It is the second question I would raise.
+
+## The remaining decisions, with the defaults I would proceed on
+
+I would not block on these; I would state a default, proceed, and list them for confirmation.
+
+- **Where is grace configured?** Default: on the loan product, as a grace-period-in-days value, so it can vary by product and be zero (preserving today's behaviour exactly, which also gives a clean no-op migration). Open question: is a single per-product value enough, or does grace need to sit per penalty charge, per tenant, or be overridable per loan?
+- **Days: calendar or business?** Default: calendar days, matching how days-past-due is already computed. If grace is meant to absorb weekend and bank-holiday timing, business days is the intent, and that pulls in the working-day calendar. Worth one explicit confirmation because "a day late" complaints are usually weekend-driven.
+- **Boundary.** Default: grace is inclusive, penalty first applies on due date plus grace plus one. State it so nobody argues about the off-by-one later.
+- **Partial payment.** Default: grace is satisfied only by payment that clears the instalment's due amount within the window; a partial payment does not earn grace. Open question: should partial payment earn partial or full grace? This matters more under Reading B.
+- **Per instalment.** Default: each instalment carries its own independent grace. A borrower chronically five days late gets grace on every instalment. If the intent is to withdraw grace from repeat offenders, that is a separate rule and I would not infer it.
+- **Scope of charges.** Default: this affects late-payment penalty charges only, not other charge types (fees, interest). Confirm.
+- **Existing late loans at rollout.** Default: apply prospectively. Loans already past due when the feature ships keep their already-posted penalties; grace applies to instalments falling due after the change. Retroactively waiving penalties already on the ledger is a data-correction exercise, not a config change, and I would not do it silently.
+
+## Specification (on the defaults above)
+
+Given a loan product with a configured penalty grace period of *G* calendar days, and an instalment with due date *D* and outstanding due amount *A*:
+
+No late-payment penalty accrues or posts for the instalment on or before *D + G*. If the instalment's due amount is cleared on or before *D + G*, no late-payment penalty is ever charged for that instalment. If any due amount remains after *D + G*, the late-payment penalty applies from *D* exactly as it does today (Reading A), on the first penalty-accrual run after *D + G*.
+
+Days-past-due, delinquency classification, and all arrears reporting continue to compute from *D*, unchanged. Grace suppresses the penalty charge only. When *G* is zero, behaviour is identical to today, for every code path.
+
+Under Reading B the single change is that the penalty accrues from *D + G* rather than *D*; everything else stands.
+
+## How I would implement it
+
+Add a nullable `penalty_grace_period_days` (or reuse Fineract's existing grace-period configuration pattern on the loan product, which already has grace concepts for interest and principal, so this slots into a familiar place in the product schema and admin UI). Default zero.
+
+The change is almost entirely in the penalty-accrual path, not the ledger or reporting. Fineract accrues charges on a scheduled job and on transaction events; the guard is: for a late penalty charge, compute the effective first-penalised date as `dueDate.plusDays(G)` and skip accrual until the business date passes it. Under Reading A that skip is a suppression that either never fires (paid in grace) or fires with the accrual dated back to *D* once grace lapses. The cleanest form is to suppress accrual entirely during grace and, on the first run after grace lapses with amount still outstanding, post the penalty as today. That avoids the accrue-then-reverse pattern, which litters the ledger and is worth avoiding.
+
+Delinquency and reporting code is left untouched by design, which is the point of the "charging concession, not reclassification" decision and the thing I would call out most loudly in review.
+
+Testing centres on the boundary and the two readings: paid on *D+G* (no penalty), paid on *D+G+1* (penalty from *D* under A, from *D+G* under B), *G=0* equals current behaviour exactly, partial payment within grace, and an instalment that straddles the rollout date. I would add a regression check that PAR and days-past-due for an in-grace loan still report from *D*, because that is the invariant most likely to be broken by a well-meaning later change.
+
+The one-line summary for the product team: I can build this today, but tell me first whether grace *waives* the penalty or merely *delays its start*, and whether an in-grace loan should still show as in arrears in reporting. Those two answers change the numbers on the ledger and the compliance surface, and everything else I can carry on sensible defaults.

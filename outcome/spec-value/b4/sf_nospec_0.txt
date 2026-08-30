@@ -1,0 +1,29 @@
+Here's how I'd build it, and the decisions baked in.
+
+## The core decision: extend the mechanism that already exists, don't invent a new one
+
+Fineract already has the lever the product team is asking for. Overdue penalties aren't posted synchronously when an instalment ticks past its due date; they're applied by the scheduled "apply penalty to overdue loans" job, and that job already respects a global `penalty-wait-period` configuration that holds penalties off for N days after the due date. The problem is that it's a single global number. The product team's request ("borrowers aren't penalised the instant they're a day late") really means "let different products give different grace", so the change is to lift that wait period out of global config and make it a per-product setting with a per-loan override, keeping the global value as the fallback default.
+
+Concretely I'd add `penaltyGraceDays` (non-negative integer, default 0) to the loan product configuration, and an optional same-named override captured on the loan at approval/disbursement. Resolution order when the overdue job runs is: loan override, then product setting, then the existing global `penalty-wait-period`, then 0. Defaulting to 0 means every existing product and loan behaves exactly as it does today until someone deliberately sets a grace. Nothing is retroactive.
+
+## Behaviour
+
+Grace is counted in **calendar days from the instalment's own due date**, measured against the tenant business date, per instalment independently. An instalment becomes penalisable only once it is **strictly more than** `penaltyGraceDays` past due. So a grace of 3 means days one, two and three past due incur nothing, and the penalty first becomes eligible on day four. Grace of 0 reproduces today's behaviour (penalisable from day one). I chose calendar days rather than business days to match how days-past-due is already computed elsewhere; mixing the two would make the ledger disagree with the delinquency figures.
+
+The gate is implemented as an extra predicate in the query that selects overdue instalments for the penalty job: `business_date - due_date > effective_grace_days`. Instalments still within grace are simply not selected, so **nothing posts to the ledger during grace and nothing has to be reversed later**. This matters because the alternative (post on day one, then reverse if paid within grace) creates churn and confusing statements. If the borrower clears the arrears within grace, the penalty never existed.
+
+When grace expires, the penalty fires under the existing charge configuration on the amount still overdue at that point. For a fixed penalty that's a one-time charge on day `grace+1`. For a percentage penalty it's the percentage of the outstanding overdue amount at that moment. I deliberately chose **the waiver interpretation, not a back-dated cliff**: the penalty clock starts at grace expiry, it does not retroactively bill the grace days. A back-dated model produces the perverse cliff where paying on the last grace day costs nothing and paying one day later triggers a lump sum covering the whole grace window. If the product uses recurring overdue penalties, the first application lands at grace expiry and subsequent applications follow the configured frequency from there; grace shifts the start, it doesn't compress or duplicate.
+
+Partial payment within grace behaves the way the base charge config already dictates: grace only gates *whether* the penalty fires, not the base it's computed on. If a balance is still overdue past grace, the penalty fires on that remaining amount.
+
+## What I deliberately left alone
+
+**Delinquency classification and DPD reporting are untouched.** The product asked about penalties, and softening risk/regulatory reporting as a side effect of a fee change would be wrong and probably unwelcome to the risk team. Days-past-due still counts from the original due date, delinquency buckets still key off it, and Fineract's separate `graceOnArrearsAgeing` (which does govern arrears ageing) is a distinct control the risk side already owns. A borrower two days into a three-day penalty grace is still reported as two days past due. If the product team actually wants grace to move the reporting line too, that's a second, explicit decision, not a default.
+
+**No retroactive reversals.** Turning grace on for a product does not refund penalties already assessed on currently-overdue loans. Grace applies to penalty assessments that haven't happened yet. Already-posted charges stand unless someone waives them through the existing waiver flow.
+
+## Touch points and safety
+
+The changes are: the product and loan configuration schema (plus API and validation, `penaltyGraceDays >= 0`), the overdue-instalment selection query used by the penalty job, and the resolution logic that picks the effective grace value. The job's existing idempotency (it tracks what it has already applied per instalment) is preserved; the grace predicate only ever *removes* instalments from the candidate set, so re-running the job can't double-charge. Because the value is resolved at job-run time against the business date, value-dated back-dated payments that land inside the grace window correctly prevent the penalty, consistent with how the rest of the schedule treats value dates.
+
+The one edge worth flagging to the product team before ship: changing `penaltyGraceDays` on a product takes effect for the next job run, so an in-flight overdue instalment that hasn't yet been penalised will pick up the new grace. That's the intended behaviour for a forward-looking change, but it's worth them confirming they don't expect grace to bind only to loans originated after the change.

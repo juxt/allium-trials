@@ -1,0 +1,33 @@
+## What I'm shipping
+
+A configurable late-payment grace period that delays when a penalty starts to accrue, without changing anything about how penalties are calculated once they do accrue.
+
+Concretely: each loan product gains a `graceOnPenaltyPosting` value in days (default 0, which preserves today's behaviour exactly). For an unpaid instalment with due date `D` and grace `g`, no penalty is assessed or posted while the payment lands on or before `D + g`. If the instalment is still unpaid after `D + g`, the penalty is applied by the existing overdue-charge path, with its charge-from date set to `D + g + 1` rather than `D`. Fixed and percentage penalties both flow through unchanged; only the date the clock starts from moves.
+
+The value is read at penalty-application time, not snapshotted onto the instalment, so changing a product's grace affects loans that are not yet penalised but never rewrites penalties already on the ledger.
+
+## The decisions I'm making, and which ones need product sign-off
+
+The request is one sentence and it hides several genuinely load-bearing choices. Here is how I've resolved each, and where I'd want confirmation before this is irreversible in production.
+
+**Grace forgives the grace days rather than merely deferring the assessment.** This is the decision that matters most and the request does not settle it. There are two coherent readings. Either grace is a waiver, so a borrower who pays on day `g + 5` owes penalty for 5 days, or grace is a stay of execution, so that same borrower owes penalty from the original due date for `g + 5` days once they cross the line. "So borrowers aren't penalised the instant they're a day late" reads to me as leniency, so I've implemented the waiver: penalty accrues from `D + g + 1`, and the grace days are never charged. For a fixed one-off penalty this distinction is invisible, the borrower either owes the fixed amount or doesn't. For a percentage-per-day penalty it changes the money. If product actually wants the stay-of-execution behaviour, that is a one-line change to the charge-from date, but it is a different promise to the borrower and I would not pick it silently.
+
+**Grace applies to the penalty only, not to delinquency classification or days-past-due reporting.** The system description notes that delinquency and DPD both key off the due date. The request talks about being "penalised", which I read as the charge, not the arrears status. So a borrower one day late still shows as one day past due in reporting and still ages into delinquency buckets on the original schedule; they simply are not charged yet. This keeps risk reporting honest and avoids masking real arrears. If product wants the grace to also suppress delinquency classification, that is a larger and more consequential change touching regulatory and provisioning reporting, and I've deliberately not bundled it in. Fineract already has a separate `graceOnArrearsAgeing` lever for that, so the two concerns stay independent, which is the right shape.
+
+**Scope and default is per loan product, with no per-loan override in this change.** Grace lives on the product because penalty configuration already lives there and product teams reason at that level. Default 0 means existing products are untouched until someone sets a value, so there is no behavioural change on deploy. A per-loan override is easy to add later on the same read path but I'm not speculatively building it.
+
+**Days are calendar days, and the boundary is inclusive of the grace window.** Grace of 3 on a due date of the 10th means the penalty first accrues for the 14th. Payment any time up to and including the 13th is penalty-free. I'm using calendar days to match how due dates and days-past-due are already computed in the loan schedule; introducing business-day semantics here would be inconsistent with the rest of the loan and would need a holiday calendar decision I don't think is intended.
+
+**Existing overdue loans are not retroactively credited.** Penalties already posted stay posted. The grace applies going forward from deploy to instalments not yet penalised. Reversing live ledger entries against a config change is the kind of thing that needs an explicit, audited migration and a product decision, not a side effect of shipping a feature.
+
+## Where the change lands in the code
+
+The accrual start is computed in one place, the overdue-penalty application path (the scheduled job that walks overdue instalments and applies the loan product's penalty charge). Today it treats "overdue" as `today > due date`; it becomes `today > due date + grace`, and the charge's effective date becomes `due date + grace + 1`. The product schema, the product create/update validation and command handlers, the product read model and template, and the loan-product API docs all gain the new field. I'd add a migration adding the nullable column defaulting to 0, and validation rejecting negative values.
+
+Fineract also carries a global `penalty-wait-period` used by the overdue job. I've kept the new grace as a product-level field rather than overloading that global, because a single global would force every product to the same leniency, which defeats the point. If you'd rather the global be the source of truth and the product value be an override, say so, because that changes the precedence rule and I'd want it explicit rather than assumed.
+
+## Edge cases handled
+
+Partial payments do not restart or consume grace; grace attaches to the instalment's due date, not to payment activity. A reversal of a repayment that had suppressed the penalty re-exposes the instalment to the same `D + g` test on the next run, so a reversed payment can correctly trigger a penalty that was previously withheld. Setting grace of 0 is exactly today's behaviour, which is what makes the default safe.
+
+The two things I'd get product to confirm before calling this done are the waiver-versus-deferral question and the confirmation that grace must not touch delinquency reporting. Both are cheap to flip in code and expensive to get wrong in front of a borrower or an auditor.

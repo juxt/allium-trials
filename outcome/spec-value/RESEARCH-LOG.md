@@ -94,3 +94,25 @@ reconvenes when RANKING.md carries a defensible SYNTHESIS.
   miss (B1 B3_guard). Net value depends on spec completeness and whether what matters is in scope.
 - UNIFYING INSIGHT (elevate to synthesis): **a spec concentrates the agent's attention on what it
   covers** — a benefit for cost on hard in-scope retrieval, a hazard for out-of-scope correctness.
+
+## Iteration 5 — B4 brownfield surfacing — LARGEST unique-value effect; but it's the PROCESS, not the notation
+- 1 underspecified Fineract change (add a late-payment grace period), 10 new-policy decisions the
+  existing code does not determine, 3 arms x 3 reps, judge-robust surfaced/guessed/absent. Verified
+  genuine by reading outputs.
+- Means: **nospec 4.7 surfaced / 4.3 GUESSED; prose 8.0 / 1.0; v4elicit 7.7 / 0.7.**
+- **=> The largest clean unique-value effect in the programme: a "just implement" arm SILENTLY COMMITS
+  ~4 of 10 policy decisions the human should make** — including the money/regulatory-critical
+  retroactivity choice (does the penalty bill from the original due date or only from grace-end?).
+  Verified on the SAME decision: nospec picked "waiver" with a good justification but committed it;
+  v4elicit flagged it "the real crux... not mine to decide" and refused. The value is not that the
+  model guesses BADLY (its defaults were excellent and well-argued) but that it guesses AT ALL on
+  decisions that are the human's, and you cannot tell which guesses are wrong without surfacing them.
+- **Two honest caveats.** (a) The benefit is from the ACT OF SPECIFYING, not from Allium/elicit: prose
+  matched elicit here (8.0 vs 7.7 surfaced). The greenfield "prose worse than none" did NOT replicate
+  on this brownfield task (existing-code context and a single reflective task likely prime prose to
+  surface). So B4 argues for "write a spec first", not specifically "use v4". (b) n=1 task, 3 reps,
+  and nospec was high-variance (surfaced 2,4,8 across reps).
+- **KEY DISTINCTION for the synthesis: the spec PROCESS vs the spec PRODUCT.** The PROCESS of
+  specifying (B4) forces enumeration of the human's decisions -> surfacing benefit. The finished
+  PRODUCT/artefact (B1, B2) concentrates attention -> cost saving on hard in-scope retrieval (B2) but
+  tunnel-vision misses out-of-scope (B1). Same object, two phases, opposite effects.
