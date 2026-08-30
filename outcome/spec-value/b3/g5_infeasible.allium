@@ -1,0 +1,7 @@
+-- allium: 4
+component FeeRule
+  entity Acct
+  observable state fee(Acct) : Money(gbp)
+  invariant cap means every a :: fee(a) <= 10
+  requirement big_fee means some a :: fee(a) >= 20
+end

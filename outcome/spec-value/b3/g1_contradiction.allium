@@ -1,0 +1,8 @@
+-- allium: 4
+component LoanCaps
+  entity Loan
+  observable state penalty(Loan) : Money(gbp)
+  observable state base(Loan) : Money(gbp)
+  invariant a means every l :: penalty(l) >= base(l) + 5
+  invariant b means every l :: base(l) >= penalty(l)
+end

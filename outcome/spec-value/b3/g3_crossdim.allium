@@ -1,0 +1,7 @@
+-- allium: 4
+component Mix
+  entity T
+  observable state amount(T) : Money(gbp)
+  observable state weight(T) : Mass(kg)
+  invariant bad means every t :: amount(t) <= weight(t)
+end

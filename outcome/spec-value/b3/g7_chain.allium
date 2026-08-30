@@ -1,0 +1,10 @@
+-- allium: 4
+component Allocation
+  entity Batch
+  observable state total(Batch) : Money(gbp)
+  observable state alloc(Batch) : Money(gbp)
+  observable state resid(Batch) : Money(gbp)
+  invariant split means every b :: total(b) >= alloc(b) + resid(b)
+  invariant alloc_dom means every b :: alloc(b) >= total(b)
+  invariant resid_pos means every b :: resid(b) >= 1
+end

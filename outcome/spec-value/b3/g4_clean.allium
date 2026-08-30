@@ -1,0 +1,8 @@
+-- allium: 4
+component CleanLoan
+  entity Loan
+  observable state bal(Loan) : Money(gbp)
+  observable state paid(Loan) : Money(gbp)
+  invariant nonneg means every l :: bal(l) >= 0
+  invariant paid_le means every l :: paid(l) <= bal(l)
+end

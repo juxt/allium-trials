@@ -1,0 +1,8 @@
+-- allium: 4
+component Repayment
+  entity P
+  observable state due(P) : Money(gbp)
+  observable state paid(P) : Money(gbp)
+  invariant nonneg means every p :: paid(p) >= 0
+  invariant not_over means every p :: paid(p) <= due(p)
+end

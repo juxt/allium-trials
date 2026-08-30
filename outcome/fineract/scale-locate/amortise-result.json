@@ -1,0 +1,15 @@
+{
+  "nospec": [
+    {
+      "task": "T1_newtype",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 1.8139305000000003,
+      "turns": 21,
+      "in_tok": 855981,
+      "out_tok": 15613,
+      "err": false
+    }
+  ]
+}
