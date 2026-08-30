@@ -1,0 +1,17 @@
+-- allium: 4
+component SMELoan
+  entity Period
+  given disbursed : Money
+  given service_fee means disbursed * 0.0025
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state rate_factor(Period) : Rate
+  observable state is_last(Period) : bool
+  -- interest LINE = pure declining-balance interest + flat service fee (0.25% of original)
+  invariant interest_line means every p :: interest(p) = rate_factor(p) * outstanding_start(p) + service_fee
+  invariant principal_split means every p :: principal(p) = emi(p) - interest(p)
+  invariant conservation means sum p :: principal(p) = disbursed
+  invariant closes_to_zero means every p :: is_last(p) implies outstanding_start(p) - principal(p) = 0
+end

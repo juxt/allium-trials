@@ -1,0 +1,32 @@
+{
+  "v4": [
+    {
+      "rep": 0,
+      "distill_cost": 0.1454895,
+      "distill_tok": 23451,
+      "rebuild_cost": 0.10589849999999999,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 140,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d1000_r9.99_m24",
+          "maxres": 0.02
+        },
+        {
+          "id": "d5000_r9.99_m24",
+          "maxres": 0.02
+        },
+        {
+          "id": "d1000_r9.99_m1",
+          "maxres": 0.01
+        }
+      ]
+    }
+  ]
+}

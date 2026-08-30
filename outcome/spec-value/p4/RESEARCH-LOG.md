@@ -63,3 +63,14 @@
   distinction TBD from those rows + the validated experiment.
 - Ops note: running two model-heavy harnesses concurrently ~halves throughput; the validated (v4
   check+monitor+fix, ~4 calls/rep) is slow under contention. Will run it solo.
+
+## Iteration 5 — checkability has TWO mechanical layers (both demonstrated on the complex product)
+- Layer 1 `check` (syntax): v4-complex rep0 distiller emitted INVALID v4; `allium check` caught it,
+  fed back, fixed over 2 rounds -> valid spec -> rebuild 150/150. This partly compensates for v4's own
+  fluency cost (the model is less fluent in v4 than prose).
+- Layer 2 `monitor` (semantic faithfulness): hand-check on the complex oracle — faithful spec holds
+  (ok True); a spec with the WRONG fee (0.5% vs 0.25%) FAILS interest_line at residual 12.5 (ok False).
+  So a v4 spec that gets a convention wrong is caught MECHANICALLY. Prose can only be eyeballed.
+- => v4 checkability is real and two-layered. Whether it yields CLEAR AIR over prose on build-
+  correctness now hinges on whether prose (eyeball) drifts on the complex conventions — validated-
+  complex prose reps + the naive distill-complex control will decide. v4-complex rep0 already 150/150.

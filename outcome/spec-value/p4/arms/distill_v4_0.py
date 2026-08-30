@@ -1,40 +1,46 @@
+from decimal import Decimal, ROUND_HALF_EVEN
+
+
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    r = annual_rate_pct / 100.0 / 12.0
-    n = months
+    def r2(x: Decimal) -> Decimal:
+        return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN)
 
-    if n <= 0:
-        return []
+    D = Decimal(str(disbursed))
+    f = Decimal(str(annual_rate_pct)) / Decimal(1200)
+    n = int(months)
 
-    if r == 0:
-        emi = disbursed / n
+    fee = r2(D * Decimal("0.0025"))
+
+    if f == 0:
+        base_emi = r2(D / Decimal(n))
     else:
-        factor = (1 + r) ** n
-        emi = disbursed * r * factor / (factor - 1)
-
-    emi = round(emi, 2)
+        pow_n = (Decimal(1) + f) ** n
+        base_emi = r2(D * f * pow_n / (pow_n - Decimal(1)))
 
     rows = []
-    outstanding = round(disbursed, 2)
-
-    for i in range(n):
-        outstanding_start = outstanding
-        interest = round(outstanding_start * r, 2)
-
-        if i == n - 1:
-            # final instalment clears the balance exactly
-            principal = outstanding_start
-            emi_i = round(principal + interest, 2)
+    outstanding = r2(D)
+    for period in range(n):
+        pure_interest = r2(outstanding * f)
+        if period < n - 1:
+            principal = r2(base_emi - pure_interest)
+            base_instalment = base_emi
         else:
-            emi_i = emi
-            principal = round(emi_i - interest, 2)
+            principal = outstanding
+            base_instalment = r2(pure_interest + principal)
 
-        outstanding = round(outstanding_start - principal, 2)
+        interest = r2(pure_interest + fee)
+        emi = r2(base_instalment + fee)
 
         rows.append({
-            "emi": float(emi_i),
-            "interest": float(interest),
+            "period": period,
+            "outstanding_start": float(outstanding),
+            "pure_interest": float(pure_interest),
             "principal": float(principal),
-            "outstanding_start": float(outstanding_start),
+            "base_instalment": float(base_instalment),
+            "interest": float(interest),
+            "emi": float(emi),
         })
+
+        outstanding = r2(outstanding - principal)
 
     return rows
