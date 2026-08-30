@@ -1,0 +1,9 @@
+Specification — amortising loan repayment schedule.
+A loan of `disbursed` principal is repaid over `months` equal monthly periods at `annual_rate_pct` annual interest.
+- The monthly interest factor is the annual rate percent divided by 1200 (e.g. 12% -> 0.01/month).
+- Interest each period accrues on the OUTSTANDING balance at the start of that period (declining balance), not the original principal.
+- The instalment (EMI) is the standard annuity payment: emi = P*r*(1+r)^n / ((1+r)^n - 1), constant across all periods except possibly the last.
+- Each period: interest = factor * outstanding_start; principal = emi - interest; the next period's outstanding_start = this outstanding_start - principal.
+- The FINAL period absorbs any rounding residual: its principal equals the remaining outstanding balance so the loan closes to exactly zero; its instalment equals interest + that principal.
+- All monetary values are rounded to 2 decimal places using banker's rounding (round half to even).
+- The principal repaid across all periods equals `disbursed` exactly.
