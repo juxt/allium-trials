@@ -110,6 +110,34 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 6 — collected hard-conflict eval — MAJOR HONEST FINDING: conflict-detection saturates
+- Hard eval (runhard, strict judge, 2 reps): v4 6/6 caught 0 FA; nospec 6/6 (1 FA); prose 6/6 0 FA.
+- **Verified by reading outputs:** the model's hard_chain catch is GENUINE and deep — nospec
+  substituted the full 5-def chain (outstanding=5D -> surcharge=0.05D -> fee=0.07D=7% vs stated 4%,
+  "Seven is not four") and checked no partial reading gives 4%. Real multi-step in-head composition.
+  nospec's clean_alloc "false alarm" was a JUDGE MISFIRE, not a model error: the model said
+  "40+30+20+7+3=100... no arithmetic conflict" and flagged a SEPARATE rounding-residual concern,
+  which the clean-judge miscounted. So the model's real precision here is 0 FA too.
+- **=> CONFLICT-DETECTION SATURATES.** A frontier model catches even 5-constraint emergent conflicts
+  in-head, and is precise. v4 (after the decimals + requirement-feasibility fixes) also catches 6/6
+  deterministically with a named core — but does NOT beat the model on catch-rate OR precision at
+  this scale. This is the same saturation the whole programme found on every accuracy axis.
+- **v4's genuine value on this axis (not accuracy):** determinism/repeatability, a machine-checked
+  named core (auditability), an AUTOMATIC standing gate (no reliance on the model choosing to reason
+  about consistency), and clear air over v3 (v3 analyse = 0/6, no such check). Catch-rate clear air
+  would only appear beyond in-head composition — i.e. genuine SCALE (dozens of constraints / long
+  schedules / a spec too big to hold), the untested frontier we keep hitting.
+- **Harness fix (H3):** corrected the clean-scenario false-alarm judge to count only a claim that the
+  REQUIREMENTS are mutually contradictory, not separate implementation concerns (rounding/residual).
+  Committed (both harnesses).
+- **Contrast with the SURFACING result (earlier):** that DID show clear air (v4/v3 elicit 9/0 vs
+  prose/none ~5/~4 guessed) because it measured DISPOSITION (refuse to guess), not accuracy. So the
+  elicit skill's surfacing value stands; the analyse conflict-CATCHING value saturates vs the model.
+- **Next:** the only place catch-rate value could remain is scale-beyond-context. Iterations should
+  either (a) probe that (a spec with many constraints the model can't hold — hard to construct so it
+  actually exceeds a 1M-context model), or (b) consolidate v4's genuine differentiators (determinism/
+  audit/automatic/v3-parity) and the surfacing win, which is where the honest value lives.
+
 ### Iteration 5 — harness (harder multi-constraint conflicts) + v4 fix it surfaced
 - Designed 3 SUBTLER conflicts (harder to eyeball): hard_chain (5-def algebraic chain forcing fee =
   7% vs stated 4%, satisfiable only at overdue=0), hard_alloc (5 percentages sum to 101.5 not 100),
