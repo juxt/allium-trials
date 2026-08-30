@@ -25,3 +25,21 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
 - GATE 1 PROVISIONAL: floor framing recovers blocking. MUST confirm floor DISCRIMINATES (does not just
   block everything). Benign-control experiment running: floor vs ceiling block-rate on genuinely benign
   changes (rename, stream-sum, logging). If floor keeps benign-block low, it is a real fix.
+
+## Iteration 5 — GATE 1 SETTLED: tunnel vision is FIXABLE by framing; skill change made
+- Benign discrimination control (floor vs ceiling on rename/stream-sum/logging, 3 reps):
+  ceiling benign-BLOCK 0/9; **floor benign-BLOCK 1/9 (11%)** — floor merges benign ~89%, essentially
+  like ceiling. So floor DISCRIMINATES; it is not blanket timidity.
+- Combined with iteration 4 (floor recovers OS1 blocking 4/4 vs ceiling 2/4 merge):
+  **GATE 1 = FIXABLE. Presenting a spec as a PARTIAL FLOOR ("not-violating != safe; flag any other
+  risk") recovers out-of-scope-bug blocking without over-blocking safe changes.** The rank-4
+  overconfidence hazard is a fixable PRESENTATION problem, not intrinsic.
+- SKILL CHANGE (skills-v4/distill/SKILL.md), evidence-backed by Programme 2:
+  1. New loop step "Validate against runtime, not just by reading": monitor invariants on real traces
+     (FAITHFULNESS — catches over-claims like level_payment, Phase 2a) + mutation battery (COMPLETENESS
+     — records detection rate + blind spots, Phase 2b).
+  2. New section "The spec is a partial floor, not a ceiling": emit a verbatim PARTIAL-FLOOR header
+     listing blind spots (the tunnel-vision fix, Phase 1 verified).
+  3. Done-criteria updated: faithfulness validated, completeness probed, floor header present.
+- Re-verifying now: does the partial-floor HEADER alone (under a plain consumer prompt) flip the
+  decision (block OS1 bug, merge benign)? If yes, the fix is self-contained in the artefact.

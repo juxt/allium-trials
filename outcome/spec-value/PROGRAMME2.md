@@ -66,6 +66,6 @@ Discipline: honest, negatives first-class, verify before claiming, no overclaim 
 an evaluated agent see answers or peers.
 
 ## Gate status (live)
-- GATE 1: OPEN
-- GATE 2: OPEN
-- GATE 3: OPEN
+- GATE 1: CLOSED — tunnel vision FIXABLE by partial-floor framing (floor recovers OS1 catch 4/4 vs ceiling 2/4 merge; floor benign-block 11% = discriminates). Skill updated.
+- GATE 2: CLOSED — spec correctness confidence BUILDABLE: monitor for faithfulness (over-claims), mutation battery for completeness (LLM 63% vs gold 88%, blind spots pinpointed).
+- GATE 3: CLOSED — specs supply RELATIONAL properties over broad inputs (complementary to value oracles, which catch what specs miss e.g. wrong rate). PBT pillar = complementary, not standalone.

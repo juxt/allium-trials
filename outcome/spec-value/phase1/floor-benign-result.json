@@ -28,5 +28,65 @@
     "id": "rename",
     "arm": "floor",
     "d": "MERGE"
+  },
+  {
+    "id": "libsum",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "libsum",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "libsum",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "libsum",
+    "arm": "floor",
+    "d": "BLOCK"
+  },
+  {
+    "id": "libsum",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "libsum",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "logging",
+    "arm": "floor",
+    "d": "MERGE"
   }
 ]
