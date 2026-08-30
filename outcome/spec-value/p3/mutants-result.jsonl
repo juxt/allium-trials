@@ -13,3 +13,8 @@
 {"id":"mul2add_4","compile":true,"traces":150,"changed":"yes","shipped":"fail","spec":"hold"}
 {"id":"mul2add_5","compile":true,"traces":150,"changed":"yes","shipped":"fail","spec":"hold"}
 {"id":"mul2add_6","compile":true,"traces":150,"changed":"no","shipped":"fail","spec":"hold"}
+{"id":"mul2add_7","compile":true,"traces":150,"changed":"no","shipped":"fail","spec":"hold"}
+{"id":"mul2add_8","compile":true,"traces":150,"changed":"no","shipped":"fail","spec":"hold"}
+{"id":"mul2add_9","compile":true,"traces":150,"changed":"yes","shipped":"fail","spec":"hold"}
+{"id":"scale2to4_1","compile":true,"traces":150,"changed":"no","shipped":"pass","spec":"hold"}
+{"id":"scale2to0_1","compile":true,"traces":150,"changed":"no","shipped":"pass","spec":"hold"}

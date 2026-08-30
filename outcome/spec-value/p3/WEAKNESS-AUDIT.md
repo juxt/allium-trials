@@ -42,3 +42,16 @@
   on ALL 150 real schedules, so it cannot distinguish a correct schedule from a different wrong-but-
   internally-consistent one; (b) E2 real-code mutants that re-derive a consistent schedule (mul2sub_1:
   changed, shipped-test FAIL, spec HOLD). => the gate is blind to value errors that preserve structure.
+
+## E2 + E4 final (real-code mutation, MECHANICAL) — the two-sided result
+- E2 SOLVER (ProgressiveEMICalculator): 20 real-code mutants. spec caught **0/20**; shipped fixed-value
+  tests caught 18/20 (2 within-tolerance setScale, missed by both). Spec-gate adds ZERO regression
+  coverage on solver code — arithmetic bugs stay internally consistent, relational spec blind.
+- E4 STRUCTURE-ASSEMBLING (CashBasedAccountingProcessorForLoan): omit credit legs (guard all
+  createCreditJournalEntryForLoan). Double-entry spec caught **4/7 cash traces** (charge-off r=340,
+  disbursement r=1000, repayment r=300, sub-cent-repayment r=300.005). Real code, deterministic, exact
+  residuals. (3 held — those fixtures emit credits via a different primitive; first attempt was a null
+  result from guarding an unexercised site — noted honestly.) Repo reverted clean after each run.
+- => CONFIDENT two-sided, mechanical, real-code conclusion: the spec-gate catches omission/desync bugs
+  in STRUCTURE-ASSEMBLING code (double-entry) and is BLIND to value bugs in SOLVER code. Scope the
+  benefit accordingly.

@@ -1,0 +1,4 @@
+guarded credit sites: 1
+gradle exit=0; mutant traces: 0
+double-entry spec: FLAGGED 0/0 mutant traces as unbalanced (catch>0 => spec CATCHES the real omit-leg bug)
+reverted

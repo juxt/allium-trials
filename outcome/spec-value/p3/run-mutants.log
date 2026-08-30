@@ -13,3 +13,9 @@
 [13/20] mul2add_4 changed=yes shipped=fail spec=hold
 [14/20] mul2add_5 changed=yes shipped=fail spec=hold
 [15/20] mul2add_6 changed=no shipped=fail spec=hold
+[16/20] mul2add_7 changed=no shipped=fail spec=hold
+[17/20] mul2add_8 changed=no shipped=fail spec=hold
+[18/20] mul2add_9 changed=yes shipped=fail spec=hold
+[19/20] scale2to4_1 changed=no shipped=pass spec=hold
+[20/20] scale2to0_1 changed=no shipped=pass spec=hold
+DONE; reverted.
