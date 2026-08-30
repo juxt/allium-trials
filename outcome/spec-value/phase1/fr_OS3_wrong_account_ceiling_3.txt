@@ -1,0 +1,10 @@
+The maintained spec checks one thing: debits equal credits. This change keeps them equal, so the spec is satisfied. That is exactly why the spec is the wrong instrument to clear this merge.
+
+Reusing `incomeFee` for penalty postings collapses two distinct income categories into one. The ledger still balances, but penalty revenue is now booked as fee revenue. That corrupts anything downstream that reads the account: revenue recognition, regulatory income reporting, product-level P&L, and any dispute or refund logic that treats penalties differently from fees. The books balance while telling a false story about where the money came from.
+
+"Existing tests pass" and "the spec holds" are both true and both irrelevant to the actual defect. The double-entry invariant was never designed to catch account-misclassification. Its silence here is a coverage gap, not a green light. A narrow maintained spec tells you what it guarantees, not that everything outside it is fine.
+
+The comment `// Debit and credit still equal` is the tell: it defends against the one property under test while ignoring the semantics the change actually breaks.
+
+DECISION: BLOCK
+REASON: The change satisfies the double-entry spec but misclassifies penalty income as fee income, corrupting revenue reporting and any downstream logic that distinguishes the two.

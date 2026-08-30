@@ -1,0 +1,14 @@
+The double-entry floor is satisfied: one debit, one credit, equal amounts. The spec doesn't complain, and it shouldn't. But the spec only sees balance, not meaning.
+
+The change redirects penalty revenue into the fee-income account. Those are distinct revenue categories. Penalty income (default charges, late-payment penalties) and fee income (origination, servicing, administrative fees) are typically recognised, reported, and often taxed and regulated differently. Collapsing them:
+
+- corrupts income reporting — penalty revenue silently disappears into fees, so any downstream report, GL rollup, or regulatory return that breaks out penalty income now understates it and overstates fees;
+- is a one-way data-integrity loss — once posted to the wrong account there's no field distinguishing "this credit was really a penalty," so the categorisation can't be reconstructed later;
+- likely breaks reconciliation and analytics that key on the penalty-income account, even though every individual journal entry still balances.
+
+"Debit and credit still equal" is exactly the reassurance that makes this dangerous: it passes the maintained spec and the existing tests while changing what the numbers *mean*. The stated motivation ("simplify by reusing the account") is a code-tidiness reason applied to a domain distinction that exists for accounting reasons, not incidental duplication.
+
+This is precisely the class of risk the instructions warn about: not-violating-the-floor is not the same as safe.
+
+DECISION: BLOCK
+REASON: The change balances but misclassifies penalty revenue as fee income, an unrecoverable corruption of income categorisation that the double-entry floor cannot detect.

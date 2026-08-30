@@ -21,3 +21,16 @@
 [OS2_double_post floor 0] caught_oos=no decision=BLOCK
 [OS2_double_post floor 1] caught_oos=no decision=BLOCK
 [OS2_double_post floor 2] caught_oos=YES decision=BLOCK
+[OS2_double_post floor 3] caught_oos=no decision=BLOCK
+[OS3_wrong_account nospec 0] caught_oos=YES decision=BLOCK
+[OS3_wrong_account nospec 1] caught_oos=YES decision=BLOCK
+[OS3_wrong_account nospec 2] caught_oos=YES decision=BLOCK
+[OS3_wrong_account nospec 3] caught_oos=no decision=BLOCK
+[OS3_wrong_account ceiling 0] caught_oos=no decision=BLOCK
+[OS3_wrong_account ceiling 1] caught_oos=YES decision=BLOCK
+[OS3_wrong_account ceiling 2] caught_oos=YES decision=BLOCK
+[OS3_wrong_account ceiling 3] caught_oos=YES decision=BLOCK
+[OS3_wrong_account floor 0] caught_oos=no decision=BLOCK
+[OS3_wrong_account floor 1] caught_oos=YES decision=BLOCK
+[OS3_wrong_account floor 2] caught_oos=no decision=BLOCK
+[OS3_wrong_account floor 3] caught_oos=no decision=BLOCK

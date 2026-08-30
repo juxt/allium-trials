@@ -1,0 +1,15 @@
+This is a change that balances but is still wrong.
+
+**What the change actually does.** The debit leg is untouched: it still hits `receivablePenalty`. Only the credit leg moves, from `incomePenalty` to `incomeFee`. So yes, debits still equal credits and the trial balance still ties. That is exactly why it compiles and the tests pass, and it is also why "debit and credit still equal" is a red herring. Double-entry balancing tells you the books are internally consistent, not that money landed in the right account.
+
+**Why it's not safe.** The change now posts a penalty *receivable* against *fee* income. Those are two different accounts on purpose:
+
+- Penalty income and fee income are distinct revenue lines. Merging the credit destroys the ability to tell penalty revenue from fee revenue in the GL, so every downstream report that sums by account, management P&L, regulatory returns, revenue recognition, is now silently misstated.
+- Penalties and fees frequently have different regulatory and tax treatment, and different refund/waiver/reversal rules. A reversal that keys off `incomePenalty` will no longer find these entries, and a fee waiver keying off `incomeFee` will now claw back penalty income by accident.
+- The receivable and income legs are now semantically mismatched: `receivablePenalty` on one side, `incomeFee` on the other. Any reconciliation that pairs the penalty receivable with penalty income will break.
+- This posts to a production ledger. Misclassified GL entries are painful and sometimes impossible to unwind cleanly after the fact, and the existing tests demonstrably do not cover the account-identity property, so "tests pass" gives no assurance here.
+
+"Simplify by reusing the account" trades a real accounting distinction for a cosmetic reduction in named accounts. That is not simplification, it's conflation.
+
+DECISION: BLOCK
+REASON: The credit leg is redirected from penalty income to fee income, which balances but silently misclassifies penalty revenue as fee revenue, corrupting GL reporting, regulatory treatment, and reversal logic despite passing tests.

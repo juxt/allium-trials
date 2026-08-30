@@ -1,0 +1,19 @@
+## Review
+
+The spec floor holds. Debit `receivablePenalty` still equals credit, so double-entry balance is preserved. Existing tests pass because they check the same invariant. That is exactly why this change is dangerous: it slides past every automated gate while corrupting the ledger's meaning.
+
+The change books **penalty income into the fee-income account**. Balance is a structural property; it says nothing about whether money landed in the *right* account. Here it did not.
+
+Concrete harms the spec never mentions:
+
+- **Revenue misclassification.** Penalties and fees are distinct income categories in financial reporting. Regulators, auditors, and management accounts need them separated. Collapsing them understates fee income in one direction and erases penalty income entirely.
+- **Broken sub-ledger correspondence.** The debit lands in `receivablePenalty` while the credit lands in `incomeFee`. The penalty receivable and its income no longer pair. Any reconciliation, reversal, or refund flow keyed on the penalty account pairing will now mismatch or silently misfile.
+- **Tax and regulatory treatment.** In some jurisdictions penalty income is treated differently from service fees. Misclassification at the journal level propagates into returns and disclosures.
+- **Irreversibility.** These are posted journal entries. Once live, correcting them means reversal entries and a restatement, not a code revert.
+
+The stated justification, "simplify by reusing the fee-income account," is a false economy. The accounts are not interchangeable; the separation is the point.
+
+This is the textbook case for treating the spec as a floor rather than a checklist. "Does not violate the spec" and "safe to merge" are different questions, and the second one fails.
+
+DECISION: BLOCK
+REASON: The change preserves double-entry balance but misroutes penalty income into the fee-income account, corrupting revenue classification and sub-ledger reconciliation in ways the partial spec does not cover.

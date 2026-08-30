@@ -1,0 +1,10 @@
+The change satisfies the spec: one debit leg, one credit leg, equal amounts, so double-entry balance holds. That's exactly why the spec can't be the thing that decides this.
+
+What the change actually does is post penalty income into the fee-income account. The ledger balances, but the general ledger now misclassifies revenue at the account level. Penalty income and fee income are distinct for good reasons: they carry different regulatory treatment, different tax treatment, different disclosure obligations, and they feed different lines in financial and management reporting. Collapsing them means every downstream consumer that reads `incomeFee` now silently overstates fees and understates penalties. Reconciliation against penalty subledgers breaks. Historical comparability breaks. None of this trips a balance check because the corruption is in *which* account, not in the arithmetic.
+
+"Existing tests pass" is consistent with this being a bug: the tests evidently assert balance, not account identity, which is the same blind spot the spec has. The comment "Debit and credit still equal" is true and beside the point.
+
+There is no correctness argument for the merge, only a convenience one ("simplify by reusing the account"). Reusing an account to save a line of code trades a real data-integrity property for nothing of value.
+
+DECISION: BLOCK
+REASON: The change keeps debits equal to credits but posts penalty income to the fee-income account, misclassifying revenue at the ledger level and corrupting downstream financial, tax and regulatory reporting that the partial spec never constrains.

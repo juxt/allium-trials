@@ -1,0 +1,10 @@
+The spec is silent on this change, and that silence is the trap.
+
+**What the spec checks:** sum of debit legs equals sum of credit legs. The proposed change swaps the credit account (`incomePenalty` → `incomeFee`) but keeps a single debit and single credit of equal `amount`. Balance is preserved. A mechanical spec-gate passes it, and the comment "Debit and credit still equal" is correct.
+
+**What the spec does not check:** account mapping. Double-entry balance is a structural invariant, not a semantic one. It constrains the shape of the posting, not the meaning of the accounts. Reusing the fee-income account books penalty revenue as fee revenue. The ledger still balances while the financials are wrong: penalty income is understated, fee income overstated, and any downstream report, revenue-recognition rule, or regulatory return that distinguishes the two now misstates. "Existing tests pass" tells you the same thing the spec does, from the same blind spot.
+
+This is the failure mode the balance spec cannot see. Passing it is necessary, not sufficient. A change can be fully spec-conformant and still materially incorrect when the defect lives in a dimension the spec was never written to constrain. The right response is not to merge and not to silently widen the spec in your head, but to block and either add a maintained property covering account-to-transaction-type mapping or route the categorisation decision to someone who owns the chart of accounts.
+
+DECISION: BLOCK
+REASON: The change preserves double-entry balance so the maintained spec passes, but it misclassifies penalty income as fee income, a correctness and reporting error the balance-only spec was never designed to catch.

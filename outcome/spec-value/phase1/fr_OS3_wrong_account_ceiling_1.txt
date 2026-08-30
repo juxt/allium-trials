@@ -1,0 +1,16 @@
+## Review
+
+The maintained spec covers one property: for each posted transaction, debit legs sum to credit legs. The proposed change keeps that property intact. It swaps the *credit account* (`incomePenalty` → `incomeFee`) but not the amount or the leg structure, so debits still equal credits. Against the letter of the spec, nothing is violated. That is exactly why the compiler is happy and the tests pass.
+
+But "doesn't violate the maintained spec" is not the same as "safe to merge." The change silently reclassifies penalty income as fee income. Two distinct revenue streams now post to the same ledger account. The consequences sit entirely outside what this spec constrains:
+
+- Financial reporting and revenue recognition can treat fees and penalties differently. Penalties are often contingent, sometimes waivable, and can carry different regulatory or tax treatment.
+- Reconciliation and audit trails lose the ability to distinguish the two, which is hard to unwind once historical postings accumulate.
+- Downstream consumers (dunning, reporting, disclosures) that read the income account by type will now misattribute.
+
+The double-entry invariant is a *necessary* correctness property, not a *sufficient* one. A spec scoped to balance-only will happily wave through any change that keeps the two legs equal, including ones that book money to the wrong account. The narrowness of the spec is doing the work of making this look safe, and it isn't.
+
+The rationale in the diff comment ("simplify by reusing the fee-income account") is a semantic change dressed as a refactor. It needs sign-off from whoever owns revenue classification, not a green test suite.
+
+DECISION: BLOCK
+REASON: The change preserves the maintained double-entry balance but misclassifies penalty income as fee income, a real ledger-correctness fault the balance-only spec is simply blind to.

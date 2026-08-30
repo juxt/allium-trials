@@ -1,0 +1,27 @@
+This is a straightforward one to reason through, and the change should not merge.
+
+## What the change actually does
+
+The two-line entry is a double-entry pair. The proposed edit keeps the debit on `receivablePenalty` but moves the credit from `incomePenalty` to `incomeFee`:
+
+```
+createDebitJournalEntryForLoan(receivablePenalty, amount);   // unchanged
+createCreditJournalEntryForLoan(incomeFee, amount);          // was incomePenalty
+```
+
+The author's justification, "debit and credit still equal", is true but irrelevant. Balance is a necessary condition for a valid journal entry, not a sufficient one. Every well-formed entry balances; that tells you nothing about whether it posts to the right accounts.
+
+## Why "balances and tests pass" doesn't clear it
+
+Two problems, either one blocking:
+
+**Revenue misattribution.** Penalty income and fee income are distinct GL accounts precisely because they are different revenue streams. Penalties are often reported, taxed, and regulated differently from service fees, and in consumer-lending contexts penalty/late-charge income is frequently subject to separate disclosure and caps. Folding penalties into the fee account silently overstates fee income and understates penalty income for every penalty posted. That corrupts the ledger and any downstream regulatory or financial reporting drawn from it, and it does so invisibly because the books still balance.
+
+**Account-pair incoherence.** The debit still lands on `receivablePenalty` while the credit now lands on `incomeFee`. The receivable and the recognised income no longer describe the same economic event. Reconciling penalty receivables against penalty income will now show a permanent, growing discrepancy.
+
+That the existing tests pass is expected, not reassuring: a suite that checks "debit == credit" or overall balance will not notice which income account was used. The passing tests reveal a coverage gap, not a safe change. "Simplify by reusing an account" is not a simplification here; the two accounts are not interchangeable, they carry different meaning by design.
+
+If there were a genuine requirement to consolidate these revenue lines, that is an accounting-policy decision for finance, made deliberately with reporting and regulatory sign-off, not a code-level cleanup slipped in for tidiness.
+
+DECISION: BLOCK
+REASON: The edit reposts penalty income into the fee-income account, silently misattributing a distinct (and often separately regulated) revenue stream and breaking the receivable-to-income pairing, none of which the balance check or existing tests can catch.

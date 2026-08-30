@@ -1,0 +1,14 @@
+This change satisfies the maintained spec: the debit and credit legs still equal, so double-entry balance holds. But the spec is a floor, and the change introduces a real data-integrity problem the spec doesn't mention.
+
+Penalty income and fee income are distinct general-ledger accounts by design. They feed different lines on financial statements, are recognised under different rules, and are often reported separately for regulatory and tax purposes. Routing penalty postings into `incomeFee` misclassifies revenue at the account level: the ledger still balances, but penalty income is now silently booked as fee income.
+
+The consequences are the kind that balanced-books checks won't catch:
+
+- Income-by-category reporting overstates fees and understates penalties, corrupting any downstream reconciliation, analytics, or regulatory return that splits the two.
+- Once these entries are posted to a live ledger they are painful to unwind. You cannot cleanly separate penalty from fee amounts after the fact without an out-of-band audit trail.
+- "Existing tests pass" only tells us the tests assert balance, not account correctness. The comment "Debit and credit still equal" is true and beside the point.
+
+The stated motivation is "simplify," but merging two accounts is not a simplification, it is a loss of information that the account separation exists to preserve. There is no correctness benefit to weigh against the misclassification risk.
+
+DECISION: BLOCK
+REASON: The entry still balances but posts penalty income into the fee-income account, misclassifying revenue at the ledger level in a way that corrupts category reporting and is hard to reverse once posted.

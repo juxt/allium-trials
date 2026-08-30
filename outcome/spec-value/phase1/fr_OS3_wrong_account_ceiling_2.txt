@@ -1,0 +1,10 @@
+The double-entry spec is satisfied. Both legs still post `amount`, so debits equal credits, and the maintained property holds. If spec conformance were the only bar, this passes.
+
+But spec conformance is not the same as safe. The change routes penalty income into `incomeFee`, collapsing two distinct revenue accounts into one. The ledger can no longer distinguish penalty income from fee income. That distinction is not cosmetic: penalty and fee revenue are separate categories for financial reporting, regulatory disclosure, and often tax treatment. Balancing entries into the wrong account is a classic misclassification defect: the books balance to the penny and still misstate what the money is.
+
+The maintained spec is silent on account identity. It constrains the *sum* of legs, not *which* accounts they hit. That silence is exactly the blind spot here. "Compiles, tests pass, debits equal credits" is necessary but not sufficient, and the comment `// Debit and credit still equal` is arguing to the wrong invariant. The right check is whether penalty postings land in a penalty account, which the spec never asserts and these tests evidently don't either.
+
+This is a case where the relational property survives intact while a semantic bug walks straight through it. The spec gives no cover to merge.
+
+DECISION: BLOCK
+REASON: The change misclassifies penalty income as fee income, a real accounting defect that the double-entry balance spec cannot see because it constrains only the equality of legs, not which accounts they post to.

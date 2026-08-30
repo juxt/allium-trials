@@ -159,5 +159,96 @@
     "rep": 2,
     "caught": 1,
     "decision": "BLOCK"
+  },
+  {
+    "id": "OS2_double_post",
+    "arm": "floor",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "nospec",
+    "rep": 0,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "nospec",
+    "rep": 1,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "nospec",
+    "rep": 2,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "nospec",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "ceiling",
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "ceiling",
+    "rep": 1,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "ceiling",
+    "rep": 2,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "ceiling",
+    "rep": 3,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "floor",
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "floor",
+    "rep": 1,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "floor",
+    "rep": 2,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS3_wrong_account",
+    "arm": "floor",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
   }
 ]

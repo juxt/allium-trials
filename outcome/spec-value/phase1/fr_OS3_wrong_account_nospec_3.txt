@@ -1,0 +1,14 @@
+This misclassifies revenue. The change reroutes the credit side of a penalty posting from `incomePenalty` to `incomeFee`, so penalty income now lands in the fee-income account.
+
+The justification in the comment is a red herring. "Debit and credit still equal" is true but irrelevant. Balancing is necessary for a valid journal entry, not sufficient for a correct one. A double-entry system stays balanced no matter which income account you credit, so the invariant the comment appeals to cannot detect this class of error at all.
+
+What actually breaks:
+
+- **Revenue misclassification.** Penalty income and fee income are distinct accounts for a reason. After this change the ledger can no longer tell them apart, which corrupts financial reporting and any downstream aggregation that reads the penalty account.
+- **Regulatory and contractual treatment.** Penalties and fees often sit under different rules (disclosure, caps, waiver, refund on early settlement). Booking penalties as fees can put reporting on the wrong side of those rules.
+- **Reversals and reconciliation.** Waiving or reversing a penalty expects to debit the account it was credited to. Splitting the original posting across two income accounts leaves the penalty account permanently understated and breaks reconciliation.
+
+"Existing tests pass" is not reassurance here. It tells us the tests assert on balancing but not on *which* income account is credited. That is a coverage gap, not evidence of safety. The correct posting is exactly the current code.
+
+DECISION: BLOCK
+REASON: Crediting `incomeFee` instead of `incomePenalty` misclassifies penalty revenue as fee revenue, corrupting reporting, reversals and regulatory treatment, and the "debit and credit still equal" invariant is structurally incapable of catching it.

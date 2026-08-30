@@ -1,0 +1,28 @@
+This is a review task with everything I need inline. Let me reason about it directly.
+
+## Review
+
+The spec is satisfied *per attempt* — each pass through the block posts a balanced debit/credit pair. That is exactly the trap: the spec is a floor, and "each attempt is balanced" does not mean "the transaction is balanced."
+
+The problem is that `retry` wraps two **non-idempotent, independently-committing** writes with no surrounding DB transaction and no idempotency key:
+
+```
+retry(3, () -> {
+    createDebitJournalEntryForLoan(cash, t.amount);   // (1)
+    createCreditJournalEntryForLoan(portfolio, t.amount);  // (2)
+});
+```
+
+Consider the exact failure mode the change is meant to handle — a transient DB error. Suppose attempt 1 commits the debit (1), then the credit (2) throws. `retry` re-runs the **whole block**. Attempt 2 posts a debit *and* a credit and succeeds. Net posted legs for this one transaction:
+
+- debits: `2 × amount`
+- credits: `1 × amount`
+
+That is a duplicate posting **and** it violates the maintained double-entry spec itself. The "each attempt posts a balanced pair" comment is true and irrelevant: the invariant is over the transaction, not the attempt. Any interleaving where a leg commits before the retrying failure double-counts money — real cash overstated, portfolio understated, or vice versa.
+
+Even setting the spec aside, this is a money-critical data-integrity regression: retries of a non-idempotent side effect. The reason existing tests pass is that they don't inject a mid-block transient failure, which is the one scenario this code was written for.
+
+The fix is to make the retry safe, not to retry raw writes: wrap the pair in a single DB transaction so a failed attempt rolls back atomically before the next attempt, or attach an idempotency key so re-posting is a no-op. Retry belongs *around* an atomic unit, not around two separately-committing writes.
+
+DECISION: BLOCK
+REASON: The retry re-runs two independently-committing, non-idempotent writes with no enclosing transaction or idempotency key, so a transient failure after the debit commits produces duplicate/unbalanced postings that corrupt the ledger and violate the double-entry invariant itself.
