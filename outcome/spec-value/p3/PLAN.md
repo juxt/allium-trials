@@ -38,3 +38,21 @@ catches the wrong-rate mutant end-to-end.
 Every change: RED test first, then GREEN, then re-run the real repro. Do not ship unverified (I reverted
 an unverified D8 fix last session — do not repeat). Constructs/names are the human's; these three were
 DIRECTED by the human this session. Commit each step. If a step over-runs, stop at a clean, tested state.
+
+## STATUS (end of P3c session)
+1. FIX D8 — RESOLVED as RETRACTED: D8 was my trace-format error (event a... -> entity="" collapse),
+   NOT a checker bug. Verified the relational quantified monitor is CORRECT (some/every/no/exists-one,
+   entity identity, at-most-one/uniqueness) with correct `entity=` traces. Locked with a regression test
+   (relational_quantified_forms_correct). => replay/uniqueness IS a catchable class. Net gain: confirmed
+   trustworthiness rather than a fix.
+2. TEMPORAL ORDERING — DONE & TESTED & COMMITTED: added multi-step before/precedes/after over the event
+   timeline (monitor eval + per-entity arrival order) and declared them builtin in analyse name-
+   resolution. auth-anywhere-before-capture now caught end-to-end. Tests: multistep_ordering_before;
+   50 allium-v4 tests pass. (Immediate-past `old` already worked; liveness until/eventually still absent.)
+3. REFERENCE / ABSOLUTE ORACLE — mechanism ALREADY EXISTS (E7: input-anchored absolute invariant catches
+   wrong-rate). The `let` pure-function enhancement is DESIGNED (REFERENCE-ORACLE-DESIGN.md) but NOT
+   shipped: it needs a new ItemKind that ripples through the crate's exhaustive matches — do it next
+   session RED->GREEN, not rushed. Then re-run the E7 mutant using a `let expected_interest` oracle.
+
+Remaining gaps for a future session: `let` reference-function construct; liveness (until/eventually);
+concurrency; refinement. Highest-value next: ship `let` (ergonomic absolute oracle) with tests.
