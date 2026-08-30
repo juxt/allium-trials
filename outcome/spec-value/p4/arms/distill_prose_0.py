@@ -1,39 +1,49 @@
 from decimal import Decimal, ROUND_HALF_EVEN
 
-
-def _round(value):
-    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN))
-
-
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    f = annual_rate_pct / 1200
-    fee = _round(disbursed * 0.0025)
-
-    if f == 0:
-        base_emi = _round(disbursed / months)
+    P = Decimal(str(disbursed)).quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+    r = Decimal(str(annual_rate_pct))
+    n = months
+    
+    f = r / Decimal(1200)
+    S = (Decimal('0.0025') * P).quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+    
+    if r == 0:
+        base_emi = P / Decimal(n)
     else:
-        base_emi = _round(disbursed * f * (1 + f) ** months / ((1 + f) ** months - 1))
-
+        factor = (1 + f) ** n
+        base_emi = P * f * factor / (factor - 1)
+    base_emi = base_emi.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+    
+    B = P
     result = []
-    balance = disbursed
-    for period in range(months):
-        outstanding_start = _round(balance)
-        pure_int = _round(balance * f)
-
-        if period == months - 1:
-            principal = _round(balance)
-            period_base = _round(pure_int + principal)
+    
+    for i in range(1, n + 1):
+        outstanding_start = B
+        
+        I = B * f
+        I = I.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+        
+        if i == n:
+            principal = B
         else:
-            principal = _round(base_emi - pure_int)
-            period_base = base_emi
-
+            principal = base_emi - I
+        principal = principal.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+        
+        interest_charge = I + S
+        interest_charge = interest_charge.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+        
+        emi = principal + interest_charge
+        emi = emi.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+        
+        B = B - principal
+        B = B.quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
+        
         result.append({
-            "outstanding_start": outstanding_start,
-            "principal": principal,
-            "interest": _round(pure_int + fee),
-            "emi": _round(period_base + fee),
+            'outstanding_start': float(outstanding_start),
+            'principal': float(principal),
+            'interest': float(interest_charge),
+            'emi': float(emi)
         })
-
-        balance = _round(balance - principal)
-
+    
     return result

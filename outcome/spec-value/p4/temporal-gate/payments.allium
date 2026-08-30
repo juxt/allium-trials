@@ -1,0 +1,10 @@
+-- allium: 4
+-- Payment lifecycle ordering (a bug class no arithmetic/relational invariant can catch).
+component Payments
+  entity Event
+  observable state is_auth(Event) : bool
+  observable state is_capture(Event) : bool
+  observable state is_settle(Event) : bool
+  invariant capture_after_auth means every c :: is_capture(c) implies some a :: (is_auth(a) and before(a, c))
+  invariant settle_after_capture means every s :: is_settle(s) implies some c :: (is_capture(c) and before(c, s))
+end

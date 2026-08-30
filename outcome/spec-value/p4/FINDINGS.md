@@ -119,3 +119,16 @@ This session shipped division (+ reference constants). Re-test on 144 REAL Finer
   This is the P3 value-blindness gap CLOSED. (Faithfulness caveat: the absolute invariant holds on
   144/150 real traces at tol 0.02; 6 miss due to Fineract's exact day-count vs the rate/1200
   approximation — a real limit fixed by emitting Fineract's exact per-period rate factor.)
+
+## FINDING 7 — the shipped TEMPORAL-ORDERING feature closes the sequencing bug-class gap (executable)
+Payment sequencing (capture must follow authorize; settle must follow capture) is a core banking bug
+class that NO arithmetic/relational invariant can catch. The multi-step ordering shipped this
+session-set (`before`/`precedes` over the event timeline) expresses and checks it:
+- temporal spec (capture_after_auth, settle_after_capture) monitored over event streams:
+    valid streams passed (no false positive): 4/4
+    ordering mutants (capture-before-auth, missing-auth, settle-before-capture) caught: 12/12
+- => Pattern with F6: each language feature shipped this session closes a DISTINCT real bug-class gap
+  the executable gate can now catch — DIVISION -> value bugs (0->144/144 on real traces); TEMPORAL
+  ORDERING -> sequencing bugs (12/12). This is the concrete, deliverable "why v4 is better": not a
+  higher one-shot build-correctness rate (saturated), but an expanding set of bug classes a v4 spec can
+  mechanically GATE against, that a prose spec cannot express or check at all.
