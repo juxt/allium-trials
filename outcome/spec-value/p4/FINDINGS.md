@@ -175,3 +175,16 @@ run over all 144 real traces, CATCHES it (on 24 traces). A monitorable invariant
 against every input the system actually sees, where an example-based test checks only the cases someone
 thought to write. Honest caveat: somewhat expected (a suite without large loans can't see a large-loan
 bug); the point is that a spec-gate's coverage is the whole input distribution, not a hand-picked set.
+
+## FINDING 9 — v4's value expressiveness was incomplete for banking; this programme closed the gaps
+Probing what real banking invariants v4 could express surfaced THREE essential missing constructs; all
+were shipped this programme, end-to-end with tests + executable gate demonstrations (54 v4 tests pass):
+- DIVISION `/` — was entirely absent (`x/1200` -> `x` silently). Enables rate/ratio invariants. (F6)
+- min / max — caps and floors (`fee = min(computed, cap)`, `payment = max(due, minimum)`). Catches a
+  cap breach the relational spec can't see.
+- if / then / else — conditional/tiered values (`rate = if bal > 10000 then 5 else 10`). Catches a
+  tiered-rate violation.
+- => "Building a better language" is concrete and corpus-driven here: each construct was motivated by a
+  real banking invariant it unlocked, and each measurably widened the executable gate's reach. v4 can
+  now express the arithmetic of real loan/fee products (rates, caps, tiers) and gate against their drift.
+  Remaining gap noted: the day-count-exact rate factor for penny-perfect interest laws.

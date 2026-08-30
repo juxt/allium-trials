@@ -97,7 +97,7 @@
   real financial specs need, and each measurably widened what the gate catches on real code.</p>
   <div class="cards">
     <div class="card"><h3>division <code>/</code></h3><p>Was entirely missing — <code>x/1200</code> silently became <code>x</code>. Now specs pin interest to a rate. Value-drift catch on 144 real traces: <span class="b">0/144</span> → <span class="g">144/144</span>.</p></div>
-    <div class="card"><h3>min / max</h3><p>Caps and floors (<code>fee = min(computed, cap)</code>) — pervasive in banking. Catches a cap breach the relational spec can't see.</p></div>
+    <div class="card"><h3>min / max &amp; if/then/else</h3><p>Caps/floors (<code>fee = min(computed, cap)</code>) and tiered values (<code>if bal &gt; 10k then 5 else 10</code>) — the shapes real fee/rate products need.</p></div>
     <div class="card"><h3>temporal ordering</h3><p><code>before</code> over the event timeline. Payment sequencing (capture-after-authorize): <span class="g">12/12</span> ordering bugs caught, 0 false positives.</p></div>
     <div class="card"><h3>reference definitions</h3><p><code>given k means &lt;expr&gt;</code> — absolute, input-anchored invariants. The difference between catching structural bugs only and catching wrong values too.</p></div>
   </div>
@@ -107,7 +107,7 @@
     <li><b>Pitch:</b> the spec you <em>need</em> for correctness (over no-spec), that <em>stays true</em> because it's executable (over prose/v3). Not "more correct or cheaper than prose" — that saturates.</li>
     <li><b>Lean into:</b> distillation + a standing gate over real production traces; each new operator opens a bug class to gate against.</li>
     <li><b>Honest limits:</b> one-shot build/elicit/distill correctness is model-and-notation-independent; the gate needs the spec's reference inputs emitted in traces; absolute invariants are exact only modulo the code's rounding.</li>
-    <li><b>Next gaps found:</b> <code>if/then/else</code> for tiered rates; the day-count-exact rate factor for penny-perfect interest laws.</li>
+    <li><b>Shipped this programme (54 tests):</b> <code>/</code> division, <code>min/max</code> caps/floors, <code>if/then/else</code> tiers — the arithmetic real loan/fee products need. <b>Next:</b> day-count-exact rate factor for penny-perfect interest laws.</li>
   </ul>
 
   <div class="foot">Programme 4 · findings F1–F8 · all reproducible from outcome/spec-value/p4 · division + min/max + temporal shipped with tests (53 passing)</div>
