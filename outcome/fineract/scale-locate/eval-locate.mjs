@@ -55,7 +55,7 @@ function agent(prompt) {
   const r = spawnSync("claude", [
     "-p", prompt, "--output-format", "json", "--model", MODEL, "--max-turns", String(TURNS),
     "--dangerously-skip-permissions",
-    "--disallowedTools", "Edit,Write,NotebookEdit,WebFetch,WebSearch",
+    "--disallowedTools", "Task,Agent,Edit,Write,NotebookEdit,WebFetch,WebSearch",
   ], { cwd: REPO, encoding: "utf8", maxBuffer: 1 << 29, timeout: 1200000 });
   let j = {};
   try { j = JSON.parse(r.stdout || "{}"); } catch { j = { result: r.stdout || "", parse_error: true }; }

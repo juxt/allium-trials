@@ -1,0 +1,26 @@
+## Assessment: yes, the charge-off repayment path can silently post an unbalanced transaction.
+
+### The method
+
+`createJournalEntriesForChargeOffLoanRepayments` — `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java:527` (reached from `createJournalEntriesForRepayments` at `:519-520` when `loanDTO.isMarkedAsChargeOff()`).
+
+Its accrual twin is `createJournalEntriesForRepaymentWhenLoanIsChargedOff` in `AccrualBasedAccountingProcessorForLoan.java` (same shape, same hazard).
+
+### The exact mechanism
+
+Every other loan-repayment path posts each leg through a helper that takes a debit account, a credit account and *one* amount, so debit and credit are emitted as a matched pair per leg and cannot diverge. The charge-off path breaks that pairing. It builds the two sides into **three independent accumulators** and posts them from separate loops with no reconciliation:
+
+1. A `GLAccountBalanceHolder` with two separate `LinkedHashMap`s — `debitBalances` and `creditBalances` (`GLAccountBalanceHolder.java:32-33`). `populateCreditDebitMaps` (`CashBasedAccountingProcessorForLoan.java:197-205`) pushes the same `transactionPartAmount` into both maps on each call.
+2. A scalar `totalDebitAmount` (`:545`), accumulated leg-by-leg alongside those calls (`:549, :589, :616, :644, :672`).
+
+Then at posting time the two sides are drained independently:
+- **Credits**: loop over `creditBalances` (`:692-696`), always.
+- **Debits**: for a loan-to-loan or account transfer, post a *single* entry of the scalar `totalDebitAmount` (`:699-704`); otherwise loop over the `debitBalances` map (`:706-712`).
+
+Nothing between accumulation and posting computes `sum(debitBalances)` vs `sum(creditBalances)` (or either against `totalDebitAmount`) and asserts equality. Balance holds only by the hand-maintained convention that (a) every branch calls `populateCreditDebitMaps` exactly once per leg so the two maps stay in lockstep, and (b) the scalar `totalDebitAmount` is bumped by the same amount every time. Three parallel running totals kept equal by discipline, not by construction. Any branch that adds to one side without the other, or bumps `totalDebitAmount` without a matching map entry (or vice versa), posts a lopsided set of journal lines with nothing to catch it.
+
+### Why nothing catches it
+
+The only debit=credit assertion in the ledger is `checkDebitAndCreditAmounts` at `JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-326` — it sums the credit array and debit array and throws `DEBIT_CREDIT_SUM_MISMATCH` if they differ. But that guard sits on the operator-submitted *manual* journal-entry route (`createJournalEntry`), not on the loan-generated posting path. The charge-off legs go straight to `createCreditJournalEntryForLoan` / `createDebitJournalEntryForLoan` and never pass through it. So an imbalance on this path is written silently and only surfaces in later GL reconciliation.
+
+This matches the spec's `double_entry_balances` invariant precisely: it is emergent, not enforced, and the charge-off repayment method is where the two sides are accumulated separately and never reconciled against each other.

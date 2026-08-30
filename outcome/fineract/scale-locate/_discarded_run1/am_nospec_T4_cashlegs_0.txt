@@ -1,0 +1,34 @@
+Verified. Here's the trace.
+
+## CASH-basis repayment journalling
+
+**Entry and dispatch.** `CashBasedAccountingProcessorForLoan.createJournalEntriesForLoan` routes repayment-type transactions (`CashBasedAccountingProcessorForLoan.java:81-84`) to `createJournalEntriesForRepayments`, which for a non-charged-off loan calls `createJournalEntriesForLoanRepayments` (the normal-repayment handler).
+
+**The handler:** `createJournalEntriesForLoanRepayments` at `CashBasedAccountingProcessorForLoan.java:727`.
+
+### Legs journalled
+
+The transaction amount is split into four component amounts pulled off the `LoanTransactionDTO` at lines 736-739, and each non-zero leg gets its own **credit** entry:
+
+| Leg | Amount source | Credit account type | Line |
+|-----|---------------|--------------------|------|
+| Principal | `getPrincipal()` | `CashAccountsForLoan.LOAN_PORTFOLIO` | `748` |
+| Interest | `getInterest()` | `CashAccountsForLoan.INTEREST_ON_LOANS` | `758` |
+| Fees | `getFees()` | `CashAccountsForLoan.INCOME_FROM_FEES` | `779` (or `773` net-of-tax) |
+| Penalties | `getPenalties()` | `CashAccountsForLoan.INCOME_FROM_PENALTIES` | `801` (or `794` net-of-tax) |
+
+(Overpayment is handled separately at `814` → `OVERPAYMENT`.) Each leg amount is accumulated into `totalDebitAmount`, and a single matching **debit** entry is posted to `CashAccountsForLoan.FUND_SOURCE` for the whole amount at `CashBasedAccountingProcessorForLoan.java:839-841`. So on CASH basis the money actually received debits fund source and credits portfolio/income; nothing is journalled until the repayment posts.
+
+Principal and interest go through `helper.createCreditJournalEntryForLoan`; fees and penalties go through `helper.createCreditJournalEntryForLoanCharges` (they carry per-charge payment detail).
+
+### Where the per-type GL accounts come from
+
+The enum values above are `accountMappingTypeId`s. Two lookup methods in `AccountingProcessorHelper.java` resolve them to a `GLAccount`:
+
+- **Principal, interest, fund source** → `getLinkedGLAccountForLoanProduct` at `AccountingProcessorHelper.java:1179`. It queries the product-to-GL mapping table via `accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId, PortfolioProductType.LOAN, accountMappingTypeId)` (line 1186). For `FUND_SOURCE` it additionally looks for a payment-channel-specific override keyed by `paymentTypeId` (`findByProductIdAndProductTypeAndFinancialAccountTypeAndPaymentTypeId`, lines 1194-1196). Organisation-level accounts short-circuit to `FinancialActivityAccount` (line 1182).
+
+- **Fees and penalties** → `getLinkedGLAccountForLoanCharges` at `AccountingProcessorHelper.java:1212`. Same `findCoreProductToFinAccountMapping` base lookup (line 1213), but when a `chargeId` is present it prefers a charge-specific mapping via `findProductIdAndProductTypeAndFinancialAccountTypeAndChargeId` (lines 1224-1226), so a particular fee/penalty can map to its own income account.
+
+Both ultimately return `accountMapping.getGlAccount()` from a `ProductToGLAccountMapping` row — the product→GL-account mapping configured for the loan product.
+
+The `CashAccountsForLoan` enum (`FUND_SOURCE=1`, `LOAN_PORTFOLIO=2`, `INTEREST_ON_LOANS=3`, `INCOME_FROM_FEES=4`, `INCOME_FROM_PENALTIES=5`, …) is defined in `fineract-core/.../accounting/common/AccountingConstants.java:37`.

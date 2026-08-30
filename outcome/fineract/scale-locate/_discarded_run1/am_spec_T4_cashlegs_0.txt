@@ -1,0 +1,40 @@
+Both citations are verified against the source. Here's the answer.
+
+## Cash-basis normal loan repayment posting
+
+On cash basis, a normal (non-charge-off) repayment routes through `createJournalEntriesForRepayments`, which checks `loanDTO.isMarkedAsChargeOff()` and, for a normal repayment, delegates to:
+
+**`createJournalEntriesForLoanRepayments(LoanDTO, LoanTransactionDTO, Office)`**
+`fineract-provider/.../accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java:727`
+(dispatched from `createJournalEntriesForRepayments` at `:515`, else-branch at `:522`)
+
+### Leg types journalled
+
+Every payment component is extracted from the `LoanTransactionDTO` (`:736–740`) and posted as a **credit**, with a single **debit** for the summed total. On cash basis all four types post at the moment cash moves (repayment), matching the spec's "leg posts when cash moves" regime.
+
+| Leg | Amount extraction | Posting call | Account-mapping enum |
+|-----|-------------------|--------------|----------------------|
+| Principal | `getPrincipal()` `:736` | `createCreditJournalEntryForLoan` `:748` | `CashAccountsForLoan.LOAN_PORTFOLIO` |
+| Interest | `getInterest()` `:737` | `createCreditJournalEntryForLoan` `:758` | `CashAccountsForLoan.INTEREST_ON_LOANS` |
+| Fees | `getFees()` `:738` | `createCreditJournalEntryForLoanCharges` `:773`/`:779` | `CashAccountsForLoan.INCOME_FROM_FEES` |
+| Penalties | `getPenalties()` `:739` | `createCreditJournalEntryForLoanCharges` `:794`/`:801` | `CashAccountsForLoan.INCOME_FROM_PENALTIES` |
+| Overpayment | `getOverPayment()` `:740` | `createCreditJournalEntryForLoan` `:814` | `CashAccountsForLoan.OVERPAYMENT` |
+
+The matching debit is a single consolidated entry for `totalDebitAmount` to `CashAccountsForLoan.FUND_SOURCE` `:839`. (Fees/penalties split off any tax portion to a tax-liability account first; transfers and goodwill-credit take alternate debit branches at `:823–842`.)
+
+This is exactly the spec's "balance is emergent" picture: each credit leg is one-sided, and total credits equal the single debit only because the summing at `:746–820` and the debit at `:839` are hand-matched. Nothing on this path asserts it.
+
+### Where the per-type GL accounts come from
+
+The credit/debit helpers resolve the account through `AccountingProcessorHelper`:
+
+**`getLinkedGLAccountForLoanProduct(Long loanProductId, int accountMappingTypeId, Long paymentTypeId)`**
+`fineract-provider/.../accounting/journalentry/service/AccountingProcessorHelper.java:1179`
+
+- Organization-level activities resolve via `financialActivityAccountRepository.findByFinancialActivityTypeWithNotFoundDetection` `:1182`.
+- Otherwise the per-product mapping comes from `accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId, PortfolioProductType.LOAN, accountMappingTypeId)` `:1186`.
+- For `FUND_SOURCE`, a payment-channel-specific override is layered on via `findByProductIdAndProductTypeAndFinancialAccountTypeAndPaymentTypeId` `:1194`.
+
+Fees and penalties use the charge-aware variant **`getLinkedGLAccountForLoanCharges(Long loanProductId, int accountMappingTypeId, Long chargeId)`** `:1212`, which starts from the same `findCoreProductToFinAccountMapping` and then applies per-charge overrides when a `chargeId` is present `:1221`.
+
+The `CashAccountsForLoan` enum values are defined in `fineract-core/.../accounting/common/AccountingConstants.java`.

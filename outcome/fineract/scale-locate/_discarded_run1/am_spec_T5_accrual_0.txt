@@ -1,0 +1,1 @@
+The background agent's findings corroborate my answer and add one useful detail: the `AccountingProcessorForLoanFactory` (`AccountingProcessorForLoanFactory.java:32-48`) is what selects between the two processors based on the loan product's accounting type. My answer above stands, verified from both the direct read and the independent search.

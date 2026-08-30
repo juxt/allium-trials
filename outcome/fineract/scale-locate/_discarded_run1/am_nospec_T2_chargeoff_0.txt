@@ -1,0 +1,33 @@
+## Assessment
+
+Yes, the charge-off repayment posting path can persist an unbalanced posting, and the reason is structural: it is the one repayment-accounting path that hand-rolls its double entry with **no debit-equals-credit assertion**, even though the same helper class enforces exactly that check on the sibling path.
+
+## The method
+
+`AccrualBasedAccountingProcessorForLoan.createJournalEntriesForRepaymentWhenLoanIsChargedOff(...)`
+`fineract-provider/.../accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java:1388`
+
+(and its cash-basis twin `CashBasedAccountingProcessorForLoan.createJournalEntriesForChargeOffLoanRepayments`, `.../CashBasedAccountingProcessorForLoan.java:527`)
+
+This is reached only for charged-off loans: `createJournalEntriesForRepayments` branches on `loanDTO.isMarkedAsChargeOff()` and routes here (`AccrualBasedAccountingProcessorForLoan.java:1371-1373`).
+
+## The mechanism
+
+The method accumulates the two legs into **two independent maps** inside `GLAccountBalanceHolder` (`debitBalances`, `creditBalances`, `GLAccountBalanceHolder.java:32-33`) and tracks a **separate, hand-maintained running total** `totalDebitAmount` that is computed independently of what actually lands in those maps (`AccrualBasedAccountingProcessorForLoan.java:1407`, incremented per component at 1411, 1450, 1480, 1518, 1555).
+
+It then posts the two legs through two loops with **asymmetric guards**:
+
+- credits: posted unconditionally, per-entry `isGreaterThanZero` filter (`:1576-1582`)
+- debits: posted only inside `if (MathUtil.isGreaterThanZero(totalDebitAmount))`, no per-entry filter (`:1584-1598`)
+
+Nothing reconciles `creditBalances` against `debitBalances` before persistence, and the low-level writers `createCreditJournalEntryForLoan` / `createDebitJournalEntryForLoan` (`AccountingProcessorHelper.java:934-947`, `:969+`) each persist a **standalone `JournalEntry` row** with no balance validation. So the balance of the posting rests entirely on the discipline that every credit-producing branch also bumps `totalDebitAmount` and adds a matching debit. There is no invariant enforcing it.
+
+## Why that is the defect
+
+The same helper class already contains the guard this path omits. `createJournalEntriesForLoanCharges` sums both legs and throws `PlatformDataIntegrityException` ("Meltdown in advanced accounting…") when either side fails to equal the transaction total (`AccountingProcessorHelper.java:427-441`). The charge-off repayment path bypasses that helper entirely and reimplements posting inline without the check. Any divergence between the three quantities that are supposed to stay equal but are maintained separately, the credit map total, the debit map total, and `totalDebitAmount`, is written straight to the ledger silently rather than rejected.
+
+## Caveat, stated honestly
+
+In the current code every component block pairs its credit and debit and increments `totalDebitAmount` in lockstep, so today the method balances by construction; I could not construct a live input that unbalances it. The exposure is the missing guardrail, not a reproducible arithmetic bug: this path has removed the one assertion the codebase uses elsewhere to make such an imbalance impossible rather than merely improbable, so any future edit to a component branch here fails open.
+
+The domain layer, for contrast, is not the culprit: charge-off and repayment processing keep `amount == Σ portions` via `updateComponentsAndTotal` (`LoanTransaction.java:598-602`) or `updateComponents` + `handleOverpayment` after `resetDerivedComponents`, and there is no `isBalanced`-style check there either.

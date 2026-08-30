@@ -1,0 +1,116 @@
+{
+  "nospec": [
+    {
+      "task": "T1_newtype",
+      "rep": 0,
+      "score": 3,
+      "max": 4,
+      "cost": 1.8966944000000006,
+      "turns": 17,
+      "in_tok": 679742,
+      "out_tok": 12173,
+      "err": false
+    },
+    {
+      "task": "T2_chargeoff",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 4.129638000000001,
+      "turns": 41,
+      "in_tok": 2690542,
+      "out_tok": 47569,
+      "err": false
+    },
+    {
+      "task": "T3_guard",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.9740095500000001,
+      "turns": 1,
+      "in_tok": 49256,
+      "out_tok": 525,
+      "err": false
+    },
+    {
+      "task": "T4_cashlegs",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.4482721,
+      "turns": 3,
+      "in_tok": 66498,
+      "out_tok": 1899,
+      "err": false
+    },
+    {
+      "task": "T5_accrual",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.46477510000000005,
+      "turns": 4,
+      "in_tok": 98666,
+      "out_tok": 1909,
+      "err": false
+    }
+  ],
+  "spec": [
+    {
+      "task": "T1_newtype",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 2.12006435,
+      "turns": 16,
+      "in_tok": 887647,
+      "out_tok": 12135,
+      "err": false
+    },
+    {
+      "task": "T2_chargeoff",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.88688535,
+      "turns": 14,
+      "in_tok": 305281,
+      "out_tok": 8520,
+      "err": false
+    },
+    {
+      "task": "T3_guard",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.54103435,
+      "turns": 3,
+      "in_tok": 62473,
+      "out_tok": 1716,
+      "err": false
+    },
+    {
+      "task": "T4_cashlegs",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.46098215000000003,
+      "turns": 3,
+      "in_tok": 98234,
+      "out_tok": 1931,
+      "err": false
+    },
+    {
+      "task": "T5_accrual",
+      "rep": 0,
+      "score": 0,
+      "max": 3,
+      "cost": 1.1321713,
+      "turns": 1,
+      "in_tok": 87387,
+      "out_tok": 109,
+      "err": false
+    }
+  ]
+}

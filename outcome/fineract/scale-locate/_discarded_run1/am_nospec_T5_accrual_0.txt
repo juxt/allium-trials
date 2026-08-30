@@ -1,0 +1,40 @@
+All three citations verified. Here is the answer.
+
+## The difference in timing
+
+Interest income hits the P&L (the `INTEREST_ON_LOANS` income account) at a **different transaction event** in each processor:
+
+- **Cash processor**: income is booked only when a **repayment is received**.
+- **Accrual processor**: income is booked when interest **accrues** (a periodic accrual transaction), decoupled from cash. A later repayment then just clears a receivable, touching no income account.
+
+Both implement `AccountingProcessorForLoan` and are selected per loan product's accounting rule.
+
+## Cash: income recognised on repayment
+
+`CashBasedAccountingProcessorForLoan.createJournalEntriesForLoanRepayments()`. On repayment, the interest portion is credited straight to the income account:
+
+- `CashBasedAccountingProcessorForLoan.java:756-759` — credit `INTEREST_ON_LOANS` (income) for the interest paid.
+- `CashBasedAccountingProcessorForLoan.java:839-840` — the matching debit to `FUND_SOURCE`.
+
+So the entry is Dr FUND_SOURCE / Cr INTEREST_ON_LOANS (income) at the moment cash arrives. There is no accrual step in the cash processor.
+
+## Accrual: income recognised on accrual, receivable cleared on repayment
+
+Two separate transaction types do the work:
+
+1. **Accrual transaction** books the income. `AccrualBasedAccountingProcessorForLoan.createJournalEntriesForAccruals()`:
+   - `AccrualBasedAccountingProcessorForLoan.java:2036-2039` — Dr `INTEREST_RECEIVABLE` / Cr `INTEREST_ON_LOANS` (income). This is where income reaches the ledger, independent of any payment. (Lines 2032-2035 handle the reversal for an accrual adjustment.)
+
+2. **Repayment transaction** does *not* touch income. `AccrualBasedAccountingProcessorForLoan` handling of the interest portion of a repayment:
+   - `AccrualBasedAccountingProcessorForLoan.java:1730-1739` — the interest is credited to `INTEREST_RECEIVABLE` (a balance-sheet asset), not to income. The offsetting debit is `FUND_SOURCE`.
+
+So under accrual the repayment is Dr FUND_SOURCE / Cr INTEREST_RECEIVABLE, merely converting the receivable to cash. Income was already recognised at accrual time.
+
+## Summary
+
+| Event | Cash | Accrual |
+|---|---|---|
+| Interest accrues | no entry | Dr INTEREST_RECEIVABLE / **Cr INTEREST_ON_LOANS (income)** — `AccrualBased…java:2036-2039` |
+| Repayment received | Dr FUND_SOURCE / **Cr INTEREST_ON_LOANS (income)** — `CashBased…java:756-759`, `:839-840` | Dr FUND_SOURCE / Cr INTEREST_RECEIVABLE (no income) — `AccrualBased…java:1730-1739` |
+
+The line that captures the whole distinction: the accrual processor credits `INTEREST_ON_LOANS` from `createJournalEntriesForAccruals` (line 2038), whereas the cash processor credits it from `createJournalEntriesForLoanRepayments` (line 758).

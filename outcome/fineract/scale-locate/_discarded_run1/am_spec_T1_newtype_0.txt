@@ -1,0 +1,39 @@
+I have a complete picture. Here's the map.
+
+## Key finding: goodwill credit already exists
+
+`goodwill credit` is not hypothetical here. It is `LoanTransactionType.GOODWILL_CREDIT` (code 23, `fineract-loan/.../loanaccount/domain/LoanTransactionType.java`), and its accounting is already wired through every posting site. So the existing wiring *is* the checklist of "every place that must emit postings." There are three posting engines, and goodwill credit touches all three.
+
+## The posting sites
+
+**1. Cash basis, regular loans — `CashBasedAccountingProcessorForLoan.java`**
+
+Routed in at `:81-84` (goodwill is a member of `isRepaymentType()`, so it lands in the repayment branch), then split by charge-off state at `:518-523`:
+
+- Non-charge-off: `createJournalEntriesForLoanRepayments` posts the per-type credit and builds a matching goodwill debit map at `:750-753` (principal), `:760-764` (interest), `:782-785` (fees), `:805-809` (penalties), `:816-819` (overpayment); the debits are emitted at `:830-836`.
+- Charge-off: `createJournalEntriesForChargeOffLoanRepayments` has the goodwill branch of `populateCreditDebitMaps` at `:572-574`, `:600-602`, `:627-629`, `:655-657`, `:681-683`.
+
+**2. Accrual basis, regular loans — `AccrualBasedAccountingProcessorForLoan.java`**
+
+Routed at `:87-89`, split by charge-off state at `:1371-1376`:
+
+- Non-charge-off: `createJournalEntriesForLoanRepayments` goodwill debits at `:1723-1725`, `:1740-1743`, `:1776-1779`, `:1806-1809`, `:1823-1825`; emitted at `:1847-1856`.
+- Charge-off: `createJournalEntriesForRepaymentWhenLoanIsChargedOff` goodwill branches at `:1433-1436`, `:1461-1464`, `:1491-1493`, `:1529-1532`, `:1564-1566`.
+
+**3. Working Capital Loan subsystem — `AccrualWithDeferredRevenueAmortizationAccountingProcessorForWorkingCapitalLoan.java`**
+
+This is a separate loan product with its own processor and its own `switch`. Goodwill is a `case` at `:80-86` dispatching to `postGoodwillCreditJournalEntries` (`:114-127`). Note the charged-off variant is *not* implemented: it throws `NotImplementedException` at `:84`. This processor is easy to miss because it doesn't share the `AccountingProcessorForLoan` interface or the `isRepaymentType()` dispatch used by the other two.
+
+Beyond the postings themselves, a new type also needs the GL-account constants (`AccountingConstants.CashAccountsForLoan` / `AccrualAccountsForLoan`) and the product-to-GL mapping wiring (`LoanProductToGLAccountMappingHelper`, `ProductToGLAccountMappingWritePlatformServiceImpl`) so the accounts resolve, plus enum/`LoanTransactionEnumData` membership in `isRepaymentType()` (`LoanTransactionEnumData.java:128-134`) so it routes into the repayment branch at all. Miss that membership and it silently posts nothing.
+
+## What guarantees the postings balance
+
+**Nothing on the loan path.** This matches the spec's load-bearing point. Balance is emergent, hand-maintained per branch:
+
+- In the regular processors, each per-type block posts a credit and, in the same block, adds an equal amount to `totalDebitAmount` (or to the goodwill debit map). The single fund-source debit, or the sum of the goodwill debit map, equals the credited total only because each block was written to touch both sides by the same figure.
+- In the charge-off repayment path, `populateCreditDebitMaps` (`CashBased:197-205`) adds the same amount to a credit map and a debit map, which are then emitted in two independent loops (`:691-712`) with no cross-check. This is the spec's "sharpest hazard": the two sides are accumulated separately and never reconciled. Add a portion to one side only, or change one account resolution, and it posts unbalanced silently.
+- The Working Capital goodwill method (`:114-127`) is a hand-listed set of debits (`GOODWILL_CREDIT` = principal+overpayment, plus goodwill fee/penalty income) against credits (`LOAN_PORTFOLIO`, `FEES_RECEIVABLE`, `PENALTIES_RECEIVABLE`, `OVERPAYMENT`). Equal by inspection, guarded by nothing.
+
+The only debit=credit assertion in the ledger, `checkDebitAndCreditAmounts` (`JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-326`, throwing `DEBIT_CREDIT_SUM_MISMATCH`), is called only from the operator-submitted manual journal-entry route (callers at `:197`, `:217`, `:651`). It never runs on the loan-generated path. A goodwill leg added on one side without its counterpart would post unbalanced with nothing to catch it.
+
+So: to keep double-entry balanced for goodwill credit you must edit all five per-type blocks in **each** of the three processors (and implement the currently-throwing charge-off case in the Working Capital one if that combination is allowed), and the only thing making it balance is that each edit is written symmetrically by hand.

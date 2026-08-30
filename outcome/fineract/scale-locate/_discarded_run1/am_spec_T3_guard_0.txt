@@ -1,0 +1,30 @@
+**No. There is no runtime check that rejects a loan-generated journal batch for unbalanced debits and credits.** The balance assertion exists, but it guards only the manual (operator-submitted) journal-entry route. The loan posting path never calls it.
+
+## The check that does exist, and where it lives
+
+`JournalEntryWritePlatformServiceJpaRepositoryImpl.checkDebitAndCreditAmounts` sums the credit legs and the debit legs of a submitted batch and throws if they differ:
+
+```java
+// sum of all debits must be = sum of all credits
+if (creditsSum.compareTo(debitsSum) != 0) {
+    throw new JournalEntryInvalidException(GlJournalEntryInvalidReason.DEBIT_CREDIT_SUM_MISMATCH, null, null, null);
+}
+```
+`fineract-provider/.../journalentry/service/JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-326` (throw at :323-325).
+
+It is reached only from the manual `createJournalEntry` command path, via `validateBusinessRulesForJournalEntries` and the two single-sided-account branches (called at :197, :217, :651). That path handles `GLJournalEntryCommand` objects an operator submits, exactly the "different entry route" the spec describes.
+
+## Why the loan path is never guarded
+
+Loan transactions post through the accounting processors (`CashBasedAccountingProcessorForLoan`, `AccrualBasedAccountingProcessorForLoan`), which build entries leg by leg through the shared helper. The helper's loan methods each persist a single one-sided entry directly:
+
+- `AccountingProcessorHelper.createCreditJournalEntryForLoan` → `persistJournalEntry(...)` (`AccountingProcessorHelper.java:934-947`)
+- `AccountingProcessorHelper.createDebitJournalEntryForLoan` → `persistJournalEntry(...)` (`AccountingProcessorHelper.java:969-982`)
+
+Each builds one `JournalEntry` with `manualEntry = false`, type `CREDIT` or `DEBIT`, and persists it. There is no batch object, no summation, and no call to `checkDebitAndCreditAmounts`. The two sides are emitted at independent call sites.
+
+## What the code relies on instead
+
+Balance is emergent, not enforced, exactly as the spec states. It holds only because each regime's per-type branch is hand-written to emit a matching debit and credit for every leg. Nothing on the loan path reconciles the two sides.
+
+The charge-off repayment posting is the sharpest instance. `CashBasedAccountingProcessorForLoan.createJournalEntriesForChargeOffLoanRepayments` (`CashBasedAccountingProcessorForLoan.java:527-725`) accumulates the two sides into the separate `debitBalances` and `creditBalances` maps of a `GLAccountBalanceHolder` (`journalentry/data/GLAccountBalanceHolder.java`), then drains each map to `createCreditJournalEntryForLoan` (~:691-696) and `createDebitJournalEntryForLoan` (~:699-712). The maps are filled and flushed independently and never compared against each other. If a per-type branch populated one map without its counterpart, the batch would post unbalanced and silently, with nothing on this path to catch it.
