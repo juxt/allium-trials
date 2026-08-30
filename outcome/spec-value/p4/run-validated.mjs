@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ALLIUM = "/Users/hgarner/code/allium-tools/target/debug/allium";
-const MODEL = "claude-opus-4-8";
+const MODEL = (process.argv[process.argv.indexOf("--model")+1]) || "claude-opus-4-8";
 const argv = process.argv.slice(2);
 const REPS = Number(argv[argv.indexOf("--reps") + 1] ?? "4");
 const REF = argv[argv.indexOf("--ref") + 1] ?? "ref_flat.py";
@@ -49,6 +49,29 @@ function monitorV4(spec) { // returns list of {id, failing:[invariant...], resid
   }
   return fails;
 }
+
+// Completeness probe: perturb each output field (+5) in the sample traces; a faithful+complete spec must
+// CATCH every perturbation. A field that can be changed without any invariant failing is UNCONSTRAINED.
+function completenessV4(spec) {
+  writeFileSync("/tmp/vspec.allium", spec);
+  const gaps = [];
+  const fields = ["interest", "principal", "emi"];
+  for (const s of SAMPLE.slice(0, 2)) {
+    for (const fld of fields) {
+      const mutated = s.text.split("\n").map((ln) => {
+        if (!ln.startsWith("period=")) return ln;
+        return ln.replace(new RegExp(`(\\b${fld}=)([-0-9.]+)`), (m, k, v) => k + (parseFloat(v) + 5).toFixed(2));
+      }).join("\n");
+      writeFileSync("/tmp/vtrace.trace", mutated);
+      const r = spawnSync(ALLIUM, ["monitor-schedule", "/tmp/vspec.allium", "/tmp/vtrace.trace", "--tol", "0.02"], { encoding: "utf8" });
+      try { const d = JSON.parse(r.stdout || "{}"); const caught = (d.results || []).some((x) => !x.holds); if (!caught) gaps.push(`${fld} on ${s.id}`); }
+      catch { /* ignore */ }
+    }
+  }
+  // dedup field names
+  return [...new Set(gaps.map((g) => g.split(" ")[0]))];
+}
+
 function grade(pyPath) {
   const env = { ...process.env, ORACLE_DIR: join(HERE, ORACLE) };
   const r = spawnSync("python3", [join(HERE, "grade.py"), pyPath], { encoding: "utf8", maxBuffer: 1 << 25, timeout: 120000, env });
@@ -73,6 +96,7 @@ async function runForm(form, i) {
       const problems = [];
       if (!chk.ok) problems.push(`SPEC DOES NOT CHECK: ${chk.errors.join("; ")}`);
       for (const f of mon) problems.push(`On real trace ${f.id}: ${f.monitored === 0 ? "NO invariants were monitorable (spec not connected to the fields)" : "failing invariants: " + f.bad.join("; ")}`);
+      if (chk.ok) { const gaps = completenessV4(spec); for (const g of gaps) problems.push(`INCOMPLETE: the output field '${g}' can be changed without any invariant failing — your spec does not constrain it. Add an invariant that pins ${g}.`); }
       if (problems.length === 0) break;
       caught.push(...problems);
       validated_rounds++;

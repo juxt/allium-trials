@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
-const MODEL = "claude-opus-4-8";
+const MODEL = (process.argv[process.argv.indexOf("--model")+1]) || "claude-opus-4-8";
 const argv = process.argv.slice(2);
 const REPS = Number(argv[argv.indexOf("--reps") + 1] ?? "3");
 const FORMS = (argv[argv.indexOf("--forms") + 1] ?? "v4,prose").split(",");

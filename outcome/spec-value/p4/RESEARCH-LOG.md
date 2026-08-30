@@ -74,3 +74,13 @@
 - => v4 checkability is real and two-layered. Whether it yields CLEAR AIR over prose on build-
   correctness now hinges on whether prose (eyeball) drifts on the complex conventions — validated-
   complex prose reps + the naive distill-complex control will decide. v4-complex rep0 already 150/150.
+
+## Iteration 6 — saturation is MODEL-INDEPENDENT (haiku confirms) + distill saturates
+- Naive distill->rebuild on the COMPLEX product, 4 reps, fixed harness: v4 150/150, prose 150/150.
+  Even claude-haiku-4-5 (cheap): v4 distill->rebuild 150/150 (reps 0,1). => given the reference/spec,
+  correctness saturates across BOTH notation (v4=prose=v3) AND model strength (opus=haiku). The value
+  is entirely in HAVING the specified conventions, not model/notation. The earlier "v4 drift" was a
+  max-turns harness artefact.
+- CONSEQUENCE: no v4>prose clear air on build/distill/elicit correctness or tokens is available — the
+  regime is saturated. v4's only clear air over prose is CATEGORICAL: it is executable (checkable +
+  monitorable + a standing regression gate). F5 stands as the v4-distinct value.

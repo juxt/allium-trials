@@ -1,42 +1,41 @@
-from decimal import Decimal, ROUND_HALF_EVEN
-
-
-def _r2(x):
-    return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN))
-
-
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    f = annual_rate_pct / 1200
-    fee = _r2(disbursed * 0.0025)
-
-    if f == 0:
-        base = _r2(disbursed / months)
+    monthly_rate_factor = annual_rate_pct / 1200
+    service_fee_monthly = round(disbursed * 0.0025, 2)
+    
+    if annual_rate_pct == 0:
+        base_emi_amount = round(disbursed / months, 2)
     else:
-        base = _r2(disbursed * f * (1 + f) ** months / ((1 + f) ** months - 1))
-
-    rows = []
-    bal = disbursed
-    for i in range(months):
-        is_final = i == months - 1
-        pure = _r2(bal * f)
-
+        r = monthly_rate_factor
+        compound = (1 + r) ** months
+        base_emi_amount = round(disbursed * r * compound / (compound - 1), 2)
+    
+    periods = []
+    outstanding_start = disbursed
+    
+    for period_index in range(months):
+        r = monthly_rate_factor
+        is_final = period_index == months - 1
+        
+        pure_interest = round(outstanding_start * r, 2)
+        
         if is_final:
-            principal = bal
-            base_inst = _r2(pure + bal)
+            principal_portion = outstanding_start
+            base_instalment = round(pure_interest + principal_portion, 2)
         else:
-            principal = _r2(base - pure)
-            base_inst = base
-
-        emi = _r2(base_inst + fee)
-        interest = _r2(pure + fee)
-
-        rows.append({
+            principal_portion = round(base_emi_amount - pure_interest, 2)
+            base_instalment = base_emi_amount
+        
+        emi = round(base_instalment + service_fee_monthly, 2)
+        interest_reported = round(pure_interest + service_fee_monthly, 2)
+        outstanding_end = round(outstanding_start - principal_portion, 2)
+        
+        periods.append({
             "emi": emi,
-            "interest": interest,
-            "principal": principal,
-            "outstanding_start": bal,
+            "interest": interest_reported,
+            "principal": principal_portion,
+            "outstanding_start": outstanding_start
         })
-
-        bal = _r2(bal - principal)
-
-    return rows
+        
+        outstanding_start = outstanding_end
+    
+    return periods
