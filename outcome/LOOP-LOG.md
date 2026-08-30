@@ -116,21 +116,27 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   arm outputs with a SECOND, independently-worded scorer (verbs ASKED/DECIDED/UNADDRESSED, different
   framing) — no regeneration, so this isolates JUDGE variance from generation variance. If the arm
   ordering survives a change of judge wording, the finding is real.
-- Result (interim, 28/40 — C/D tasks still scoring, ordering already decisive):
-  | arm | 2nd judge surf/guess | 1st judge surf/guess |
+- Result (FINAL, 40/40, n=10 per arm):
+  | arm | 2nd judge surf/guess/abs | 1st judge surf/guess |
   |---|---|---|
-  | nospec   | 3.9 / 5.9 | 5.0 / 4.4 |
-  | prose    | 2.4 / 6.9 | 3.8 / 5.1 |
-  | v3elicit | 7.7 / 0.7 | 7.3 / 0.9 |
-  | v4elicit | 7.7 / 0.8 | 7.1 / 0.5 |
+  | nospec   | 3.1 / 6.4 / 0.5 | 5.0 / 4.4 |
+  | prose    | 2.2 / 7.0 / 0.8 | 3.8 / 5.1 |
+  | v3elicit | 7.6 / 0.9 / 1.5 | 7.3 / 0.9 |
+  | v4elicit | 7.1 / 0.8 / 2.1 | 7.1 / 0.5 |
 - **Every load-bearing ordering SURVIVES the judge swap:** (a) prose worse than none — nospec surf
-  3.9 > prose 2.4, and prose guesses more (6.9 > 5.9); (b) elicit >> both non-spec arms on surfaced
-  (7.7 vs 3.9/2.4) and << on guessed (~0.7 vs ~6); (c) v4 ~= v3. The 2nd judge is uniformly stricter
-  (all surfaced counts lower), so ABSOLUTE calibration is judge-dependent — but the DIRECTION of
-  every claim is judge-independent. The surfacing value is not a scoring artefact.
-- Bad/limit: absolute numbers are not portable across judges (calibration drift ~1 pt), so report the
-  finding as an ORDERING, never as "elicit scores 7/10". Final 40/40 means land in rejudge-result.json;
-  will refine on completion. Commit: allium-trials.
+  3.1 > prose 2.2, and prose guesses more (7.0 > 6.4); (b) elicit >> both non-spec arms on surfaced
+  (7.6/7.1 vs 3.1/2.2) and << on guessed (~0.9 vs ~6.7); (c) v4 ~= v3. The 2nd judge is uniformly
+  stricter (all surfaced counts ~1-2 pt lower), so ABSOLUTE calibration is judge-dependent — but the
+  DIRECTION of every claim is judge-independent. The surfacing value is not a scoring artefact.
+- **Honest nuance (mild negative for v4):** on this stricter judge v4 slightly TRAILS v3 —
+  v3elicit surf 7.6 vs v4 7.1, and v4 ABSENT 2.1 > v3 1.5. So v4's elicit skill drops a touch more of
+  the decision space entirely (neither surfaces nor guesses) rather than surfacing it. v4 does NOT
+  beat v3 on surfacing; it ties-to-marginally-trails. The value is the elicit DISCIPLINE both carry,
+  and v4's edge over v3 must come from elsewhere (determinism / the analyse gate / dimensioned bite),
+  not from a higher surfacing rate. Backlog item: audit whether the v4 SKILL.md wording causes the
+  extra ABSENT (decisions silently dropped) and close that gap so v4 at least matches v3's coverage.
+- Bad/limit: absolute numbers are not portable across judges (calibration drift ~1-2 pt), so report
+  the finding as an ORDERING, never as "elicit scores 7/10". Commit: allium-trials.
 
 ### Iteration 16 — v4: close the polymorphic-literal laundering hole (regression test)
 - Probed the risk that generalising "0 is polymorphic" to ALL literals opened a laundering hole:

@@ -47,6 +47,18 @@
       "SURFACED": 5,
       "GUESSED": 4,
       "ABSENT": 1
+    },
+    {
+      "task": "D",
+      "SURFACED": 0,
+      "GUESSED": 8,
+      "ABSENT": 2
+    },
+    {
+      "task": "D",
+      "SURFACED": 0,
+      "GUESSED": 9,
+      "ABSENT": 1
     }
   ],
   "prose": [
@@ -97,6 +109,18 @@
       "SURFACED": 2,
       "GUESSED": 7,
       "ABSENT": 1
+    },
+    {
+      "task": "D",
+      "SURFACED": 0,
+      "GUESSED": 10,
+      "ABSENT": 0
+    },
+    {
+      "task": "D",
+      "SURFACED": 3,
+      "GUESSED": 5,
+      "ABSENT": 2
     }
   ],
   "v3elicit": [
@@ -147,6 +171,18 @@
       "SURFACED": 9,
       "GUESSED": 1,
       "ABSENT": 0
+    },
+    {
+      "task": "D",
+      "SURFACED": 5,
+      "GUESSED": 3,
+      "ABSENT": 2
+    },
+    {
+      "task": "D",
+      "SURFACED": 8,
+      "GUESSED": 0,
+      "ABSENT": 2
     }
   ],
   "v4elicit": [
@@ -185,6 +221,30 @@
       "SURFACED": 9,
       "GUESSED": 0,
       "ABSENT": 1
+    },
+    {
+      "task": "C",
+      "SURFACED": 7,
+      "GUESSED": 0,
+      "ABSENT": 3
+    },
+    {
+      "task": "C",
+      "SURFACED": 4,
+      "GUESSED": 3,
+      "ABSENT": 3
+    },
+    {
+      "task": "D",
+      "SURFACED": 8,
+      "GUESSED": 0,
+      "ABSENT": 2
+    },
+    {
+      "task": "D",
+      "SURFACED": 6,
+      "GUESSED": 0,
+      "ABSENT": 4
     }
   ]
 }
