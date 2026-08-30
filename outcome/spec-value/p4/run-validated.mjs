@@ -64,6 +64,7 @@ async function runForm(form, i) {
     : `Distil a precise prose behavioural specification from this implementation, complete enough to rebuild it without the code (esp. numeric conventions). Respond in a SINGLE message; do not use tools. Output ONLY the prose spec.\n\n=== REFERENCE ===\n${REFCODE}`;
   let d = claude(distillPrompt); cost += d.cost;
   let spec = form === "v4" ? block(d.text, "allium") : d.text.trim();
+  if (!spec || spec.length < 40) { const d2 = claude(distillPrompt + "\n\n(Reminder: reply in ONE message with only the spec; do not use tools.)"); cost += d2.cost; spec = form === "v4" ? block(d2.text, "allium") : d2.text.trim(); }
   let validated_rounds = 0, caught = [];
   if (form === "v4") {
     for (let round = 0; round < FIXROUNDS; round++) {
@@ -79,9 +80,12 @@ async function runForm(form, i) {
       cost += fix.cost; spec = block(fix.text, "allium");
     }
   } else {
-    // prose: honest eyeball control — shown the same traces, asked to self-verify/fix (no mechanical check)
-    const rev = claude(`Verify your prose specification below reproduces these real execution traces from the reference; if you spot any discrepancy, output a corrected spec. Output ONLY the (possibly corrected) prose spec.\n\n=== SPEC ===\n${spec}\n\n=== REAL TRACES ===\n${SAMPLE.slice(0,3).map((s)=>s.id+":\n"+s.text).join("\n")}`);
-    cost += rev.cost; spec = rev.text.trim();
+    // prose: honest eyeball control — SAME number of review rounds as v4, shown the same traces, but no
+    // mechanical check (it must eyeball the traces to find discrepancies).
+    for (let round = 0; round < FIXROUNDS; round++) {
+      const rev = claude(`Carefully verify your prose specification below reproduces these real execution traces from the reference implementation, value by value. If ANY discrepancy exists, output a corrected spec; otherwise output the spec unchanged. Respond in a SINGLE message; do not use tools. Output ONLY the prose spec.\n\n=== SPEC ===\n${spec}\n\n=== REAL TRACES (ground truth) ===\n${SAMPLE.slice(0,3).map((s)=>s.id+":\n"+s.text).join("\n")}`);
+      cost += rev.cost; spec = rev.text.trim(); validated_rounds++;
+    }
   }
   writeFileSync(join(HERE, "arms", `val_${form}_${i}.spec`), spec);
   // rebuild + grade
