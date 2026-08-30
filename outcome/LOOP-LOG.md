@@ -110,6 +110,16 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 11 — v4: fixed the over-broad rate-pinning (general-purpose + honest)
+- Removed the arith `lower` rate-pin (Rate states were globally pinned to 1/10, a loan hack). Rate
+  states are now variables; `rate * balance` is honestly nonlinear -> skipped + PARTIAL. Verified
+  (rebuilt CLI): general `a = b*c` now SATISFIABLE-PARTIAL not faked; fineract loan's
+  `interest = rate_factor * outstanding_start` now honestly "not linearisable, PARTIAL" instead of
+  pinned. GOOD: arith tier is general-purpose again and no longer over-claims to check nonlinear
+  interest; loan feasibility still holds via the linear invariants; 46 tests green. Commit: allium-tools.
+- Net: this + iter 10 make analyse HONEST about the boundary of the decidable fragment — important
+  given the scale-probe finding that real banking math (compound interest) is nonlinear and outside it.
+
 ### Iteration 10 — v4: honest coverage (PARTIAL) + surfaced a rate-pinning bug
 - analyse now flags the satisfiability verdict as PARTIAL when nonlinear constraints were skipped
   ("N nonlinear constraint(s) were not checked, so this is not a full guarantee"), closing the
