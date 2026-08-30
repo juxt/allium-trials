@@ -87,6 +87,44 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   Re-run launched (runc3). GOOD: removes the suspected inflation of nospec's 6/6. Result pending
   (collect next wake). Commit: allium-trials.
 
+### Iteration 4 — harness (collected the strict-judge re-run) — KEY HONEST FINDING
+- Strict-judge non-leading result (runc3, 2 reps): v4 4/6 caught, 0/4 FA; v3 0/6, 0/4; prose 6/6,
+  1/4; nospec 6/6, 1/4.
+- **Verified by reading saved outputs (not trusting the number):** the model arms' catches are
+  GENUINE and SPECIFIC, not hedging. nospec on floorcap works the max/min orderings and notes 2%
+  becomes dead code; on monotonic it explicitly says "This isn't generic hedging. It's a specific
+  arithmetic collision on outstanding_balance." So the strict judge is right and prose/nospec really
+  do catch 6/6.
+- **=> The conflicts I designed are catchable IN-HEAD by a frontier model.** So v4's deterministic
+  analyse does NOT beat the model on catch-rate here (v4 4/6 vs model 6/6). This is the saturation
+  problem one level up: two-constraint emergent conflicts are within the model's reasoning.
+- **GOOD for v4:** clear air over v3 (4/6 vs 0/6); deterministic (same verdict every run) and 0
+  false alarms vs the model's occasional FA; catches automatically without relying on the model
+  noticing. The decimal + coherent-verdict fixes removed v4's earlier false alarm.
+- **BAD / open:** v4 recurrence & monotonic only 1/2 — encoding-variance (the skill sometimes
+  harmonises). And prose's clean_pct "false alarm" may be a judge misfire (the output discusses
+  uniqueness constraints, not a requirements conflict) — flagged, low priority.
+- **NEXT (the real gap):** to show v4's UNIQUE value (catch what the model misses), need SUBTLER
+  conflicts that exceed in-head composition — infeasibility emerging only from composing 4-5 numeric
+  constraints, or across a schedule of periods. If the model STILL catches those, the honest
+  conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
+  v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
+
+### Iteration 5 — harness (harder multi-constraint conflicts) + v4 fix it surfaced
+- Designed 3 SUBTLER conflicts (harder to eyeball): hard_chain (5-def algebraic chain forcing fee =
+  7% vs stated 4%, satisfiable only at overdue=0), hard_alloc (5 percentages sum to 101.5 not 100),
+  hard_band (3% of 500 = 15, outside required [10,12]) + 2 consistent complex controls.
+- **De-risk (hand-encoded) found a real v4 gap:** hard_alloc & hard_band caught, but hard_chain was
+  MISSED — the arith feasibility check ignored `requirement`/existential items, so it "satisfied"
+  the spec by setting overdue=0 (fee never applies). Fixed with a **requirement_probe**: grounds a
+  `requirement some x :: C` and checks it feasible against the invariants via LRA; reports INFEASIBLE
+  with core. GOOD: hard_chain now caught; regression test added; 45 tests green. Commit: allium-tools.
+- Hard-conflict eval (v4/nospec/prose, strict judge) launched (runhard). Collect next wake: the
+  question is whether the model MISSES any hard conflict that v4 catches (v4 unique value) or still
+  catches all (conflict-detection saturates). Either is an honest result.
+- Note: v4 catching hard_chain depends on the skill encoding a reachability `requirement` — the
+  reworked skill says to, but encoding variance may bite.
+
 ### Iteration 3 — v4 (V3: coherent analyse verdict)
 - analyse post-filters the boolean "jointly satisfiable" line for any component the arithmetic tier
   overrules (CONTRADICTORY/VACUOUSLY). Before, a floor>cap spec printed both "jointly satisfiable"

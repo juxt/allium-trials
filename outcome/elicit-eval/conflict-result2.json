@@ -3,6 +3,88 @@
     "conflict_floorcap": [
       1,
       1
+    ],
+    "conflict_recurrence": [
+      1,
+      0
+    ],
+    "conflict_monotonic": [
+      1,
+      0
+    ],
+    "clean_flat": [
+      0,
+      0
+    ],
+    "clean_pct": [
+      0,
+      0
+    ]
+  },
+  "v3": {
+    "conflict_floorcap": [
+      0,
+      0
+    ],
+    "conflict_recurrence": [
+      0,
+      0
+    ],
+    "conflict_monotonic": [
+      0,
+      0
+    ],
+    "clean_flat": [
+      0,
+      0
+    ],
+    "clean_pct": [
+      0,
+      0
+    ]
+  },
+  "prose": {
+    "conflict_floorcap": [
+      1,
+      1
+    ],
+    "conflict_recurrence": [
+      1,
+      1
+    ],
+    "conflict_monotonic": [
+      1,
+      1
+    ],
+    "clean_flat": [
+      0,
+      0
+    ],
+    "clean_pct": [
+      0,
+      1
+    ]
+  },
+  "nospec": {
+    "conflict_floorcap": [
+      1,
+      1
+    ],
+    "conflict_recurrence": [
+      1,
+      1
+    ],
+    "conflict_monotonic": [
+      1,
+      1
+    ],
+    "clean_flat": [
+      0,
+      0
+    ],
+    "clean_pct": [
+      1,
+      0
     ]
   }
 }
