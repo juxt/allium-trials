@@ -43,3 +43,15 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
   3. Done-criteria updated: faithfulness validated, completeness probed, floor header present.
 - Re-verifying now: does the partial-floor HEADER alone (under a plain consumer prompt) flip the
   decision (block OS1 bug, merge benign)? If yes, the fix is self-contained in the artefact.
+
+## Iteration 6 — RE-VERIFY caught a refinement: the floor fix must be in the CONSUMER, not just a header
+- Tested whether the partial-floor HEADER in the spec (what distill now emits) flips a plain reviewer's
+  decision on its own. Result: with_header and no_header BOTH merged the OS1 bug 4/4 — **the header
+  alone did NOT flip the decision.** (This OS1 variant was also weaker — stripped diff + an "order
+  unchanged" comment — so both merged; the clean signal is header==no-header.)
+- => The floor framing works as a CONSUMER INSTRUCTION (Phase 1 floor-prompt blocked OS1 4/4), not as a
+  passive spec comment a plain reviewer underweights. The fix belongs in HOW A SPEC IS CONSUMED (the
+  reviewing/guiding agent's instructions), with the header as a supporting marker. Confirming now that
+  the floor CONSUMER instruction still bites on this same stripped case (vs ceiling).
+- Skill implication: keep the distill partial-floor HEADER, but ALSO add the floor-consumption
+  principle to the skill(s) that USE a spec to review/guide code. Pending consumer-verify.
