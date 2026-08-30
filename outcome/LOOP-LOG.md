@@ -110,6 +110,13 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 13 — v4: negative literals (unary minus)
+- Found: `bal(a) >= -1000` silently became `bal(a) >= <error>` (no unary-minus in the parser) — skipped
+  as unchecked. Essential for finance (overdrafts, adjustments, refunds). Fixed: unary minus desugars
+  to `0 - operand`, reusing subtraction everywhere. Verified: overdraft spec now satisfiable; negative
+  literals compose (x>=-1000 ∧ x<=-2000 -> CONTRADICTORY). Regression test; 47 tests green. Commit:
+  allium-tools. (The PARTIAL-honesty from iter 10 is why this was visible rather than silent.)
+
 ### Iteration 12 — harness: robustify the SURFACING win across 4 features
 - Added overdraft + multi-currency features (taskC/taskD + rubrics) to the surfacing eval, now 4
   diverse banking features x 4 arms (nospec/prose/v3elicit/v4elicit) x 2 reps. Launched (runsurf4).

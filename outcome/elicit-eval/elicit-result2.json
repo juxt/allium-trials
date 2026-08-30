@@ -3,29 +3,22 @@
     {
       "task": "A",
       "rep": 0,
-      "SURFACED": 5,
-      "GUESSED": 5,
+      "SURFACED": 7,
+      "GUESSED": 3,
       "ABSENT": 0
     },
     {
       "task": "A",
       "rep": 1,
-      "SURFACED": 5,
-      "GUESSED": 4,
-      "ABSENT": 1
-    },
-    {
-      "task": "A",
-      "rep": 2,
-      "SURFACED": 5,
-      "GUESSED": 4,
-      "ABSENT": 1
+      "SURFACED": 7,
+      "GUESSED": 3,
+      "ABSENT": 0
     },
     {
       "task": "B",
       "rep": 0,
-      "SURFACED": 8,
-      "GUESSED": 2,
+      "SURFACED": 3,
+      "GUESSED": 7,
       "ABSENT": 0
     },
     {
@@ -36,11 +29,18 @@
       "ABSENT": 0
     },
     {
-      "task": "B",
-      "rep": 2,
-      "SURFACED": 7,
-      "GUESSED": 3,
+      "task": "C",
+      "rep": 0,
+      "SURFACED": 5,
+      "GUESSED": 5,
       "ABSENT": 0
+    },
+    {
+      "task": "C",
+      "rep": 1,
+      "SURFACED": 8,
+      "GUESSED": 1,
+      "ABSENT": 1
     }
   ],
   "prose": [
@@ -48,29 +48,22 @@
       "task": "A",
       "rep": 0,
       "SURFACED": 6,
-      "GUESSED": 4,
-      "ABSENT": 0
+      "GUESSED": 3,
+      "ABSENT": 1
     },
     {
       "task": "A",
       "rep": 1,
-      "SURFACED": 6,
-      "GUESSED": 4,
-      "ABSENT": 0
-    },
-    {
-      "task": "A",
-      "rep": 2,
-      "SURFACED": 4,
-      "GUESSED": 6,
+      "SURFACED": 5,
+      "GUESSED": 5,
       "ABSENT": 0
     },
     {
       "task": "B",
       "rep": 0,
-      "SURFACED": 6,
-      "GUESSED": 4,
-      "ABSENT": 0
+      "SURFACED": 2,
+      "GUESSED": 7,
+      "ABSENT": 1
     },
     {
       "task": "B",
@@ -80,10 +73,17 @@
       "ABSENT": 1
     },
     {
-      "task": "B",
-      "rep": 2,
-      "SURFACED": 3,
-      "GUESSED": 6,
+      "task": "C",
+      "rep": 0,
+      "SURFACED": 6,
+      "GUESSED": 2,
+      "ABSENT": 2
+    },
+    {
+      "task": "C",
+      "rep": 1,
+      "SURFACED": 4,
+      "GUESSED": 5,
       "ABSENT": 1
     }
   ],
@@ -91,8 +91,8 @@
     {
       "task": "A",
       "rep": 0,
-      "SURFACED": 9,
-      "GUESSED": 0,
+      "SURFACED": 8,
+      "GUESSED": 1,
       "ABSENT": 1
     },
     {
@@ -103,31 +103,17 @@
       "ABSENT": 3
     },
     {
-      "task": "A",
-      "rep": 2,
-      "SURFACED": 10,
-      "GUESSED": 0,
-      "ABSENT": 0
-    },
-    {
       "task": "B",
       "rep": 0,
-      "SURFACED": 9,
-      "GUESSED": 0,
-      "ABSENT": 1
+      "SURFACED": 6,
+      "GUESSED": 1,
+      "ABSENT": 3
     },
     {
       "task": "B",
       "rep": 1,
-      "SURFACED": 9,
-      "GUESSED": 0,
-      "ABSENT": 1
-    },
-    {
-      "task": "B",
-      "rep": 2,
-      "SURFACED": 9,
-      "GUESSED": 0,
+      "SURFACED": 8,
+      "GUESSED": 1,
       "ABSENT": 1
     }
   ],
@@ -135,43 +121,29 @@
     {
       "task": "A",
       "rep": 0,
-      "SURFACED": 8,
-      "GUESSED": 0,
-      "ABSENT": 2
-    },
-    {
-      "task": "A",
-      "rep": 1,
-      "SURFACED": 8,
-      "GUESSED": 1,
+      "SURFACED": 7,
+      "GUESSED": 2,
       "ABSENT": 1
     },
     {
       "task": "A",
-      "rep": 2,
-      "SURFACED": 8,
-      "GUESSED": 0,
+      "rep": 1,
+      "SURFACED": 7,
+      "GUESSED": 1,
       "ABSENT": 2
     },
     {
       "task": "B",
       "rep": 0,
-      "SURFACED": 9,
+      "SURFACED": 8,
       "GUESSED": 0,
-      "ABSENT": 1
+      "ABSENT": 2
     },
     {
       "task": "B",
       "rep": 1,
-      "SURFACED": 9,
-      "GUESSED": 0,
-      "ABSENT": 1
-    },
-    {
-      "task": "B",
-      "rep": 2,
-      "SURFACED": 9,
-      "GUESSED": 0,
+      "SURFACED": 8,
+      "GUESSED": 1,
       "ABSENT": 1
     }
   ]
