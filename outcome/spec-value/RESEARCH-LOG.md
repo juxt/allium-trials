@@ -116,3 +116,22 @@ reconvenes when RANKING.md carries a defensible SYNTHESIS.
   specifying (B4) forces enumeration of the human's decisions -> surfacing benefit. The finished
   PRODUCT/artefact (B1, B2) concentrates attention -> cost saving on hard in-scope retrieval (B2) but
   tunnel-vision misses out-of-scope (B1). Same object, two phases, opposite effects.
+
+## Iteration 6 — B5 drift gate — catch SATURATES (model 6/6 unaided); value=guarantee; BONUS: model-checker is unreliable
+- Gate: `allium monitor-schedule` on the broken postings -> double_entry_balances FALSE, residual
+  50.00, named invariant, IDENTICAL across 3 runs (variance 0), ~0 cost, fires without being asked.
+- Model arm (feature-framed PR review, NOT told to check double-entry, 6 reps): the harness judge
+  scored 3/6 catches, BUT verification (reading all 6 outputs) shows **all 6 caught the imbalance** —
+  the 3 "misses" (model_0/4/5) each explicitly name the missing offsetting credit, and model_4/5 even
+  distinguish the GL from the portfolio sub-ledger and flag "existing tests pass" as the smell. So the
+  true model catch-rate is **6/6**. No tunnel vision when UNAIDED — the model is broadly thorough.
+- **JUDGE ERROR is itself a finding.** My judge (a model asked "did the reviewer catch the imbalance?")
+  gave 3 FALSE NEGATIVES. A model acting as a CHECKER was unreliable even though the reviewer models
+  were perfect. That is a live demonstration of the B3/B5 thesis: you cannot trust a model to reliably
+  VERIFY; a deterministic checker can. The exhibit is my own harness.
+- **=> B5: drift catching SATURATES (model 6/6 unaided, non-leading). The gate's value is NOT catch-
+  rate; it is determinism + a named invariant + exact residual + automatic firing + zero cost + a
+  GUARANTEE the model cannot give (it was 6/6 here but carries no proof of the 7th; and model-checkers
+  demonstrably err).** Same verdict family as B3.
+- Reconciles B1: tunnel vision is INDUCED BY THE SPEC narrowing attention (B1 spec arm), NOT a default
+  model failure — the UNAIDED model was thorough here (B5) and in B2-T2 (explored broadly). Consistent.

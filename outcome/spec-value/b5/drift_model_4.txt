@@ -1,0 +1,25 @@
+## Review
+
+The blocking problem is that this posts a one-legged journal entry. In a double-entry ledger every transaction must balance: total debits equal total credits. This method debits the goodwill/hardship expense account and stops. There is no corresponding credit.
+
+For a hardship write-down the correct GL entry is:
+
+- **Debit** goodwill/hardship expense (recognise the loss) ✓ present
+- **Credit** the loan principal receivable / portfolio control account (derecognise the asset) ✗ missing
+
+The comment leans on the wrong thing to excuse the gap:
+
+> The borrower's outstanding principal is reduced on the loan side by the write-down handler.
+
+That handler lowers the **portfolio sub-ledger** balance (what the borrower owes). It does not post a GL credit. The general ledger and the portfolio are separate books. So after this change, the loan's outstanding drops on the portfolio side while the GL only ever receives a debit. Every goodwill adjustment leaves the general ledger out of balance by `amount`, and the receivable control account overstates the asset by the cumulative written-down total.
+
+"Existing tests pass" doesn't cover this because there's no test asserting the entry balances, and the new type is only exercised through dispatch wiring, not through a trial-balance check. This is exactly the class of defect a balanced-journal invariant would catch and a happy-path test won't.
+
+A couple of smaller notes, secondary to the above:
+- No guard on `amount` (null / zero / negative). A negative or zero write-down would post a nonsensical entry.
+- `getLinkedGLAccountForLoanProduct` returning null (product not configured for `GOODWILL_EXPENSE`) isn't handled; worth confirming the helper throws a meaningful error rather than NPE-ing mid-post.
+
+But the credit leg is the one that must be fixed before this can merge. Add `createCreditJournalEntryForLoan` against the loan portfolio/principal-receivable account for the same `amount`, and add a test asserting debits equal credits for the goodwill transaction.
+
+DECISION: BLOCK
+REASON: The entry posts only the expense debit with no offsetting credit to the loan receivable, leaving the general ledger permanently unbalanced by the write-down amount on every goodwill adjustment.

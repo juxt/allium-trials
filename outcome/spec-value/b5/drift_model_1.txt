@@ -1,0 +1,24 @@
+## Review
+
+This is Apache Fineract accounting code, and the posting is **single-sided**. `postGoodwillAdjustment` debits the goodwill/hardship expense account and posts nothing else. Every journal entry in a double-entry ledger must balance: debits equal credits within the transaction. This one has a debit and no credit.
+
+The defence offered is the comment:
+
+> The borrower's outstanding principal is reduced on the loan side by the write-down handler.
+
+That conflates two different books. The write-down handler lowering the loan's *outstanding balance* is a **portfolio sub-ledger** operation. It is not a GL journal entry. The general ledger still needs the offsetting **credit to the loan principal receivable (asset)** account to record that the asset has shrunk. Compare the existing analogous flows in this same accounting processor — write-off and interest waiver both post a debit *and* a `createCreditJournalEntryForLoan(...)` against the loan portfolio / principal-receivable account. This method is missing that second leg.
+
+Consequences in production:
+
+- The trial balance goes out by `amount` on every goodwill adjustment. Debits no longer equal credits.
+- The GL overstates assets: expense is recognised, but the loan receivable is never reduced on the GL side, while the sub-ledger says it was. GL-to-portfolio reconciliation breaks, and it breaks silently.
+- This is money-critical and cumulative. Every hardship write-down widens the gap.
+
+"Existing tests pass" is not reassurance here — it tells us there is no test asserting the entry balances, which is precisely the invariant that would have caught this.
+
+The fix is one line: credit the loan principal-receivable GL account for the same `amount`, office, currency, txnId and date. Pair it with a test asserting total debits equal total credits for a `GOODWILL_ADJUSTMENT`.
+
+I'd also want the credit target confirmed against the loan product's linked accounts (principal receivable vs. a portfolio control account), but the structural defect stands regardless of which account it is.
+
+DECISION: BLOCK
+REASON: The journal entry is unbalanced — it posts the expense debit but omits the offsetting credit to the loan principal-receivable account, so every goodwill adjustment throws the GL out of balance and overstates assets.

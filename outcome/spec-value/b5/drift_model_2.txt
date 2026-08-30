@@ -1,0 +1,29 @@
+## Review
+
+The posting is single-sided. `postGoodwillAdjustment` debits the goodwill/hardship expense account and stops there. There is no offsetting credit, so every goodwill adjustment writes an unbalanced journal entry into the general ledger.
+
+For a hardship write-down the correct entries are:
+
+- **Debit** `GOODWILL_EXPENSE` — recognise the cost (present)
+- **Credit** the loan portfolio / principal-receivable asset — remove the written-down amount from the ledger (**missing**)
+
+The comment is where the reasoning goes wrong:
+
+> The borrower's outstanding principal is reduced on the loan side by the write-down handler.
+
+That conflates two different books. The write-down handler lowers the balance in the **portfolio subledger**. It does not post the GL credit. In Fineract the journal entries *are* the general ledger, and each transaction type is responsible for posting its own balanced pair. Reducing the loan's outstanding balance in the portfolio module never generates the offsetting GL entry on its own; that is exactly what this accounting method is supposed to do and doesn't.
+
+Consequences in production:
+
+- The trial balance no longer balances. Debits exceed credits by the write-down amount on every goodwill adjustment.
+- The GL loan-asset account is overstated. It keeps carrying principal that the subledger has already written off, so subledger-to-GL reconciliation breaks and drifts further with each adjustment.
+- The gap is silent. "Existing tests pass" because nothing asserts that this new transaction type posts balanced entries. That is a missing test, not evidence of correctness.
+
+Compare against any existing write-off/repayment path in the same accounting processor: they pair `createDebitJournalEntryForLoan` with `createCreditJournalEntryForLoan`. This one drops the credit leg.
+
+This is money-critical and unambiguous. It cannot go into a production ledger.
+
+Required fix: add the credit to the loan portfolio/principal-receivable account for `amount`, and add a test asserting the entry balances (sum of debits equals sum of credits for the transaction).
+
+DECISION: BLOCK
+REASON: The method posts a debit to goodwill expense with no offsetting credit to the loan asset, so every adjustment writes an unbalanced journal entry that overstates the GL loan balance and breaks the trial balance.

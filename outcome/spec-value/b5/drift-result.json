@@ -1,0 +1,32 @@
+[
+  {
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "rep": 1,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "rep": 2,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "rep": 3,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "rep": 4,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "rep": 5,
+    "caught": 0,
+    "decision": "BLOCK"
+  }
+]

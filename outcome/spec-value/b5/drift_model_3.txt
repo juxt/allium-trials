@@ -1,0 +1,27 @@
+## Review
+
+The change posts only one leg of the journal entry. `postGoodwillAdjustment` debits the goodwill/hardship expense account for the write-down amount and stops there. There is no corresponding credit.
+
+Every journal entry in a double-entry ledger must balance: debits equal credits. A goodwill write-down should post:
+
+- **Debit** goodwill/hardship expense (recognise the cost) ✅ present
+- **Credit** the loan portfolio / principal receivable control account (reduce the asset on the books) ❌ missing
+
+The PR's justification is the load-bearing mistake:
+
+> The borrower's outstanding principal is reduced on the loan side by the write-down handler.
+
+That handler lowers the **operational outstanding balance** in the portfolio subledger. It does not post the **GL credit**. Reducing the subledger figure and posting a balancing journal entry to the GL control account are two different subsystems. This accounting processor is the thing responsible for both legs of the GL entry, and it only emits one.
+
+Consequences on merge:
+
+- Every goodwill adjustment leaves the trial balance out by `amount` (debits exceed credits).
+- The loan-portfolio GL control account and the loan subledger diverge permanently. The GL still carries the full principal while the subledger shows it written down. That reconciliation break is exactly the kind of thing that surfaces months later in an audit, unwind-able only by manual journal correction.
+- "Existing tests pass" is expected: nothing asserts the entry balances, and the portfolio-side balance drop is tested independently. The gap is precisely where no test looks.
+
+The fix is a matching `createCreditJournalEntryForLoan` to the loan-portfolio (principal) GL account for the same `amount`, mirroring how write-off and repayment processors post both legs.
+
+Minor, secondary: no null/validation guards on `amount`, `txnId`, or the resolved `expense` account, but the balancing defect is the blocker.
+
+DECISION: BLOCK
+REASON: The journal entry posts only a debit to goodwill expense with no offsetting credit to the loan-portfolio GL account, so every adjustment breaks double-entry and desyncs the GL from the loan subledger.

@@ -1,0 +1,12 @@
+This posts only one leg of a two-leg entry. That's the problem.
+
+**The missing credit.** `postGoodwillAdjustment` calls `createDebitJournalEntryForLoan` for the goodwill/hardship expense account and stops. A goodwill write-down is a journal entry, and every journal entry has to balance: debits equal credits. The debit to expense records the cost the business is absorbing. The offsetting credit, to the loan portfolio / principal-receivable GL account, is what records that the asset (the borrower's debt to us) has shrunk. That credit leg is simply absent. The method posts `amount` to the debit side and nothing to the credit side, so this transaction injects an unbalanced entry of `amount` into the ledger.
+
+**Why the comment doesn't save it.** The defence is: "the borrower's outstanding principal is reduced on the loan side by the write-down handler." That conflates two different ledgers. The portfolio handler lowering the loan's outstanding balance is a sub-ledger / operational change on the loan record. The general ledger is a separate double-entry system, and its balance is maintained only by the journal entries this accounting code writes. Reducing outstanding principal on the loan does not emit a GL credit; this method was supposed to. So the loan's balance drops, the expense account is debited, and nothing credits the portfolio asset account. The two ledgers now disagree, and the GL no longer balances.
+
+**Consequences.** Trial balance is off by the write-down amount on every hardship adjustment. That residual accumulates, breaks reconciliation, and quietly corrupts every downstream financial report and regulatory return. "Existing tests pass" is expected: there's evidently no test asserting the entry balances (debits == credits) for this transaction type, which is the test that would have caught it. This is a money-critical, silent corruption, not a style nit.
+
+**Fix.** Add the matching credit before returning, to the linked loan-portfolio GL account for the same `amount`, `office`, `currencyCode`, `loanId`, `txnId`, `txnDate` (mirroring how write-off and repayment postings pair a debit with `createCreditJournalEntryForLoan`). Then add a test asserting the goodwill adjustment produces balanced journal entries.
+
+DECISION: BLOCK
+REASON: The posting creates only the expense debit and omits the required credit to the loan-portfolio account, so every goodwill adjustment writes an unbalanced journal entry that silently breaks the general ledger.

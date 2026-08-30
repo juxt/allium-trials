@@ -1,0 +1,26 @@
+## Review
+
+This posts half a journal entry. The method debits the goodwill/hardship expense account but never posts the matching credit. Double-entry accounting requires debits and credits to balance on every transaction, and here the credit leg is simply absent.
+
+The defence is in the comment: *"The borrower's outstanding principal is reduced on the loan side by the write-down handler."* That conflates two different balances. The portfolio-side handler lowers the **loan's operational outstanding** (the subsidiary/loan balance the borrower is told they owe). It does not post a GL credit to the **principal receivable / loan portfolio control account**. Those are separate ledgers by design. Reducing the borrower's balance does nothing to the general ledger.
+
+So the net effect on the GL is a lone debit of `amount` to an expense account with no offsetting credit anywhere. Two outcomes, both bad:
+
+- If the GL enforces a balance check on journal entries, every goodwill adjustment throws and the transaction fails in production.
+- If it doesn't, the trial balance drifts out of balance by the write-down amount on every single adjustment. In a loan-servicing GL that is a reconciliation and audit failure that compounds silently.
+
+"Existing tests pass" is not reassurance here. Nothing tests the invariant that matters (debits == credits for the new transaction type), and the portfolio-side handler being unchanged is exactly the problem: no one is crediting the loan portfolio asset to reflect that the receivable shrank.
+
+The missing leg is a credit to the loan portfolio / principal receivable account for the same `amount`, e.g.:
+
+```java
+GLAccount principal = helper.getLinkedGLAccountForLoanProduct(
+        loanProductId, LOAN_PORTFOLIO.getValue(), /*paymentTypeId*/ null);
+helper.createCreditJournalEntryForLoan(office, currencyCode, principal,
+        loanId, txnId, txnDate, amount);
+```
+
+That records the economic reality: recognise an expense (debit), and derecognise the receivable you're forgiving (credit). Add a test asserting the entry balances and that the credit lands on the portfolio account before this goes anywhere near production.
+
+DECISION: BLOCK
+REASON: The journal entry is unbalanced — it posts the expense debit but omits the offsetting credit to the loan portfolio/principal receivable account, so every goodwill adjustment either fails a balance check or corrupts the trial balance.
