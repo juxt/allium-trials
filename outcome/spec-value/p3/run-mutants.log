@@ -5,3 +5,11 @@
 [5/20] mul2sub_5 changed=yes shipped=fail spec=hold
 [6/20] mul2sub_6 changed=no shipped=fail spec=hold
 [7/20] mul2sub_7 changed=no shipped=fail spec=hold
+[8/20] mul2sub_8 changed=no shipped=fail spec=hold
+[9/20] mul2sub_9 changed=yes shipped=fail spec=hold
+[10/20] mul2add_1 changed=yes shipped=fail spec=hold
+[11/20] mul2add_2 changed=yes shipped=fail spec=hold
+[12/20] mul2add_3 changed=yes shipped=fail spec=hold
+[13/20] mul2add_4 changed=yes shipped=fail spec=hold
+[14/20] mul2add_5 changed=yes shipped=fail spec=hold
+[15/20] mul2add_6 changed=no shipped=fail spec=hold
