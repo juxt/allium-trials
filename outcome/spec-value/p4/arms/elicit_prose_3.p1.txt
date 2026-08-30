@@ -1,0 +1,74 @@
+This environment doesn't expose file-editing tools, so here's the implementation inline, ready to drop into a module.
+
+```python
+from dataclasses import dataclass
+from decimal import Decimal, ROUND_HALF_UP
+
+
+@dataclass(frozen=True)
+class Instalment:
+    period: int          # 1-based
+    payment: Decimal     # total due this month
+    interest: Decimal    # interest portion
+    principal: Decimal   # principal portion
+    balance: Decimal     # closing balance after this payment
+
+
+def schedule(disbursed, annual_rate_pct, months):
+    """
+    Repayment schedule for a fixed-term instalment loan repaid in equal
+    monthly instalments (annuity method).
+
+    Conventions (see spec notes above):
+      - Monthly rate = annual_rate_pct / 100 / 12  (nominal, compounded monthly).
+      - Amounts are money rounded to 2 decimal places (ROUND_HALF_UP).
+      - The final instalment absorbs the rounding residual so the balance
+        closes at exactly 0.00.
+
+    Returns a list[Instalment], one row per period.
+    """
+    if months < 1:
+        raise ValueError("months must be >= 1")
+    if disbursed <= 0:
+        raise ValueError("disbursed must be > 0")
+    if annual_rate_pct < 0:
+        raise ValueError("annual_rate_pct must be >= 0")
+
+    cents = Decimal("0.01")
+    principal = Decimal(str(disbursed))
+    r = Decimal(str(annual_rate_pct)) / Decimal(100) / Decimal(12)
+
+    if r == 0:
+        level = (principal / months).quantize(cents, ROUND_HALF_UP)
+    else:
+        factor = (Decimal(1) + r) ** months
+        level = (principal * r * factor / (factor - 1)).quantize(cents, ROUND_HALF_UP)
+
+    rows = []
+    balance = principal
+    for period in range(1, months + 1):
+        interest = (balance * r).quantize(cents, ROUND_HALF_UP)
+        if period == months:
+            # Final instalment clears whatever remains.
+            principal_part = balance
+            payment = (principal_part + interest).quantize(cents, ROUND_HALF_UP)
+        else:
+            payment = level
+            principal_part = payment - interest
+        balance = (balance - principal_part).quantize(cents, ROUND_HALF_UP)
+        rows.append(Instalment(period, payment, interest, principal_part, balance))
+
+    return rows
+```
+
+Notes on the choices, so they're easy to challenge in review:
+
+- **Decimal throughout.** Money maths on floats leaks sub-cent error; `Decimal` with an explicit `ROUND_HALF_UP` quantise keeps every figure exact and auditable.
+- **Final instalment closes the loan.** The level payment is computed once; the last row pays off the exact residual balance plus its interest, so the closing balance is `0.00` by construction rather than by luck. This is why the last payment can differ from the others by a cent or two.
+- **Zero-rate path** avoids the `factor − 1` division by zero and just splits principal evenly.
+
+A quick sanity check: `schedule(1000, 12, 12)` gives a level payment of `88.85`, twelve rows, closing balance `0.00`, total interest ≈ `66.19`.
+
+Two things still worth a product-owner ruling before this ships, beyond the three I flagged earlier:
+- What happens on a **partial or delayed first period** (a broken first month is common in real disbursement). I've assumed clean monthly periods.
+- Whether **fees or insurance** fold into the instalment or sit outside it. I've assumed the schedule is principal + interest only.

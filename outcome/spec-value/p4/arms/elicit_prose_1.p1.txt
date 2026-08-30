@@ -1,0 +1,111 @@
+Good problem to slow down on. "Equal monthly instalments" sounds precise but hides several decisions that change the numbers a customer sees and that regulators care about. Here's the spec I'd work to, the assumptions I'm adopting as defaults, and the questions I genuinely need a product owner to confirm. Then a reference implementation built around those assumptions so they're easy to change.
+
+## Specification
+
+`schedule(disbursed, annual_rate_pct, months)` returns an amortising repayment schedule for a fixed-term instalment loan.
+
+**Inputs**
+- `disbursed`: principal advanced to the customer, a positive amount.
+- `annual_rate_pct`: nominal annual interest rate as a percentage (e.g. `12.0` means 12%).
+- `months`: number of monthly instalments, a positive integer.
+
+**Behaviour**
+- The monthly rate is the nominal annual rate divided by 12.
+- The instalment is the level annuity payment that fully repays principal and interest over the term. With a zero rate it is simply principal divided by term.
+- Each period charges interest on the outstanding balance; the remainder of the instalment reduces principal.
+- The final instalment absorbs accumulated rounding so the closing balance is exactly zero.
+
+**Output**
+- One row per period: period number, instalment, interest portion, principal portion, closing balance. All money rounded to 2 decimal places.
+
+## Assumptions I'm adopting (please confirm or correct)
+
+1. **Rate convention**: nominal annual rate, monthly = annual / 12, applied as a flat periodic rate. Not an effective/APR conversion.
+2. **Day count**: every period is a whole month. No first-period stub, no daily accrual, so disbursement and first-payment dates don't affect the amounts.
+3. **Rounding**: money to 2 decimal places, half-up; the level instalment is rounded, and the last payment is adjusted to clear the balance exactly.
+4. **No fees, charges or insurance** folded into the schedule; principal and interest only.
+5. **Interest-bearing from period 1** on the full disbursed amount.
+6. **Output is amounts only**, not dated rows.
+
+## Questions for the product owner
+
+- **APR vs nominal**: is `annual_rate_pct` a nominal rate we divide by 12, or an APR/effective rate we must convert? This is the one most likely to be wrong.
+- **Rounding residual**: adjust the final instalment (my default), or spread the difference, or keep every instalment equal and let the last balance drift? Regulated consumer products often mandate a specific rule.
+- **Dates**: do we need a disbursement date and a payment day, with a possible short or long first period? If so the amounts change.
+- **Fees and charges**: any origination fee, monthly admin fee, or insurance premium that belongs in the instalment or the APR?
+- **Return shape**: is a per-period breakdown what downstream consumers want, or just the level payment and a total-cost-of-credit summary?
+- **Validation**: how should we handle zero or negative inputs, non-integer months, or a rate high enough that a rounded instalment can't cover interest?
+
+## Reference implementation
+
+Built on the defaults above, using `Decimal` so the money arithmetic is exact and the rounding rule is explicit rather than accidental.
+
+```python
+from decimal import Decimal, ROUND_HALF_UP
+
+
+CENTS = Decimal("0.01")
+
+
+def _money(x: Decimal) -> Decimal:
+    return x.quantize(CENTS, rounding=ROUND_HALF_UP)
+
+
+def schedule(disbursed, annual_rate_pct, months):
+    """Amortising repayment schedule for a fixed-term instalment loan.
+
+    Returns a list of dicts, one per period:
+        {period, payment, interest, principal, balance}
+
+    Assumptions (see spec): nominal annual rate / 12, whole-month periods,
+    2dp half-up rounding, final payment clears the balance.
+    """
+    principal = Decimal(str(disbursed))
+    n = int(months)
+
+    if principal <= 0:
+        raise ValueError("disbursed must be positive")
+    if n <= 0:
+        raise ValueError("months must be a positive integer")
+    if months != n:
+        raise ValueError("months must be a whole number")
+
+    monthly_rate = Decimal(str(annual_rate_pct)) / Decimal("100") / Decimal("12")
+
+    # Level instalment: annuity payment, or straight-line if rate is zero.
+    if monthly_rate == 0:
+        payment = _money(principal / n)
+    else:
+        factor = (Decimal(1) + monthly_rate) ** n
+        payment = _money(principal * monthly_rate * factor / (factor - Decimal(1)))
+
+    rows = []
+    balance = principal
+    for period in range(1, n + 1):
+        interest = _money(balance * monthly_rate)
+
+        if period == n:
+            # Final instalment clears the balance exactly.
+            principal_part = balance
+            pay = _money(balance + interest)
+        else:
+            pay = payment
+            principal_part = _money(pay - interest)
+
+        balance = _money(balance - principal_part)
+        rows.append({
+            "period": period,
+            "payment": pay,
+            "interest": interest,
+            "principal": principal_part,
+            "balance": balance,
+        })
+
+    return rows
+```
+
+A worked example, £10,000 at 12% nominal over 12 months, gives a level payment of £888.49 with the final instalment nudged to £888.43 so the balance lands on zero.
+
+I can wire in any of the confirmed decisions quickly. The two that would change the code most are the rate convention and whether we need dated periods with a stub first month; if either of those is in play, tell me and I'll adjust the spec before we go further.
+
+Would you like me to hold here for the product owner's answers, or proceed with these defaults and add tests?

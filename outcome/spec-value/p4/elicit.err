@@ -2,3 +2,8 @@
 [nospec 1] surfaced=[] build match0.5=54/150 | $0.09
 [nospec 2] surfaced=[] build match0.5=54/150 | $0.08
 [nospec 3] surfaced=[] build match0.5=54/150 | $0.08
+[prose 0] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.36
+[prose 1] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.23
+[prose 2] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.57
+[prose 3] surfaced=[instalment,residual,rounding] build match0.5=150/150 | $0.37
+[v3elicit 0] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.37

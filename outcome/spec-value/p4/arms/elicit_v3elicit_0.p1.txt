@@ -1,0 +1,98 @@
+`schedule(disbursed, annual_rate_pct, months)` looks like a one-liner, but "equal monthly instalments" hides the decisions that actually determine the numbers. Two lenders can both claim "equal monthly instalments over a fixed term" and produce different schedules from the same three inputs. Before writing the function I need the product owner to pin down which system we're building.
+
+Here is the coarse spec that captures what's unambiguous, with the decisions marked as open questions.
+
+```
+-- allium: 3
+-- repayment-schedule.allium
+
+-- Scope: Repayment schedule generation for a consumer instalment loan
+-- Includes: schedule(disbursed, annual_rate_pct, months) producing the
+--           per-period instalment breakdown
+-- Excludes:
+--   - Origination, approval, affordability, KYC (separate specs)
+--   - Disbursement and payment collection mechanics (separate specs)
+--   - Fees, insurance, early settlement, arrears, restructuring (separate specs)
+--   - Currency conversion
+-- Dependencies: none
+
+config {
+    interest_method:      InterestMethod = annuity     -- OPEN Q1
+    currency_minor_units: Int            = 2           -- OPEN Q6
+    rounding_mode:        RoundingMode   = half_up     -- OPEN Q3
+    residual_absorbed_by: ResidualPolicy = final_instalment  -- OPEN Q3
+}
+
+entity RepaymentSchedule {
+    instalments:     [Instalment]   -- one row per period, ordered 1..months
+    total_repayable: Money
+    total_interest:  Money
+}
+
+entity Instalment {
+    period:              Int      -- 1..months
+    payment:             Money    -- equal across periods; final may differ by residual
+    principal_component: Money
+    interest_component:  Money
+    balance_after:       Money
+    due_date:            Date     -- OPEN Q5: real dates, or drop for period index only?
+}
+
+surface schedule(disbursed: Money, annual_rate_pct: Decimal, months: Int)
+        -> RepaymentSchedule {
+
+    requires: disbursed > 0
+    requires: months > 0
+    requires: annual_rate_pct >= 0
+
+    ensures: RepaymentSchedule.instalments.length == months
+    ensures: sum(instalments.principal_component) == disbursed
+    ensures: instalments.last.balance_after == 0
+    ensures: total_interest == sum(instalments.interest_component)
+    ensures: total_repayable == disbursed + total_interest
+
+    -- The following hold for the ANNUITY (reducing-balance) interpretation.
+    -- They change materially if Q1 resolves to flat-rate; see notes.
+    ensures: interest_component[k] == balance_before[k] * period_rate   -- OPEN Q2
+    ensures: balance_after[k] == balance_before[k] - principal_component[k]
+    ensures: all instalments except the last have equal payment
+}
+
+invariant BalanceNeverNegative {
+    all k: instalments[k].balance_after >= 0
+}
+
+open question "Q1 Which interest method defines 'equal instalments'? annuity vs flat-rate"
+open question "Q2 Period rate = nominal annual/12, or effective (1+annual)^(1/12)-1?"
+open question "Q3 Rounding: to minor units, which mode, and how is the residual reconciled?"
+open question "Q4 Zero-rate loan: instalment = principal/months, interest = 0?"
+open question "Q5 Does the schedule carry real due dates, or period indices only?"
+open question "Q6 Units and currency of `disbursed` and the outputs?"
+```
+
+## The decisions I need confirmed
+
+**Q1 — the interest method. This is the one that changes every number.** "Equal instalments" has two common readings in consumer lending:
+
+- *Annuity / reducing balance* (recommended default). Interest each month is charged on the outstanding balance; the instalment is constant via `A = P·r / (1 − (1+r)⁻ⁿ)`; early instalments are mostly interest. This is the standard amortising loan and what most regulated consumer products mean.
+- *Flat rate.* Interest is `disbursed × rate × years`, computed once on the original principal and spread evenly. Instalments are also "equal", but the customer pays far more, and the quoted rate is not the APR. Still common in some instalment and auto products.
+
+I've defaulted to annuity. If it's flat-rate, the interest and balance invariants in the skeleton are wrong and I'll rewrite them.
+
+**Q2 — how the monthly rate comes off the annual figure.** Nominal annual ÷ 12 (recommended, and what almost all instalment products use) or the effective monthly equivalent `(1+annual)^(1/12) − 1`. And to confirm: `annual_rate_pct = 12` means 12% per year, not 12% per month.
+
+**Q3 — rounding and residual reconciliation.** The formula gives fractional pence, so I need: round to how many minor units (Q6), which rounding mode (recommended: half-up to the minor unit), and where the leftover goes so the schedule still sums exactly to principal plus interest. Standard practice is to hold instalments 1..n−1 equal and let the final instalment absorb the rounding residual. Confirm that, versus alternatives like distributing the residual or adjusting instalment 1.
+
+**Q4 — zero-rate behaviour.** `annual_rate_pct = 0` makes the annuity formula divide by zero. Recommended: treat it as `instalment = disbursed / months`, `interest = 0`. Confirm that a 0% product is valid input at all.
+
+**Q5 — output shape and dates.** Two questions in one:
+- Do you want the full per-period breakdown (principal, interest, closing balance) as drafted, or only the instalment amount(s)? The breakdown is recommended since it's what statements, APR checks and early-settlement quotes all need.
+- Do instalments carry real due dates? If so I need a first-payment date rule and a day-count convention, and whether interest can accrue on a stub period between disbursement and the first payment. Recommended default: pure monthly periods indexed 1..n with no calendar, deferring real dates to a scheduling spec. If you need dates, this stops being a three-argument function.
+
+**Q6 — units and currency.** Is `disbursed` in major units (pounds) or minor (pence), what currency, and how many minor units does it have? This is needed before Q3 can be answered. Recommended: decimal major units, GBP, 2 minor units.
+
+## Boundaries I'm assuming out of scope
+
+I've excluded fees and financed charges (nothing added to `disbursed`), insurance, early settlement, arrears and missed-payment recomputation, and APR disclosure. Each is a real feature but a separate spec. Flag any that must fold into this function, particularly an origination fee financed into the principal, since that would change the inputs.
+
+The fastest path forward is Q1 plus Q6; those two unlock the arithmetic in Q2 and Q3. Tell me the interest method and the currency units and I'll firm up the invariants and the edge-case behaviour.

@@ -1,0 +1,107 @@
+I don't have file-access tools in this session, so I'll give you the deliverable inline: a short spec, the decisions I need confirmed, and a working implementation built on the most defensible defaults.
+
+## Specification
+
+`schedule(disbursed, annual_rate_pct, months)` returns the full repayment schedule for a fixed-term consumer instalment loan repaid in equal monthly instalments.
+
+**Intended behaviour**
+
+- The customer receives `disbursed` up front and repays over `months` equal monthly instalments, in arrears (first payment one month after disbursal).
+- Interest accrues on the **declining balance**: each month's interest is charged on the outstanding principal, and the instalment is sized by the standard annuity formula so every instalment is equal.
+- `annual_rate_pct` is a nominal annual rate; the monthly rate is `annual_rate_pct / 100 / 12`.
+- Each instalment splits into interest (on the opening balance) and principal (the remainder). Amounts are rounded to 2 decimal places. The **final instalment absorbs the rounding residue** so the closing balance is exactly zero.
+- Zero-rate loans repay `disbursed / months` per month.
+- Returns a list of per-period rows: period index, opening balance, instalment, interest, principal, closing balance.
+
+## Questions / assumptions to confirm with the product owner
+
+The phrase "equal monthly instalments" is satisfied by two conventions that produce materially different numbers. This is the one that must be confirmed before shipping.
+
+1. **Interest method — declining balance vs flat/add-on.** I've assumed **declining balance** (the standard for amortising consumer loans, and the Apache Fineract default). The alternative, *flat/add-on*, computes total interest as `principal × monthly_rate × months` on the original principal and divides the total by the term. Both give equal instalments; flat costs the customer more. Confirm which the product markets and books.
+2. **Rate convention.** Assumed nominal annual, simple division by 12. Confirm it isn't an effective annual rate needing conversion, and that there's no separately-quoted APR requirement for disclosure.
+3. **Rounding.** Assumed 2 decimal places with the final instalment absorbing the residue. Confirm the currency's minor units (2 dp for GBP/EUR/USD; 0 for JPY) and the reconciliation rule (last instalment vs spreading the penny).
+4. **Payment timing.** Assumed instalments in arrears (ordinary annuity). Confirm it isn't payment-in-advance.
+5. **Scope.** Assumed principal + interest only. Confirm there are no fees, insurance, or charges to fold into the instalment, and no odd first period / calendar-day interest (the signature has no dates, so I've treated every period as a whole month).
+6. **Validation.** Assumed `disbursed > 0`, `months` a positive integer, `annual_rate_pct >= 0`; invalid input raises `ValueError`.
+
+## Implementation
+
+```python
+from dataclasses import dataclass
+from decimal import Decimal, ROUND_HALF_UP
+
+
+@dataclass(frozen=True)
+class Instalment:
+    period: int              # 1-based month index
+    opening_balance: Decimal
+    instalment: Decimal
+    interest: Decimal
+    principal: Decimal
+    closing_balance: Decimal
+
+
+def schedule(disbursed, annual_rate_pct, months):
+    """Repayment schedule for a fixed-term consumer instalment loan.
+
+    Declining-balance amortisation: interest accrues on the outstanding
+    principal, instalments are equal (annuity formula), and the final
+    instalment absorbs rounding so the balance closes at exactly zero.
+
+    Returns a list of Instalment rows, one per month.
+    """
+    principal = Decimal(str(disbursed))
+    rate = Decimal(str(annual_rate_pct))
+
+    if principal <= 0:
+        raise ValueError("disbursed must be positive")
+    if int(months) != months or months <= 0:
+        raise ValueError("months must be a positive integer")
+    if rate < 0:
+        raise ValueError("annual_rate_pct must not be negative")
+    months = int(months)
+
+    cents = Decimal("0.01")
+    monthly_rate = rate / Decimal(100) / Decimal(12)
+
+    # Level instalment. Zero-rate loans repay principal in equal parts.
+    if monthly_rate == 0:
+        payment = (principal / months).quantize(cents, ROUND_HALF_UP)
+    else:
+        factor = (1 + monthly_rate) ** months
+        payment = (principal * monthly_rate * factor / (factor - 1)).quantize(
+            cents, ROUND_HALF_UP
+        )
+
+    rows = []
+    balance = principal
+    for period in range(1, months + 1):
+        opening = balance
+        if period == months:
+            # Final instalment clears the balance exactly, absorbing residue.
+            interest = (opening * monthly_rate).quantize(cents, ROUND_HALF_UP)
+            principal_part = opening
+            instalment = opening + interest
+        else:
+            interest = (opening * monthly_rate).quantize(cents, ROUND_HALF_UP)
+            principal_part = payment - interest
+            instalment = payment
+        balance = opening - principal_part
+        rows.append(
+            Instalment(
+                period=period,
+                opening_balance=opening,
+                instalment=instalment,
+                interest=interest,
+                principal=principal_part,
+                closing_balance=balance,
+            )
+        )
+    return rows
+```
+
+I used `Decimal` deliberately: money arithmetic on `float` leaks rounding error and won't reconcile to a zero balance reliably.
+
+If you confirm the six points above, this is ready. The most likely change is item 1: switching to flat/add-on is a small, localised edit to how `payment` and the interest split are computed, so tell me which convention the product uses and I'll adjust.
+
+Want me to write this to a file in the repo, or produce the flat/add-on variant alongside it for comparison?

@@ -1,0 +1,35 @@
+{
+  "v4": [
+    {
+      "rep": 0,
+      "cost": 0.7423215,
+      "validated_rounds": 2,
+      "caught": [
+        "SPEC DOES NOT CHECK: expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Plus; expected a body item, found Colon; expected a body item, found ColonColon; expected a body item, found Dot; expected a body item, found Eq; `period` is declared more than once in `flat_addon_loan`; `interest` is declared more than once in `flat_addon_loan`; `interest_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `principal` is declared more than once in `flat_addon_loan`; `principal_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `emi_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `outstanding_start` is declared more than once in `flat_addon_loan`; `outstanding_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `r2` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `principal` is declared more than once in `flat_addon_loan`; `disbursed` is declared more than once in `flat_addon_loan`; `sum` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `disbursed` is declared more than once in `flat_addon_loan`; `total_interest` is declared more than once in `flat_addon_loan`; `outstanding_start` is declared more than once in `flat_addon_loan`; `r2` is declared more than once in `flat_addon_loan`",
+        "SPEC DOES NOT CHECK: expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found ColonColon; expected a body item, found Eq; expected a body item, found Plus; expected a body item, found ColonColon; expected a body item, found Dot; expected a body item, found Eq; `period` is declared more than once in `flat_addon_loan`; `interest` is declared more than once in `flat_addon_loan`; `interest_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `principal` is declared more than once in `flat_addon_loan`; `principal_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `emi_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `outstanding_start` is declared more than once in `flat_addon_loan`; `outstanding_at` is declared more than once in `flat_addon_loan`; `every` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `r2` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `principal` is declared more than once in `flat_addon_loan`; `disbursed` is declared more than once in `flat_addon_loan`; `sum` is declared more than once in `flat_addon_loan`; `period` is declared more than once in `flat_addon_loan`; `emi` is declared more than once in `flat_addon_loan`; `disbursed` is declared more than once in `flat_addon_loan`; `total_interest` is declared more than once in `flat_addon_loan`; `outstanding_start` is declared more than once in `flat_addon_loan`; `r2` is declared more than once in `flat_addon_loan`"
+      ],
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 36,
+      "matched_0.50": 54,
+      "matched_5.00": 73,
+      "median_residual_finite": 6.2167,
+      "worst_offenders": [
+        {
+          "id": "d999999.99_r24_m24",
+          "maxres": 59129.9386
+        },
+        {
+          "id": "d999999.99_r18_m24",
+          "maxres": 44547.4467
+        },
+        {
+          "id": "d999999.99_r24_m12",
+          "maxres": 29669.0302
+        }
+      ]
+    }
+  ]
+}

@@ -50,3 +50,16 @@
   markedly LESS FLUENT in v4 than prose (uses # not --, omits header/end) -> naive v4 distillation is
   unreliable; the `allium check` gate is needed just to reach parity. A real adoption cost of a formal
   language, and part of why checkability matters (you can't ship an unparseable prose spec's analogue).
+
+## Iteration 4 — ELICIT direction: surfacing -> correct build (executable, emerging)
+- Vague request (flat product), operator answers ONLY surfaced decisions (deterministic keyword match),
+  build graded vs flat oracle. So far:
+  - nospec (no elicitation): surfaces nothing -> build 54/150 (guesses declining). 4/4 reps.
+  - prose ("write a spec, list questions"): surfaces all 4 decisions incl. interest_basis -> operator
+    answers -> build 150/150. 3/3 so far.
+- => FINDING 2 (executable): the ELICIT step converts a vague request into a correct build by SURFACING
+  the load-bearing convention decision; without it the model silently guesses the default and is wrong
+  ~64%. v3elicit/v4elicit rows pending. Note this again is "specifying/eliciting helps"; v4-vs-prose
+  distinction TBD from those rows + the validated experiment.
+- Ops note: running two model-heavy harnesses concurrently ~halves throughput; the validated (v4
+  check+monitor+fix, ~4 calls/rep) is slow under contention. Will run it solo.

@@ -1,0 +1,85 @@
+I'll proceed on the standard consumer-loan defaults, since those are the defensible choices and the schedule can be adjusted if you tell me otherwise:
+
+- **Full amortisation table** returned (period, opening, interest, principal, instalment, closing).
+- **Final instalment absorbs the rounding residual** so the balance closes at exactly zero, with amounts at 2dp.
+- **Nominal rate**: `monthly_rate = annual_rate_pct / 100 / 12`.
+
+Here's the implementation.
+
+```python
+from dataclasses import dataclass
+from decimal import Decimal, ROUND_HALF_UP
+
+
+@dataclass(frozen=True)
+class Instalment:
+    period: int          # 1-based
+    opening: Decimal
+    interest: Decimal
+    principal: Decimal
+    payment: Decimal
+    closing: Decimal
+
+
+def _money(x: Decimal) -> Decimal:
+    """Round to 2 decimal places, half-up (banker-neutral consumer convention)."""
+    return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def schedule(disbursed, annual_rate_pct, months):
+    """Repayment schedule for a fixed-term consumer instalment loan.
+
+    The customer borrows `disbursed` and repays it in `months` equal monthly
+    instalments. Interest accrues on the declining balance at a nominal monthly
+    rate of annual_rate_pct/12. The final instalment absorbs accumulated
+    rounding so the closing balance is exactly zero.
+
+    Returns a list of `Instalment` rows, one per month.
+    """
+    P = Decimal(str(disbursed))
+    n = int(months)
+
+    if P <= 0:
+        raise ValueError("disbursed must be positive")
+    if n <= 0:
+        raise ValueError("months must be a positive integer")
+    if Decimal(str(annual_rate_pct)) < 0:
+        raise ValueError("annual_rate_pct must be non-negative")
+
+    r = Decimal(str(annual_rate_pct)) / Decimal(100) / Decimal(12)
+
+    # Level instalment. Zero-rate degenerates to straight-line principal.
+    if r == 0:
+        level = _money(P / n)
+    else:
+        factor = (Decimal(1) + r) ** n
+        level = _money(P * r * factor / (factor - Decimal(1)))
+
+    rows = []
+    balance = P
+    for period in range(1, n + 1):
+        interest = _money(balance * r)
+        if period == n:
+            # Final instalment clears whatever remains, absorbing rounding.
+            principal = balance
+            payment = _money(interest + principal)
+        else:
+            payment = level
+            principal = payment - interest
+        closing = balance - principal
+        rows.append(Instalment(period, _money(balance), interest,
+                               _money(principal), payment, _money(closing)))
+        balance = closing
+
+    return rows
+```
+
+Notes on the choices that matter:
+
+`Decimal` throughout, not floats, because money arithmetic on binary floats accumulates error and gives instalments that are off by a penny in ways auditors notice. Inputs are coerced via `str()` so a caller passing `0.1` doesn't drag float noise in.
+
+The final period sets `principal = balance` and derives the payment from it, so the closing balance is exactly zero regardless of how the per-period rounding fell. That does mean the last instalment can differ from the level payment by a few pence, which is the normal and expected behaviour for this product.
+
+Validation rejects non-positive principal or term and negative rates, but assumes `months` is a whole number and takes no view on maximum term or amount. Those are policy limits I'd expect to live in the product layer, not the maths.
+
+If you'd rather have a bare list of payment figures, spread the rounding across periods instead of onto the last one, or treat the annual rate as effective rather than nominal, those are small changes to the shape above and I'll adjust.
