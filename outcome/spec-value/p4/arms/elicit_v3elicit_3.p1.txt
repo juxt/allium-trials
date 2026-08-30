@@ -1,0 +1,66 @@
+Applying the elicitation process to `schedule(disbursed, annual_rate_pct, months)`. The request looks like a one-liner, but "equal monthly instalments" hides several decisions that change the actual numbers the function returns. I'm not going to guess these, because getting the amortisation method or the rounding wrong produces a schedule that's off by cents on every line and by a visible amount on the last one.
+
+## Scope as I understand it
+
+A pure calculation: given a disbursed principal, an annual rate, and a term in months, produce the repayment schedule. No persistence, no payment collection, no missed-payment handling, no fees or insurance. Confirm that boundary is right.
+
+## Decisions that change the numbers (need answers before I can implement)
+
+**1. Amortisation method.** "Equal monthly instalments" is satisfied by two very different products:
+- *Reducing-balance (annuity):* interest each month is charged on the outstanding balance; the fixed instalment comes from the annuity formula. This is the standard consumer amortising loan.
+- *Flat-rate:* interest is charged on the original principal for the whole term, added up, and the total divided into equal instalments. Still "equal instalments", but the customer pays more, and the principal/interest split per line differs.
+
+Which product is this? I'll assume reducing-balance annuity unless told otherwise, but this is the single most load-bearing choice.
+
+**2. Rate conversion.** Is `annual_rate_pct` a nominal annual rate where the monthly rate is `rate/12` (the usual convention), or an effective annual rate that must be de-compounded to `(1+r)^(1/12)-1`? These give different instalments.
+
+**3. Per-instalment rounding and the residual.** The annuity formula yields fractional minor units. I need:
+- The currency / number of minor units (2 dp assumed).
+- Rounding mode for each instalment (round-half-up to the cent, assumed).
+- Where the rounding residual goes. Rounded instalments won't sum exactly to principal-plus-interest. Standard practice is to adjust the final instalment so the balance closes at zero. Confirm final-instalment adjustment vs spreading the difference.
+
+**4. Interest portion rounding.** For each line, is interest computed as `balance × monthly_rate` rounded to the cent, with principal as the remainder of the instalment? Rounding interest per period vs computing it unrounded changes the running balance and therefore later lines. I'll assume round-per-period.
+
+**5. Zero and edge inputs.**
+- `annual_rate_pct == 0`: interest-free, instalment = `disbursed / months`. Confirm this is valid input, not an error.
+- `months <= 0`, `disbursed <= 0`, negative rate: reject with an error, or return empty? I'll assume validation errors.
+
+## Decisions about output shape and boundary
+
+**6. What does `schedule` return?** Just the list of payment amounts, or a full amortisation table per line: instalment number, payment, interest portion, principal portion, remaining balance? The last is far more useful and is what makes the invariants testable. I'll assume the full breakdown.
+
+**7. Dates.** The signature carries no disbursement date or due-day, so I'm treating the schedule as amounts-only with periods numbered 1..N, first payment one month after disbursement, equal periods (no actual-day-count). Confirm dates are out of scope; if due dates are needed, I need a disbursement date and a due-day convention (and month-end handling).
+
+## Invariants I'll assert (confirm these are the intended guarantees)
+
+- Sum of principal portions equals `disbursed` exactly.
+- Remaining balance after the final instalment is exactly zero.
+- Every instalment is equal except possibly the last, which absorbs rounding.
+- No instalment's principal portion exceeds the outstanding balance (no overpayment).
+
+## Coarse spec sketch (the settled parts)
+
+```
+-- allium: 3
+-- loan-repayment-schedule.allium
+
+-- Scope: Repayment schedule calculation for consumer instalment loans
+-- Includes: annuity schedule generation, per-line principal/interest split, rounding
+-- Excludes: disbursement, payment collection, arrears, fees, insurance, tax, prepayment
+-- Open: amortisation method, rate convention, dates
+
+config {
+  minor_units: Int = 2            -- OPEN: currency precision
+}
+
+schedule(disbursed, annual_rate_pct, months) ->
+  requires: disbursed > 0, months > 0, annual_rate_pct >= 0
+  ensures: result.length == months
+  ensures: sum(result.principal) == disbursed             -- invariant
+  ensures: result[months-1].balance == 0                  -- invariant
+  ensures: all_equal(result[0..months-2].payment)         -- last line may differ
+```
+
+## What I need from you
+
+The eight numbered items above. If you want a default-and-proceed instead of a round-trip, I'll take: reducing-balance annuity, nominal rate `/12`, 2-dp round-half-up, residual into the final instalment, interest rounded per period, zero-rate allowed, invalid inputs rejected, full amortisation table out, dates out of scope. Say the word and I'll implement against those and mark them as assumptions in the spec.

@@ -1,0 +1,34 @@
+`schedule(disbursed, annual_rate_pct, months)` looks like a one-liner, but "equal monthly instalments" is carrying several load-bearing decisions that change the numbers a customer actually pays. Before I write the amortisation, here is what I need the product owner to confirm.
+
+## What we're specifying
+
+The repayment schedule for one consumer instalment loan: given an amount disbursed, an annual rate and a term in months, produce the sequence of monthly instalments that repays it. In scope: the periodic amounts and their interest/principal split. Out of scope unless you say otherwise: fees, early settlement, missed-payment handling, APR disclosure text, and calendar dates (the signature carries no dates, so I'd index by period, not day).
+
+## Load-bearing questions (these change the amounts)
+
+**1. Interest method.** "Equal monthly instalments" has two common readings and they produce different schedules for the same inputs:
+- **(a) Amortising / reducing balance** (recommended): the standard instalment loan. Level payment `P = principal · r / (1 − (1+r)⁻ⁿ)`; each month interest accrues on the outstanding balance and the rest reduces principal.
+- **(b) Flat rate**: interest computed once on the original principal (`principal · rate · years`), added, then the total divided into equal instalments. Same words, roughly double the effective cost of (a).
+
+Which product is this? I'll assume (a) unless told.
+
+**2. Monthly rate convention.** From `annual_rate_pct`, is the monthly rate the **nominal** `annual/12` (recommended, near-universal for consumer instalment loans) or the **effective** `(1+annual)^(1/12) − 1`?
+
+**3. Rounding and the final instalment.** Real money must round to the minor unit, and level rounded payments never clear the balance to exactly zero. I'd propose: round the level payment to 2 decimal places, accrue interest on the rounded outstanding balance each month, and let the **final instalment absorb the residual** so the closing balance is exactly zero. This means the last payment differs slightly from the rest. Confirm: (a) 2dp / that currency's minor unit, (b) final-instalment reconciliation is acceptable, (c) rounding mode (half-up vs round-up vs banker's) for the level payment.
+
+**4. Output shape.** What does `schedule` return? I'd propose one row per month: instalment number, opening balance, payment, interest portion, principal portion, closing balance, plus totals (total repayable, total interest). Is that the right granularity, or do you only need the payment amounts?
+
+## Edge and validation questions
+
+**5. Zero interest.** `annual_rate_pct = 0` should mean equal principal split (`disbursed / months`, last row absorbing rounding). Confirm, so I guard the division.
+
+**6. Input domain.** I'll require `disbursed > 0`, `months ≥ 1`, `annual_rate_pct ≥ 0`, and reject the rest. Any maximum term or rate? Is a negative rate ever valid?
+
+**7. What is `disbursed`.** Is it exactly the amount to amortise, or could an arrangement fee be financed into the principal (so the amount borrowed and the amount amortised differ)? The signature suggests they're the same; confirm no fees folded in.
+
+## What I'd record as open questions if unanswered
+
+- Whether an odd first period exists (disbursement-to-first-payment interest) or every period is treated as exactly one month. I'll assume uniform monthly periods.
+- APR / total-cost-of-credit disclosure, which is regulated and probably belongs in a separate spec.
+
+The one I most need before writing anything is **question 1**: amortising or flat rate. It's the difference between two legitimate products, and a naive `schedule()` would silently pick one. Give me 1 and 2, confirm the rounding policy in 3, and I can write a spec that pins the rest down.

@@ -1,0 +1,13 @@
+period=0 emi=9.42 interest=1.75 principal=7.67 outstanding_start=100.00 rate_factor=0.015000 is_last=F
+period=1 emi=9.42 interest=1.63 principal=7.79 outstanding_start=92.33 rate_factor=0.015000 is_last=F
+period=2 emi=9.42 interest=1.52 principal=7.90 outstanding_start=84.54 rate_factor=0.015000 is_last=F
+period=3 emi=9.42 interest=1.40 principal=8.02 outstanding_start=76.64 rate_factor=0.015000 is_last=F
+period=4 emi=9.42 interest=1.28 principal=8.14 outstanding_start=68.62 rate_factor=0.015000 is_last=F
+period=5 emi=9.42 interest=1.16 principal=8.26 outstanding_start=60.48 rate_factor=0.015000 is_last=F
+period=6 emi=9.42 interest=1.03 principal=8.39 outstanding_start=52.22 rate_factor=0.015000 is_last=F
+period=7 emi=9.42 interest=0.91 principal=8.51 outstanding_start=43.83 rate_factor=0.015000 is_last=F
+period=8 emi=9.42 interest=0.78 principal=8.64 outstanding_start=35.32 rate_factor=0.015000 is_last=F
+period=9 emi=9.42 interest=0.65 principal=8.77 outstanding_start=26.68 rate_factor=0.015000 is_last=F
+period=10 emi=9.42 interest=0.52 principal=8.90 outstanding_start=17.91 rate_factor=0.015000 is_last=F
+period=11 emi=9.40 interest=0.39 principal=9.01 outstanding_start=9.01 rate_factor=0.015000 is_last=T
+given disbursed=100.00 annual_rate_pct=18.00 months=12

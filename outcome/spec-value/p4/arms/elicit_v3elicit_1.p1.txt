@@ -1,0 +1,89 @@
+This request looks like a one-line coding task, but `schedule(disbursed, annual_rate_pct, months)` hides a financial calculation whose every output number depends on decisions the sentence doesn't make. "Equal monthly instalments over a fixed term" is consistent with at least two different interest methods, several rate conventions, and a handful of rounding policies, each of which produces a different schedule. Below I've run the request through the elicitation process: a scope block, a coarse happy-path skeleton, and then the decisions I need you to confirm before this can be specified precisely.
+
+## Scope
+
+What I believe we're specifying, stated back for confirmation:
+
+```
+-- allium: 4
+-- repayment-schedule.allium
+
+-- Scope: Repayment schedule generation for the consumer instalment loan product
+-- Includes: instalment amount, per-period breakdown, tie-out to principal
+-- Excludes:
+--   - Fees, insurance, taxes (separate concern)
+--   - Disbursement, settlement, payment collection
+--   - Early repayment, restructuring, delinquency, missed payments
+--   - Persistence and presentation
+-- Dependencies: none identified yet
+```
+
+This is a pure calculation, not a stateful entity with a lifecycle. It models best as a surface with a precondition set, a computed output, and invariants that the output must satisfy. The interesting content is entirely in the parameters, so I've drawn the algorithm as a black box and pushed the real decisions into config.
+
+## Happy path skeleton (coarse, to react to)
+
+```
+config {
+    currency_minor_units:   Int              = 2
+    rounding_mode:          RoundingMode     = HALF_UP                  -- Q8
+    rate_convention:        RateConvention   = NOMINAL_ANNUAL_DIV_12    -- Q5
+    interest_method:        InterestMethod   = AMORTISING_ANNUITY       -- Q4
+    residual_placement:     ResidualPlacement = LAST_INSTALMENT         -- Q9
+}
+
+surface schedule {
+    requires: disbursed > 0
+    requires: months > 0
+    requires: annual_rate_pct >= 0
+
+    ensures: Schedule.created(
+        instalments: RepaymentPlanning.compute(considering: {
+            disbursed, annual_rate_pct, months,
+            config.interest_method, config.rate_convention,
+            config.currency_minor_units, config.rounding_mode,
+            config.residual_placement
+        })
+    )
+}
+
+invariant PrincipalTiesOut  { sum(Schedule.instalments.principal_portion) == disbursed }
+invariant ClosesToZero      { Schedule.instalments.last.closing_balance == 0 }
+invariant CountMatchesTerm  { count(Schedule.instalments) == months }
+```
+
+The two invariants at the bottom are the ones that make this schedule *correct* rather than merely plausible: the principal portions must sum back to the amount borrowed, and the final closing balance must be exactly zero. Every rounding decision below exists to serve those two invariants.
+
+## Decisions I need you to confirm
+
+I've grouped these and given my recommended default for each, so most can be a yes/no rather than an essay.
+
+**Output shape**
+
+1. What does `schedule` return? My assumption: an ordered list of instalments, each carrying period number, opening balance, principal portion, interest portion, total payment, and closing balance. Or do you only need the list of payment amounts? *(Recommend: full breakdown.)*
+2. Is `disbursed` the **principal amount** or the **disbursement date**? The name is ambiguous. *(Recommend: principal amount.)*
+3. Do instalments carry **due dates**? If so, what's the first due date relative to disbursement (one month later?) and how do you handle month-end (the 31st → 28th/30th problem)? *(Recommend: dates out of scope for this function; schedule is period-indexed only. Confirm.)*
+
+**Interest method**
+
+4. **Amortising annuity or flat rate?** "Equal monthly instalments" fits both. Annuity computes interest on the declining balance and gives equal *total* payments; flat rate computes interest on the original principal for the whole term, adds it, and divides. These produce materially different numbers and different APRs. *(Recommend: amortising annuity, the standard for consumer instalment loans.)*
+5. How is the monthly rate derived from `annual_rate_pct`? Nominal annual ÷ 12, or effective annual converted via `(1+r)^(1/12) − 1`? *(Recommend: nominal ÷ 12.)*
+6. Day count: is every month treated as an equal `1/12` period, or is interest accrued on **actual days** between due dates (actual/365, 30/360)? *(Recommend: equal periods, since the function has no dates. Ties to Q3.)*
+7. Does interest accrue between disbursement and the first instalment (a stub or grace period), or does the first period start clean? *(Recommend: clean first period, no grace.)*
+
+**Rounding and money**
+
+8. Currency and **minor units** (2 decimal places assumed) and **rounding mode** (half-up, banker's/half-even, ceiling)? This changes individual instalment values. *(Recommend: 2 dp, half-up.)*
+9. Where does the **rounding residual** go? Equal instalments almost never divide evenly, so a few cents must land somewhere for the schedule to tie out. Options: adjust the **last** instalment, the **first**, or spread across several. This is the single decision most likely to cause a mismatch with an existing engine. *(Recommend: absorb in the last instalment.)*
+10. Are per-period **interest and principal portions rounded independently**, with principal derived as `payment − interest`, or is only the payment rounded? *(Recommend: round payment and interest, derive principal as the remainder, so PrincipalTiesOut holds.)*
+
+**Edge cases and validation**
+
+11. **Zero interest** (`annual_rate_pct == 0`): allowed, giving `disbursed / months` per period? *(Recommend: yes, explicitly supported.)*
+12. What happens on **invalid input** (months ≤ 0, disbursed ≤ 0, negative rate)? Raise an error, or return empty? *(Recommend: reject via the `requires` preconditions.)*
+13. Any bound on **months**? Non-integer months, or months so large the instalment rounds to zero minor units? *(Recommend: positive integer only.)*
+
+**Boundary confirmation**
+
+14. Confirm the exclusions in the scope block: no fees, insurance, or taxes folded into the schedule; no early repayment or delinquency handling. If origination fees are financed into the principal, that changes `disbursed` upstream and I'd want to know where.
+
+The critical four are 4, 5, 9 and 10 (or 8): interest method, rate convention, and rounding/residual policy. Fix those and every number in the schedule is determined. Leave any one open and two conforming implementations can both claim to be right while disagreeing on the output. Tell me your answers, or confirm the recommended defaults, and I'll tighten the skeleton into a full spec with the black box replaced by concrete rules.

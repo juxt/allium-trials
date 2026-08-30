@@ -1,0 +1,15 @@
+[v4 0] rebuild match0.5=150/150 struct=150 crashes=0 valrounds=2 | $0.57
+node:fs:2398
+    return binding.writeFileUtf8(
+                   ^
+
+Error: ENOENT: no such file or directory, open '/Users/hgarner/code/allium-trials/outcome/spec-value/p4/tmp/valtest.json'
+    at writeFileSync (node:fs:2398:20)
+    at file:///Users/hgarner/code/allium-trials/outcome/spec-value/p4/run-validated.mjs:102:5 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/hgarner/code/allium-trials/outcome/spec-value/p4/tmp/valtest.json'
+}
+
+Node.js v25.8.1

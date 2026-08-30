@@ -1,0 +1,42 @@
+Applying the v4 loop, cycle zero. Before I encode anything I need to separate what domain practice settles (which I'll state as constraints for you to confirm or correct) from what genuinely depends on your product's policy (which I will not guess). Here is what I found.
+
+## The blocking decision: "equal instalments" cannot coexist with exact payoff under penny rounding
+
+The request asserts two things that pull against each other once money is rounded to the penny:
+
+- Every monthly instalment is **equal** (stated).
+- The loan **fully repays**: closing balance after the final instalment is exactly zero (implied by "repays it").
+
+The exact level payment is `L = P·r / (1 − (1+r)⁻ⁿ)`. Rounded to whole pence, `L × months` almost never equals `principal + total interest` exactly. So "all instalments equal to the penny" **and** "balance lands exactly on zero" **and** "amounts are whole pence" is over-constrained and generally unsatisfiable.
+
+I will not silently make the last instalment different to paper over this, because that is precisely the reconciliation this process forbids. Encoded literally (an `invariant` that all instalment amounts are equal, plus a `requirement` that a schedule exists closing the balance to exactly zero in whole pence), `allium analyse` reports this pair CONTRADICTORY, or the exact-payoff requirement INFEASIBLE. That is the spec biting as intended.
+
+**Question 1 (OPEN, cannot guess):** When the exact level payment does not divide into whole pence, which constraint gives?
+- (a) Keep every instalment equal to the penny and let the **final instalment differ** to absorb the residual. Standard for consumer instalment loans, but "equal instalments" is then false for the last row.
+- (b) Keep all instalments equal and accept the closing balance within a stated **rounding tolerance** (not exactly zero).
+- (c) Spread the residual across instalments some other way.
+
+This is the one decision I genuinely cannot resolve from the brief, and it changes the invariant materially.
+
+## Assumptions I have encoded from domain practice — please confirm or correct
+
+These I would state as constraints rather than surface as open questions, but they change the numbers, so I want them confirmed:
+
+- **Rate convention:** `annual_rate_pct` is a nominal annual rate, monthly rate `r = annual_rate_pct / 100 / 12`. If your APR is an *effective* annual rate, the conversion is `(1+r)¹² = 1 + APR` and every figure shifts. Confirm which.
+- **Zero-rate case:** when `annual_rate_pct = 0`, instalment is `disbursed / months` (the annuity formula divides by `r`, so this is a separate branch).
+- **Periods:** exactly `months` equal whole-month periods, first instalment one month after disbursement, no broken first period or odd-days interest. The signature carries no dates, which supports this.
+- **Per-period mechanics:** interest for a period = opening balance × `r`; principal = instalment − interest; balance is non-increasing and reaches zero (subject to Q1). Sum of principal repaid = `disbursed`.
+- **`disbursed` is the exact financed principal:** no arrangement or other fee capitalised into it. If fees are added to the financed amount, that is a separate input.
+- **Inputs:** `disbursed > 0`, `annual_rate_pct ≥ 0`, `months` a positive integer. Negative rate rejected.
+
+If any of these is wrong for your product, correct it and I will re-encode.
+
+## The other genuine unknown
+
+**Question 2 (OPEN, cannot guess):** What shape must `schedule` return? "The repayment schedule" reads as a full amortisation table (one row per month: opening balance, instalment, interest, principal, closing balance), and I will assume that unless told otherwise. But if the caller only needs the level instalment amount, or the total cost of credit, the output shape and the requirements I check against differ.
+
+## Next step
+
+Answer Q1 and Q2, and confirm or correct the assumptions above. I will then encode each answer literally as `observable state` + `invariant`/`axiom`/`requirement`, run `allium analyse`, and take any CONTRADICTORY core or INFEASIBLE requirement back to you rather than resolving it myself. The spec is not done while Q1 or Q2 remain open.
+
+One thing I am **not** asking, because standard practice settles it: the amortisation formula itself, and that interest accrues on the declining balance. Those I have stated as constraints above for you to correct if your product does something unusual.

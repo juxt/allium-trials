@@ -7,3 +7,8 @@
 [prose 2] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.57
 [prose 3] surfaced=[instalment,residual,rounding] build match0.5=150/150 | $0.37
 [v3elicit 0] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.37
+[v3elicit 1] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.38
+[v3elicit 2] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.35
+[v3elicit 3] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.34
+[v4elicit 0] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.37
+[v4elicit 1] surfaced=[interest_basis,instalment,residual,rounding] build match0.5=150/150 | $0.47

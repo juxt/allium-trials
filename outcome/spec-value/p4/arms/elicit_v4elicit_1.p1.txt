@@ -1,0 +1,67 @@
+I don't have file or execution tools in this session, so I can't read the v4 reference or run `allium analyse` here. That means this is the surfacing cycle only: I'll draft the constraints I can infer, mark what I genuinely can't know, and put the questions in front of you. Nothing below should be treated as checked until it goes through `allium analyse` with your answers landed.
+
+## The one decision that dominates the rest
+
+"Equal monthly instalments over a fixed term" does **not** pin down the loan. Two different products both produce equal instalments from `(disbursed, annual_rate_pct, months)`:
+
+- **Reducing-balance (amortising):** interest each month accrues on the outstanding balance; the level instalment comes from the annuity formula `A = P·i / (1 − (1+i)⁻ⁿ)`. Early instalments are mostly interest, later ones mostly principal.
+- **Flat / add-on interest:** interest is computed once on the original principal (`P · annual_rate · years`), added to principal, and the total is split evenly. Every instalment carries the same interest and the same principal.
+
+Both give you equal monthly payments, so the phrasing in the brief is satisfied either way, and they produce materially different schedules and different total interest for the same inputs. Given this product line's history with flat and add-on interest, I will not assume reducing-balance. This is the first thing I need decided, and it changes almost every constraint below.
+
+## Draft spec sketch (unchecked)
+
+I'm writing the parts I can infer as stated constraints so you can confirm or correct them, and marking genuine unknowns as `OPEN`. The amortisation identities below assume reducing-balance; if you pick flat, they get replaced by equal-split identities.
+
+```
+observable state
+  disbursed        : money        -- principal advanced to the customer
+  periodic_rate    : rate         -- per-month rate used for accrual
+  term_months      : count        -- number of instalments
+  instalment[k]    : money        -- payment due in month k, k in 1..term_months
+  interest[k]      : money        -- interest portion of instalment k
+  principal[k]     : money        -- principal portion of instalment k
+  balance[k]       : money        -- outstanding balance after instalment k
+
+-- Inferred, confirm or correct:
+invariant  balance[0] == disbursed
+invariant  every k :: interest[k]  == balance[k-1] * periodic_rate      -- reducing-balance only
+invariant  every k :: principal[k] == instalment[k] - interest[k]
+invariant  every k :: balance[k]   == balance[k-1] - principal[k]
+invariant  balance[term_months] == 0
+invariant  sum over k of principal[k] == disbursed
+invariant  every k < term_months :: instalment[k] == instalment[k+1]    -- level, before rounding
+
+requirement  a schedule with term_months >= 1 exists            -- non-vacuity
+requirement  a schedule with periodic_rate == 0 exists          -- straight-line P/n case
+
+-- OPEN: interest basis — reducing-balance amortisation or flat/add-on? (changes the interest/principal invariants above)
+-- OPEN: how does periodic_rate derive from annual_rate_pct — nominal (annual/12) or effective-annual equivalent?
+-- OPEN: rounding — minor unit (decimal places / currency), rounding mode, and where the residual lands
+-- OPEN: does the level-instalment invariant hold exactly, or is the final instalment adjusted to clear the balance?
+-- OPEN: what does schedule() return — which fields per row, and are due dates included?
+-- OPEN: input domain and validation behaviour for out-of-range disbursed / rate / months
+-- OPEN: are fees, insurance or add-ons inside the instalment, or is it pure principal + interest?
+```
+
+Note the tension I've deliberately **not** encoded: the level-instalment invariant (`instalment[k] == instalment[k+1]`) and the exact-zero-balance invariant (`balance[term_months] == 0`) cannot both hold once instalments are rounded to whole pence. That is precisely the rounding question below, and I won't reconcile it by inventing a "final instalment absorbs the residual" rule on your behalf. Once you answer, one of those two invariants gets a documented exception and the checker can confirm the result is consistent.
+
+## Questions
+
+**A. Please decide these. I can't know them from the brief, and guessing would be fabrication.**
+
+1. **Interest basis:** reducing-balance amortisation, or flat/add-on interest? (The dominant decision above.)
+2. **Rounding:** what currency and minor unit (e.g. pence, 2 dp)? What rounding mode (half-up, half-even, truncate)? And where does the accumulated rounding residual go so the balance clears exactly, the final instalment, the first, or spread across all?
+3. **Interest rounding within a period:** round each period's interest to the minor unit before deriving principal, or carry full precision and round only the payment? This changes individual rows.
+4. **Return shape:** what does `schedule` produce per month, opening balance, instalment, interest portion, principal portion, closing balance? Anything else? Do you need due dates on each row (if so I also need a disbursement date and a calendar convention)?
+5. **Input domain and validation:** must `months` be an integer ≥ 1 and `disbursed` > 0? Is a 0% or negative `annual_rate_pct` valid? What should happen on invalid input, an error or something else?
+6. **Add-ons:** is the instalment purely principal plus interest, or does it include fees, insurance or other charges? This product line has carried add-on components before, so I'd rather ask than assume.
+
+**B. I've inferred these from standard instalment-loan practice. Confirm, or correct.**
+
+7. **Rate convention:** `periodic_rate = annual_rate_pct / 100 / 12` (nominal annual, compounded monthly, APR-style). Effective-annual conversion is the alternative if that's what your product uses.
+8. **Period structure:** exactly `months` equal, full monthly periods; first instalment one month after disbursement; no stub or broken first period.
+9. **Zero-rate case:** when the rate is 0, the instalment is simply `disbursed / months` (straight-line), with rounding handled the same way as question 2.
+10. **Amortisation identities** (if reducing-balance): interest accrues on the prior outstanding balance, principal is the remainder of the instalment, the balance reduces by that principal each month, and the sum of principal repayments equals `disbursed`.
+
+Once you answer A1–A6 and confirm or correct B7–B10, I'll land them as constraints, replace the placeholder invariants for whichever interest basis you chose, encode the rounding rule as an explicit exception to one of the two conflicting invariants, and run `allium analyse` to prove the set is jointly satisfiable, every requirement feasible, and no invariant passing only vacuously before anything gets built.

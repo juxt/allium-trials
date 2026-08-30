@@ -1,1 +1,2 @@
 [v4 0] rebuild match0.5=54/150 struct=150 crashes=0 valrounds=2 | $0.74
+[v4 1] rebuild match0.5=150/150 struct=150 crashes=0 valrounds=2 | $1.29

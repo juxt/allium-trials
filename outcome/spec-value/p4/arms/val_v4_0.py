@@ -1,31 +1,24 @@
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    r = annual_rate_pct / 100.0 / 12.0
-    if months <= 0:
-        return []
+    rate_factor = round(annual_rate_pct / 1200, 6)
+    flat_interest = round(disbursed * rate_factor, 2)
+    flat_principal = round(disbursed / months, 2)
 
-    if r == 0:
-        emi = disbursed / months
-    else:
-        factor = (1 + r) ** months
-        emi = disbursed * r * factor / (factor - 1)
-
-    rows = []
-    outstanding = disbursed
-    for i in range(months):
-        outstanding_start = outstanding
-        interest = outstanding_start * r
-        if i == months - 1:
-            # final instalment clears any residual balance
-            principal = outstanding_start
-            emi_row = principal + interest
+    installments = []
+    outstanding_start = disbursed
+    for period in range(months):
+        is_last = (period == months - 1)
+        if is_last:
+            principal = round(outstanding_start, 2)
         else:
-            principal = emi - interest
-            emi_row = emi
-        outstanding = outstanding_start - principal
-        rows.append({
-            "emi": float(emi_row),
-            "interest": float(interest),
-            "principal": float(principal),
-            "outstanding_start": float(outstanding_start),
+            principal = flat_principal
+        interest = flat_interest
+        emi = round(interest + principal, 2)
+        installments.append({
+            "emi": emi,
+            "interest": interest,
+            "principal": principal,
+            "outstanding_start": round(outstanding_start, 2),
         })
-    return rows
+        outstanding_start = round(outstanding_start - principal, 2)
+
+    return installments

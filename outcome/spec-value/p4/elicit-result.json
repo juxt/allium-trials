@@ -255,6 +255,148 @@
           "maxres": 0.05
         }
       ]
+    },
+    {
+      "rep": 1,
+      "cost": 0.382881,
+      "surfaced": "interest_basis,instalment,residual,rounding",
+      "n_surfaced": 4,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 147,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
+    },
+    {
+      "rep": 2,
+      "cost": 0.354175,
+      "surfaced": "interest_basis,instalment,residual,rounding",
+      "n_surfaced": 4,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 150,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d100_r0_m1",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m2",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m3",
+          "maxres": 0
+        }
+      ]
+    },
+    {
+      "rep": 3,
+      "cost": 0.34101099999999995,
+      "surfaced": "interest_basis,instalment,residual,rounding",
+      "n_surfaced": 4,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 137,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
+    }
+  ],
+  "v4elicit": [
+    {
+      "rep": 0,
+      "cost": 0.3739895,
+      "surfaced": "interest_basis,instalment,residual,rounding",
+      "n_surfaced": 4,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 150,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d100_r0_m1",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m2",
+          "maxres": 0
+        },
+        {
+          "id": "d100_r0_m3",
+          "maxres": 0
+        }
+      ]
+    },
+    {
+      "rep": 1,
+      "cost": 0.47340099999999996,
+      "surfaced": "interest_basis,instalment,residual,rounding",
+      "n_surfaced": 4,
+      "n": 150,
+      "crashes": 0,
+      "struct_ok": 150,
+      "closes_to_zero": 150,
+      "matched_0.01": 147,
+      "matched_0.50": 150,
+      "matched_5.00": 150,
+      "median_residual_finite": 0,
+      "worst_offenders": [
+        {
+          "id": "d12345.67_r18_m24",
+          "maxres": 0.23
+        },
+        {
+          "id": "d12345.67_r18_m12",
+          "maxres": 0.11
+        },
+        {
+          "id": "d12345.67_r18_m6",
+          "maxres": 0.05
+        }
+      ]
     }
   ]
 }
