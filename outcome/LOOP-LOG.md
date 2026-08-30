@@ -110,6 +110,21 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 14 — collected 4-feature surfacing eval — SURFACING WIN CONFIRMED ROBUST
+- 4 features (late-fee, dormancy, overdraft, multi-currency) x 4 arms x 2 reps:
+  nospec 5.0 surfaced / 4.4 guessed; prose 3.8 / 5.1 (WORSE than none, again); v3elicit 7.3 / 0.9;
+  v4elicit 7.1 / 0.5.
+- **Verified genuine (read outputs):** v4elicit (multi-currency) refuses to guess, lists explicit
+  OPEN policy questions, even predicts the FX-markup-vs-conservation conflict analyse would catch.
+  prose (dormancy) commits recommended defaults as fact ("default should be no dormancy fees",
+  "keep interest accruing") while flagging only a few. Pattern holds across the new features.
+- **=> v4's ONE proven clear-air value is ROBUST across 4 diverse features:** the elicit skill
+  surfaces the unknowable and refuses to guess (~7/10 surfaced, ~0.5 guessed) vs prose (3.8/5.1,
+  worse than nothing) and no-spec (5.0/4.4). Numbers a touch lower than the 2-feature run (some
+  overdraft/FX decisions are more inferable), but the pattern is stable. v4 ~= v3 (the value is the
+  elicit DISCIPLINE both skills carry, not the v4 syntax). This is DISPOSITION value, not accuracy —
+  the one axis that never saturated. Commit: allium-trials.
+
 ### Iteration 13 — v4: negative literals (unary minus)
 - Found: `bal(a) >= -1000` silently became `bal(a) >= <error>` (no unary-minus in the parser) — skipped
   as unchecked. Essential for finance (overdrafts, adjustments, refunds). Fixed: unary minus desugars
