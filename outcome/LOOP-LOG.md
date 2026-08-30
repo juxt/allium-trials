@@ -110,6 +110,17 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 10 — v4: honest coverage (PARTIAL) + surfaced a rate-pinning bug
+- analyse now flags the satisfiability verdict as PARTIAL when nonlinear constraints were skipped
+  ("N nonlinear constraint(s) were not checked, so this is not a full guarantee"), closing the
+  over-reassurance gap the scale probe exposed (a clean verdict on a spec with unchecked nonlinear
+  math). GOOD: verified; regression test; 46 tests green. Commit: allium-tools.
+- **BUG SURFACED (backlog):** the arith tier's `lower` PINS any `Rate`-typed state to the constant
+  1/10 (a loan-schedule hack for rate_factor). This leaks into general specs: `b(p) * c(p)` with b,c
+  typed Rate becomes 0.01, not a variable product — wrong for any non-loan spec. The rate-pin should
+  be scoped to the loan-schedule context (or removed / replaced by a symbolic rate). Over-specialised
+  arith tier is a real v4 debt. Logged; not fixed this iteration.
+
 ### Iteration 9 — collected the SCALE probe — DECISIVE (refutes catch-rate clear air; surfaces a v4 limit)
 - Scale probe (14 constraints, 4 reps): v4 2/4 caught (1 FA); nospec 4/4 caught, 4/4 "FA" on clean.
 - **Verified by reading outputs — two big honest findings:**
