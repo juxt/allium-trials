@@ -1,0 +1,32 @@
+{
+  "nospec": [
+    {
+      "rep": 0,
+      "cost": 0.8190859999999999,
+      "turns": 16,
+      "in_tok": 322215,
+      "out_tok": 7446,
+      "err": false,
+      "struct": 4,
+      "insight": 1,
+      "guard": 1,
+      "precision": "FEW",
+      "raw": "RECALL_STRUCT: 4\nRECALL_INSIGHT: 1\nGUARD_GAP: YES\nPRECISION: FEW"
+    }
+  ],
+  "spec": [
+    {
+      "rep": 0,
+      "cost": 0.8555079999999999,
+      "turns": 21,
+      "in_tok": 595449,
+      "out_tok": 8236,
+      "err": false,
+      "struct": 4,
+      "insight": 1,
+      "guard": 1,
+      "precision": "FEW",
+      "raw": "RECALL_STRUCT: 4\nRECALL_INSIGHT: 1\nGUARD_GAP: YES\nPRECISION: FEW"
+    }
+  ]
+}

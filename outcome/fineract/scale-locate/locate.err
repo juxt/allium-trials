@@ -1,0 +1,2 @@
+[nospec 0] struct=4/4 insight=1/2 guard=1 prec=FEW | $0.819 turns=16 tok=322k+7446
+[spec 0] struct=4/4 insight=1/2 guard=1 prec=FEW | $0.856 turns=21 tok=595k+8236

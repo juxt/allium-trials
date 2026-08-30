@@ -1,0 +1,33 @@
+I have traced the full loan posting path. Here is what I found.
+
+## The loan posting path, end to end
+
+**1. Bridge / entry point.** A posted loan transaction enters the accounting layer here:
+
+- `LoanJournalEntryPosterImpl.postJournalEntriesForLoanTransaction` (`fineract-provider/.../portfolio/loanaccount/service/LoanJournalEntryPosterImpl.java:36`) delegates to
+- `JournalEntryWritePlatformServiceJpaRepositoryImpl.createJournalEntriesForLoanTransaction` (`.../accounting/journalentry/service/JournalEntryWritePlatformServiceJpaRepositoryImpl.java:826`), which builds an `AccountingBridgeDataDTO` and calls
+- `createJournalEntriesForLoan(AccountingBridgeDataDTO)` at `JournalEntryWritePlatformServiceJpaRepositoryImpl.java:540`. This builds the `LoanDTO` (`helper.populateLoanDtoFromDTO`), picks the regime with `determineProcessor`, and hands off to the processor. **No balance check happens here.**
+
+**2. Leg splitting and posting.** The two regime processors split the transaction into typed legs (principal, interest, fees, penalties, overpayment) and post each side:
+
+- `CashBasedAccountingProcessorForLoan.createJournalEntriesForLoan` (`.../service/CashBasedAccountingProcessorForLoan.java:52`) — reads `getPrincipal/getInterest/getFees/getPenalties` (lines 146-149) and calls the credit/debit primitives.
+- `AccrualBasedAccountingProcessorForLoan.createJournalEntriesForLoan` (`.../service/AccrualBasedAccountingProcessorForLoan.java`) — the accrual twin.
+- The posting primitives are `AccountingProcessorHelper.createDebitJournalEntryForLoan` / `createCreditJournalEntryForLoan` (`.../service/AccountingProcessorHelper.java:934` and neighbours). Each builds one one-sided `JournalEntry.createNew(... JournalEntryType.CREDIT/DEBIT ...)` with `manualEntry = false` and calls `persistJournalEntry` (line 946). **A single leg is one-sided by construction; nothing checks the sum.**
+
+**3. Is debit=credit actually enforced on the loan path? No.** There are two checks in the codebase, and neither guards the loan posting path:
+
+- `JournalEntryWritePlatformServiceJpaRepositoryImpl.checkDebitAndCreditAmounts` (`:306`) is the real global "sum of debits = sum of credits" assertion (`creditsSum.compareTo(debitsSum) != 0` → `DEBIT_CREDIT_SUM_MISMATCH`, line 323-324). But it is only reached from `validateBusinessRulesForJournalEntries` (`:626`) via `createJournalEntry` (`:146`) and the revert/update path (`:724`) — that is the **manual/API journal-entry path** operating on `SingleDebitOrCreditEntryCommand[]`. The loan processors never call it.
+- `AccountingProcessorHelper.createJournalEntriesForLoanCharges` (`:427-441`) does throw if sums mismatch, but it checks each side against the *charge transaction total* independently (`totalAmount vs totalCreditedAmount`, `totalAmount vs totalDebitedAmount`), and only for the charge-distribution sub-case. It is not a transaction-wide debit=credit invariant over all legs.
+
+So on the loan path the double-entry balance is **emergent, not enforced**: it holds only because each processor branch is hand-written to post matching debit and credit amounts for every leg. There is no assertion at the bridge, in the processors, or in the leg primitives that the summed debits equal the summed credits for a posted loan transaction. This matches the spec's observation that balance is "invisible at any one posting site."
+
+LOAD-BEARING SITES:
+- `fineract-provider/src/main/java/org/apache/fineract/portfolio/loanaccount/service/LoanJournalEntryPosterImpl.java :: postJournalEntriesForLoanTransaction — outermost bridge from a loan transaction into the accounting layer.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/JournalEntryWritePlatformServiceJpaRepositoryImpl.java :: createJournalEntriesForLoanTransaction (826) → createJournalEntriesForLoan (540) — entry point that builds LoanDTO and dispatches to the regime processor; no balance check.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java :: createJournalEntriesForLoan (52) — splits the transaction into principal/interest/fee/penalty/overpayment legs (cash basis) and posts each side.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccrualBasedAccountingProcessorForLoan.java :: createJournalEntriesForLoan — accrual-basis leg split and posting.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java :: createDebitJournalEntryForLoan / createCreditJournalEntryForLoan (934) — leg posting primitives; persist one one-sided JournalEntry each, no cross-leg sum check.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/AccountingProcessorHelper.java :: createJournalEntriesForLoanCharges (427-441) — only per-side-vs-total charge check, not a transaction-wide debit=credit invariant.
+- `fineract-provider/src/main/java/org/apache/fineract/accounting/journalentry/service/JournalEntryWritePlatformServiceJpaRepositoryImpl.java :: checkDebitAndCreditAmounts (306) — the only true sum(debits)=sum(credits) guard, but reached solely from the manual createJournalEntry API path (146/724), not the loan path.
+
+GUARD ON LOAN PATH: no — the sole real debit=credit balance assertion (`checkDebitAndCreditAmounts`) guards only the manual journal-entry API path; on the loan posting path balance is emergent from hand-written matched postings and is never asserted.

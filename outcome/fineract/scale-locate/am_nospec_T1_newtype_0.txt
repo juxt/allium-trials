@@ -1,0 +1,42 @@
+I have the complete picture. Let me give the answer.
+
+## Where a goodwill credit must emit postings, and what keeps it balanced
+
+### How it's routed
+
+`GOODWILL_CREDIT` is transaction type 23 (`LoanTransactionType.java:61`). Critically, it has **no dedicated accounting branch**. It is swept into the repayment path by `isRepaymentType()`, which folds goodwill credit in with ordinary repayments and refunds:
+
+- `fineract-loan/.../loanaccount/domain/LoanTransactionType.java:193-196` — `isRepaymentType()` returns true for `GOODWILL_CREDIT`.
+
+So the top-level dispatch in each processor never names goodwill credit; it falls through the `isRepaymentType()` arm and is then distinguished portion-by-portion inside the repayment handler by `isGoodwillCredit()`.
+
+### The places that must emit postings
+
+There are **three** accounting processors, and every one has goodwill-specific code. A new credit-like type must be handled in all three or postings go wrong.
+
+**1. Accrual processor** — `AccrualBasedAccountingProcessorForLoan.java`
+- Dispatch arm: `:87-89` (`isRepaymentType()` → `createJournalEntriesForRepayments`).
+- Normal path handler `createJournalEntriesForLoanRepayments`, goodwill sub-branches at `:1723`, `:1740`, `:1776`, `:1806`, `:1823`, and the debit emission loop at `:1847-1852`.
+- Charged-off path `createJournalEntriesForRepaymentWhenLoanIsChargedOff`, goodwill branches at `:1433`, `:1461`, `:1491`, `:1529`, `:1564`.
+
+**2. Cash processor** — `CashBasedAccountingProcessorForLoan.java`
+- Dispatch arm at `:81-83`; handler `createJournalEntriesForLoanRepayments` with goodwill branches at `:750`, `:760`, `:782`, `:805`, `:816`, and the debit loop at `:830-836`. Charged-off variant branches at `:572`, `:600`, `:627`, `:655`, `:681`.
+
+**3. Working-capital processor** — `AccrualWithDeferredRevenueAmortizationAccountingProcessorForWorkingCapitalLoan.java`
+- Explicit `case LoanTransactionType.GOODWILL_CREDIT ->` at `:80`; postings in `postGoodwillCreditJournalEntries` at `:114-127`. Note `:83-85`: the charged-off goodwill case deliberately throws `NotImplementedException` rather than post — a coverage gap, not silent imbalance.
+
+Supporting these, the GL accounts the branches reference must exist and be mapped to the product, or `getLinkedGLAccountForLoanProduct` fails. They are declared in `fineract-core/.../accounting/common/AccountingConstants.java`: `CashAccountsForLoan`/`AccrualAccountsForLoan` at `:48,54-56` and `:109,115-117`, and the product-mapping params `GOODWILL_CREDIT` / `INCOME_FROM_GOODWILL_CREDIT_*` at `:164,182-184`.
+
+### What guarantees the postings balance
+
+**Nothing checks it at runtime for these entries. Balance is purely structural.** Look at the emission pattern (accrual `:1695-1859`, cash `:727-842`). Each portion block does three things in lockstep:
+
+- adds the portion to `totalDebitAmount`,
+- creates a **credit** of that portion (into `accountMap`, or directly), and
+- for goodwill credit, adds the same portion to `debitAccountMapForGoodwillCredit`.
+
+For an ordinary repayment the debit side is a single `FUND_SOURCE` debit of `totalDebitAmount` (cash `:839`, accrual `:1855`), so credits and the one debit are the same accumulator, balanced by construction. For goodwill credit that single debit is replaced by a loop that posts one debit per entry in `debitAccountMapForGoodwillCredit` (cash `:833-835`, accrual `:1849-1851`). It balances only because every `if (portion > 0)` block that credits also populates the debit map with the identical amount. There is no assertion that the debit map sums to `totalDebitAmount`.
+
+The batch balance check that does exist, `checkDebitAndCreditAmounts` (sum of debits must equal sum of credits) at `JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-326`, only runs on the **manual** journal-entry API command. The processors persist through `helper.createCreditJournalEntryForLoan` / `createDebitJournalEntryForLoan`, which save entries directly and never pass through that check. The only per-amount guard on the processor path is inside `createJournalEntriesForLoanCharges` in `AccountingProcessorHelper.java` (throws if charge credits/debits don't equal the transaction amount), and that covers the fee/penalty charge split, not the overall goodwill debit-vs-credit total.
+
+The practical consequence for whoever adds this type: correctness rests on remembering to add a goodwill debit-map branch in every portion block of both the normal and charged-off handlers in all three processors. Miss one and the credit still posts while its matching debit does not; the ledger goes out of balance silently, because no code downstream re-checks it.
