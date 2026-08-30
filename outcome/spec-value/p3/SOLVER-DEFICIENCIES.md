@@ -54,7 +54,7 @@ value bugs that currently only golden tests catch — turning the "complementary
 regression gate. D2-D6 are smaller, mostly-known fixes that raise the trustworthiness of the checks
 themselves (exactness, coverage honesty, vacuity). None is a fundamental barrier; all have prior art.
 
-## D7 — Temporal/ordering paradigm not checkable end-to-end  [confirmed empirically, HIGH VALUE]
+## D7 — Temporal is PARTIAL: immediate `old` works; multi-step ordering + liveness missing  [HIGH VALUE, incremental]
 Finding: an auth-before-capture property is NOT checkable. analyse reports the ordering predicates
 `before`/`follows`/`precedes` as "not declared" (name resolution); the monitor evaluates ONLY numeric
 invariants and SKIPS boolean/temporal ones — it returned `monitored:0, ok:true` on a spec whose only

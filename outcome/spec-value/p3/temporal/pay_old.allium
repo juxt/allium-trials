@@ -1,0 +1,7 @@
+-- allium: 4
+component Pay
+  entity P
+  observable state is_auth(P) : bool
+  observable state is_capture(P) : bool
+  invariant cap_after_auth means is_capture(P) implies old(is_auth(P))
+end
