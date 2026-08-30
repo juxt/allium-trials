@@ -55,3 +55,17 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
   the floor CONSUMER instruction still bites on this same stripped case (vs ceiling).
 - Skill implication: keep the distill partial-floor HEADER, but ALSO add the floor-consumption
   principle to the skill(s) that USE a spec to review/guide code. Pending consumer-verify.
+
+## Iteration 7 — consumption principle added to language reference; Phase 4 launched
+- v4 has NO spec-consumption skill (skills-v4/allium has only a language reference). So the
+  floor-framing fix (which must live in the CONSUMER's prompt, per iter 6) was added as a
+  "Consuming a spec: it is a partial floor, not a ceiling" section in language-reference-v4.md:
+  the consuming agent's prompt must carry the floor instruction; a passive header is insufficient
+  (verified); carry the measured blind spots into the instruction. Committed to allium repo.
+- Consumer-verify on the stripped OS1 case hung (ceiling 0/4 block; floor never returned) — killed it;
+  Phase 1's fuller-case evidence (floor 4/4 block vs ceiling 2/4; benign 11%) is the load-bearing basis.
+- Phase 4 (explain-back / how to build confidence) launched: SPEC_LLM has two REAL flaws (level_payment
+  over-claim F1; roll-forward/monotonicity blind spot F2). Reviewer given {raw spec | +prose | +the
+  mechanical VALIDATION REPORT}. Tests whether the validation report (monitor+mutation) helps a reviewer
+  catch the flaws better than eyeballing — i.e. whether the confidence-builder is the validation, not
+  the explanation.
