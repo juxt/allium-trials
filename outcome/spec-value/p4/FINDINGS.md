@@ -167,3 +167,11 @@ session-set (`before`/`precedes` over the event timeline) expresses and checks i
   ORDERING -> sequencing bugs (12/12). This is the concrete, deliverable "why v4 is better": not a
   higher one-shot build-correctness rate (saturated), but an expanding set of bug classes a v4 spec can
   mechanically GATE against, that a prose spec cannot express or check at all.
+
+## FINDING 8 — coverage at scale: a monitorable spec generalises the oracle to ALL inputs
+A value bug engineered to manifest only on large loans (disbursed >= 100k) is MISSED by a spot-check
+test suite of small examples (d<=5000) — the bug isn't present in those cases — but the v4 spec-gate,
+run over all 144 real traces, CATCHES it (on 24 traces). A monitorable invariant is one law checked
+against every input the system actually sees, where an example-based test checks only the cases someone
+thought to write. Honest caveat: somewhat expected (a suite without large loans can't see a large-loan
+bug); the point is that a spec-gate's coverage is the whole input distribution, not a hand-picked set.
