@@ -1,0 +1,25 @@
+I'll evaluate the change on its own terms as a reviewer.
+
+## What the change does
+
+It adds a guard that returns from the method when `payment.isZeroOrNegative()`, before the allocation block. Allocation order is untouched.
+
+## Why the guard looks harmless but isn't
+
+The problem is the word `return`, not the condition. This exits the **entire method**, not just the allocation block. The diff shows me the allocation lines and nothing after them. In a lending system, the code following allocation is usually where the consequential work happens: recording the payment transaction, recomputing outstanding balances, writing the repayment schedule row, emitting an event, persisting. For a **zero** payment, the current code flows through all of that (allocating zero to each bucket, then doing whatever comes next). The proposed code skips it. If any downstream step must run even for a zero-value entry (a booked £0 transaction, an idempotency marker, a status transition), this silently drops it. I can't confirm it's safe because the method's tail isn't in the diff, and "existing tests pass" only tells me no existing test covers that tail for the zero case.
+
+The **negative** case is worse. A negative payment in a loan system is rarely noise; it's typically a reversal, adjustment, or a sign of upstream corruption. The current behaviour for negatives is unknown, but replacing it with a silent no-op `return` means a negative amount now produces no allocation, no error, and no record. Whichever of "should be a reversal" or "should be rejected loudly" is intended, silently swallowing it is the one behaviour that's almost certainly wrong, because it hides the input rather than handling or surfacing it.
+
+## The core issue
+
+The intent is under-determined. Two distinct questions have no encoded answer:
+
+- Should a zero payment still produce the downstream side effects that follow allocation?
+- Should a negative payment be a no-op, a rejection, or a reversal?
+
+The change picks "skip everything, silently" for both without stating why. That's a behavioural change to money-handling control flow justified only by "it compiles and tests pass".
+
+I'd want to see the full method body and a stated policy for negative amounts before this goes near production. Split it if needed: reject negatives explicitly (throw/validation error), and handle the zero case as a scoped skip of allocation only, not an early exit from the whole method.
+
+DECISION: BLOCK
+REASON: The early `return` exits the whole method, silently skipping any post-allocation side effects for zero payments and swallowing negative amounts with no error, and the diff doesn't show the method tail or state the intended negative-payment semantics needed to confirm either is safe.

@@ -1,0 +1,14 @@
+This change swaps declining-balance interest for flat interest on the original principal. That is not a simplification, it is a different financial product.
+
+**What breaks:**
+
+1. **Borrowers are overcharged.** On a declining-balance loan, interest falls each period as the outstanding principal is paid down. Computing interest on `disbursed` every period charges interest on principal the borrower has already repaid. Over the life of the loan this is a large overcharge, and on most consumer-lending regimes it misstates the APR/truth-in-lending disclosure.
+
+2. **The schedule no longer amortises to zero.** The `emi` was derived for a declining-balance schedule. Holding interest constant at the period-one level keeps `principal = emi − interest` too small every period, so `outstanding` never reaches zero at term end. There is a residual balance the code silently ignores.
+
+3. **The passing tests prove nothing.** The comment admits the fixture is flat-rate, the one case where declining-balance and flat interest coincide. Green tests here are evidence the tests don't cover the behaviour being changed, not evidence the change is safe.
+
+The comment frames this as "simpler, constant" — it is, but simplicity of the arithmetic isn't the goal; the loan's economics are. Nothing in the diff suggests the product was intended to move from reducing-balance to flat-rate, and such a move would need product, pricing and compliance sign-off, not a one-line refactor justified by a passing flat-rate fixture.
+
+DECISION: BLOCK
+REASON: The change replaces declining-balance interest with flat interest on the original principal, overcharging borrowers and leaving a non-zero residual balance at term end, and the passing tests only coincide because the fixture is flat-rate.

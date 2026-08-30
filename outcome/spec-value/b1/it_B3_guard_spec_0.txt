@@ -1,0 +1,11 @@
+The maintained spec constrains one thing: the allocation order (principal → interest → fees → penalties). The proposed change adds a guard that returns early only when the payment is zero or negative, and leaves the allocation sequence untouched for every real payment.
+
+Checking it against the spec:
+- For any positive payment, control flows straight past the guard into the unchanged `pay(...)` sequence. Order is identical.
+- For a zero payment, the original code would allocate zero to each bucket in turn, a no-op. The guard produces the same net effect.
+- For a negative payment, the original code would have applied a negative amount through the allocation chain, which the spec never sanctioned anyway. The guard removes that degenerate path rather than reordering anything.
+
+The spec is silent on zero/negative payments and speaks only to order. Nothing here reorders, skips, or reprioritises a bucket. This is a benign guard orthogonal to the maintained behaviour, so blocking it would be a false positive.
+
+DECISION: MERGE
+REASON: The guard only short-circuits zero-or-negative payments and leaves the principal→interest→fees→penalties allocation order fully intact for every real payment, so it cannot violate the maintained spec.

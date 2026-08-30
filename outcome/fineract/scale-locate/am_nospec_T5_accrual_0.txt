@@ -1,0 +1,39 @@
+I now have the complete picture. Both processors are dispatched from `LoanTransactionEnumData` transaction types, but they diverge on interest timing.
+
+## The difference
+
+**Cash basis: interest hits the income ledger only when the borrower pays.** Interest income is recognised at repayment time and never before.
+
+**Accrual basis: interest hits the income ledger when it accrues, decoupled from payment.** A separate ACCRUAL transaction recognises the income into a receivable; the later repayment just clears that receivable and touches cash, not income.
+
+## The code
+
+The structural giveaway is in the dispatch loops. The accrual processor handles the `ACCRUAL` transaction type; the cash processor has no such branch.
+
+Accrual dispatch, `AccrualBasedAccountingProcessorForLoan.java:80-82`:
+```java
+if (transactionType.isAccrual() || transactionType.isAccrualAdjustment()) {
+    createJournalEntriesForAccruals(loanDTO, loanTransactionDTO, office);
+}
+```
+The cash dispatch loop (`CashBasedAccountingProcessorForLoan.java:74-132`) never tests `isAccrual()` — accrual transactions produce no ledger entry under cash accounting.
+
+**When income is recognised (accrual):** `createJournalEntriesForAccruals` at `AccrualBasedAccountingProcessorForLoan.java:2037-2039` debits INTEREST_RECEIVABLE, credits INTEREST_ON_LOANS (the income account). This fires on the accrual transaction, independent of any payment:
+```java
+this.helper.createJournalEntriesForLoan(office, currencyCode, AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(),
+        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), ...);
+```
+
+**What a repayment then does (accrual):** interest debits FUND_SOURCE and credits INTEREST_RECEIVABLE — it clears the receivable and records cash, without touching income again. `AccrualBasedAccountingProcessorForLoan.java:1472-1473`:
+```java
+populateCreditDebitMaps(loanProductId, interestAmount, paymentTypeId, AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(),
+        AccrualAccountsForLoan.FUND_SOURCE.getValue(), glAccountBalanceHolder);
+```
+
+**By contrast, under cash the income is booked at repayment:** `CashBasedAccountingProcessorForLoan.java:758-759` credits INTEREST_ON_LOANS (income) directly against FUND_SOURCE at repayment time:
+```java
+this.helper.createCreditJournalEntryForLoan(office, currencyCode, CashAccountsForLoan.INTEREST_ON_LOANS, loanProductId,
+        paymentTypeId, loanId, transactionId, transactionDate, interestAmount);
+```
+
+So the same INTEREST_ON_LOANS income account is credited in both models, but the crediting event differs: at accrual time for accrual accounting (`:2037-2039`), and only at repayment for cash (`:758-759`). The accrual repayment path deliberately routes interest through INTEREST_RECEIVABLE instead (`:1472-1473`) to avoid double-counting income already recognised.

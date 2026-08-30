@@ -1,0 +1,17 @@
+## Assessment
+
+Yes. The charge-off repayment posting path can silently write a loan transaction whose debits and credits don't agree, because nothing in the bridge enforces double-entry balance.
+
+**Method:** `AccrualBasedAccountingProcessorForLoan.createJournalEntriesForRepaymentWhenLoanIsChargedOff` (dispatched from `createJournalEntriesForRepayments` at `fineract-provider/.../AccrualBasedAccountingProcessorForLoan.java:1373`; body at `:1388`).
+
+**The mechanism, in two parts:**
+
+1. The debit and credit legs are assembled by independent code and emitted under asymmetric conditions. Credits are posted per account only when `MathUtil.isGreaterThanZero(creditEntry.getValue())` holds (`:1577`). The debit leg is gated solely on the aggregate `totalDebitAmount` (`:1584`), and inside that block the per-account debit loop has no positivity guard at all (`:1592-1597`). The two sides are never reconciled against each other; there is no `Σcredits == Σdebits` assertion.
+
+2. The write itself does no balance check. Every leg is persisted row by row through `AccountingProcessorHelper.persistJournalEntry`, which just calls `saveAndFlush` on a single `JournalEntry` (`fineract-provider/.../AccountingProcessorHelper.java:1408-1415`). Unlike the manual Journal Entry API, the accounting bridge never validates that a transaction's debits equal its credits. So any arithmetic divergence between the legs is committed with no exception and no rejection. That is what makes an imbalance *silent*.
+
+**Why this is real, not just theoretical:** the identical construction in the sibling charge-off-family method proves the pattern breaks. `createJournalEntriesForCapitalizedIncomeAdjustment` (`:232`) builds the credit side as the itemised sum of the components (principal, interest, fees, penalties, overpayment — `:253-281`) but posts the debit as a *single lump* of `loanTransactionDTO.getAmount()` (`:287`). `getAmount()` is a separate DTO field from the component getters; nothing asserts `transactionAmount == Σcomponents`. When they diverge, the two `isGreaterThanZero`-guarded post loops (`:291-305`) emit unequal totals and `persistJournalEntry` commits them anyway.
+
+**One caveat, stated plainly:** the repayment method's *ordinary* flow happens to self-balance, because each component routes through `populateCreditDebitMaps`, which adds the same amount to both a credit and a debit account (`:963-972`), and all component amounts are pre-filtered to be positive. So the credit-side `isGreaterThanZero` guard is currently inert for straight repayments. The exposure is structural: the path relies entirely on each branch pairing its legs by hand, with no safety net at persist time, and the fee branch that posts a credit directly outside the balance holder (`:1500-1506`) plus the transfer branch that replaces the debit map with a lump `totalDebitAmount` (`:1585-1590`) are exactly the kind of hand-paired divergence that the missing balance check would otherwise catch.
+
+The fix belongs in `persistJournalEntry` (or a wrapper around each processor call): assert that the sum of debit legs equals the sum of credit legs for a transaction before flushing.

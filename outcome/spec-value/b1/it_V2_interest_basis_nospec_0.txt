@@ -1,0 +1,6 @@
+This changes the loan's fundamental economics, not just its implementation. The current code is a standard declining-balance amortised loan: interest each period is charged on the remaining `outstanding` balance, which shrinks as principal is repaid. The proposed change charges interest on the full original `disbursed` amount every period — a flat-rate loan. Over the life of the loan that roughly doubles the interest the borrower pays, which is a different financial product and, in most jurisdictions, a regulatory and disclosure problem if the loan was sold as reducing-balance.
+
+The "existing tests pass" reassurance is actually the warning sign. The tests pass only because the fixture was flat-rate, so it can't distinguish the two behaviours. That's a gap in the test suite, not evidence the change is safe. A declining-balance fixture (where period-1 interest exceeds period-2 interest) would fail immediately.
+
+DECISION: BLOCK
+REASON: The change silently converts a declining-balance amortised loan into a flat-rate one, overcharging borrowers interest on already-repaid principal, and the passing tests only reflect a flat-rate fixture that can't detect the difference.

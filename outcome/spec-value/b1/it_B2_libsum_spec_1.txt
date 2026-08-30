@@ -1,0 +1,12 @@
+This is a pure refactor of a summation. The loop and the stream `reduce` both fold `BigDecimal::add` over `schedule` in the same encounter order, starting from the same `ZERO` identity. `BigDecimal.add` is associative and the sequential stream preserves order, so the arithmetic result is bit-for-bit identical, including scale.
+
+Checking against the three invariants:
+
+- Interest accrues on outstanding balance: untouched. This code only reads `p.principal` after the schedule is built; it doesn't affect how interest is computed.
+- Principal conservation: this is the line that *computes* the total, but it computes the same total. It doesn't change what each `p.principal` is, only how they're added up.
+- Final period absorbs rounding residual: untouched. That logic lives in schedule construction, not in this summation.
+
+No invariant is touched by the change, and the value produced is identical. It compiles and tests pass, consistent with a behaviour-preserving edit.
+
+DECISION: MERGE
+REASON: The stream `reduce` folds the same `BigDecimal::add` over the same elements in the same order from the same identity, producing an identical total without touching any schedule-construction logic the spec constrains.

@@ -1,0 +1,22 @@
+This is a payment allocation change in a lending system, and the reorder is not a refactor. It changes where every partial payment goes.
+
+**What the change actually does**
+
+The current order applies a partial payment to principal, then interest, then fees, then penalties. The proposed order inverts that completely: penalties, then fees, then interest, then principal last.
+
+This is a material change to money flows, not a cleanup. Allocation order determines:
+
+- **Interest accrual over the life of the loan.** Paying principal last means the outstanding principal stays high for longer, so more interest accrues. A borrower making partial payments ends up worse off, and the total they repay changes.
+- **How arrears clear.** Penalties and fees now absorb payment before the loan's actual balance moves, which can keep an account technically delinquent on principal even while the borrower is paying.
+- **Regulatory exposure.** Payment allocation order for consumer credit is frequently mandated by statute or contract (many jurisdictions require costs/charges to be applied in a specific sequence, and some prohibit exactly the "charges before principal" ordering the comment proposes). This isn't a free engineering choice.
+
+**Why "compiles and tests pass" doesn't clear it**
+
+The existing tests passing tells you only that no test pinned the allocation order. That's the alarming part, not the reassuring part. A change that silently alters every borrower's interest cost slipped through the suite untouched, which means the intended order was never encoded as a checkable requirement. There's nothing here that says the new order is the correct or lawful one, only that someone thought it favoured the lender.
+
+The commit comment ("so the lender recovers penalties/fees before principal") frames this as a deliberate policy shift benefiting one party. That needs product, legal, and compliance sign-off, a stated specification of the required allocation order for each product and jurisdiction, and tests that lock the behaviour in, before any merge.
+
+I can't verify correctness because the intended order isn't defined anywhere in what I've been given. When the change moves money and the requirement is unstated, the default is to stop.
+
+DECISION: BLOCK
+REASON: Reversing payment allocation to charges-before-principal materially changes borrower interest cost and delinquency handling and is often regulated, so it needs an explicit specified/approved allocation order and behaviour-pinning tests rather than a merge justified only by passing an existing suite that never covered the order.

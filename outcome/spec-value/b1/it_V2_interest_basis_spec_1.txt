@@ -1,0 +1,10 @@
+This change directly violates the maintained specification.
+
+The spec's first invariant is explicit: interest each period accrues on the **outstanding (declining) balance, not the original principal**. The proposed change replaces `outstanding.multiply(rate)` with `disbursed.multiply(rate)`, which computes interest on the original principal every period. That is precisely the behaviour the spec forbids.
+
+The knock-on effects break the other two invariants as well. With interest held constant at the original-balance figure, `principal = emi - interest` is constant across all periods. The EMI was sized for a declining-balance amortisation, so a constant, inflated interest charge means the principal portions no longer sum to the disbursed amount (conservation fails) and the loan will not close to exactly zero in the final period (the residual-absorption invariant fails). Borrowers would be overcharged interest across the life of the loan.
+
+The note that "existing tests pass" is not reassuring: the fixture is flat-rate, the one case where declining-balance and original-balance interest coincide, so the tests are blind to exactly this regression. Passing tests here reflect a coverage gap, not correctness.
+
+DECISION: BLOCK
+REASON: Charging interest on the original disbursed amount rather than the declining outstanding balance contradicts the spec's core invariant and breaks both principal conservation and the exact-zero final balance, overcharging borrowers.

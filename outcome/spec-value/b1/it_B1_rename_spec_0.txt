@@ -1,0 +1,4 @@
+This is a pure local-variable rename with no other change. The spec constrains runtime behaviour: interest accrues on the declining balance (the loop still subtracts principal each period and multiplies the running variable by rate), principal conserves (the final period sets `principal = balance`, absorbing residual to close at zero). Renaming `outstanding` to `balance` is semantics-preserving. There's no name collision (`emi`, `rate`, `disbursed`, `n` are distinct), the change compiles, and tests pass. None of the three invariants depend on the identifier's spelling.
+
+DECISION: MERGE
+REASON: Renaming a local variable is semantics-preserving and leaves all three behavioural invariants (declining-balance interest, principal conservation, final-period residual absorption) intact.

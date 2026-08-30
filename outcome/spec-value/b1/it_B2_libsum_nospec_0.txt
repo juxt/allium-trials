@@ -1,0 +1,13 @@
+This is a pure refactor: replace a manual accumulation loop with a sequential stream reduction over the same `schedule`, same `ZERO` identity, same `BigDecimal::add` operation.
+
+Checking the ways it could differ:
+
+- **Order/associativity:** `schedule.stream()` is sequential, so `reduce` folds elements in encounter order, exactly as the loop does. Even under reordering, `BigDecimal::add` is exact (never rounds) and associative in both value and scale, so the sum is invariant regardless.
+- **Scale:** BigDecimal addition sets the result scale to the max of the operands' scales; that's order-independent, so the final scale matches the loop's too.
+- **Empty schedule:** both yield `ZERO`.
+- **Null principal:** both NPE identically, so no behavioural change is introduced.
+
+No hidden `parallelStream`, no comparator, no rounding mode in play. The arithmetic and the resulting scale are genuinely identical. Blocking this would be timidity, not caution.
+
+DECISION: MERGE
+REASON: Sequential stream reduction with the same ZERO identity and exact, associative BigDecimal::add produces an identical value and scale to the loop, with no change to empty-list or null behaviour.

@@ -1,0 +1,38 @@
+## Answer
+
+**No.** There is no runtime check that reconciles total debits against total credits for a LOAN-generated journal batch. The balance assertion that exists in the code is wired only into the manual/API journal-entry path, and the loan path never reaches it.
+
+### The balance check exists, but only for manual entries
+
+`checkDebitAndCreditAmounts(...)` sums the credit and debit arrays and throws `DEBIT_CREDIT_SUM_MISMATCH` when they differ:
+
+- `JournalEntryWritePlatformServiceJpaRepositoryImpl.java:323-324` (the `creditsSum.compareTo(debitsSum) != 0` guard, method at `:306`).
+
+Its only callers are the user-submitted journal-entry paths:
+- `validateBusinessRulesForJournalEntries(...)` → `checkDebitAndCreditAmounts` at `:651`, itself called from `createJournalEntry(...)` at `:157`.
+- The existing-GL-account branches at `:197` and `:217`.
+
+All of these operate on a `JournalEntryCommand` parsed from an API request. None sits on the loan-posting path.
+
+### The loan path bypasses it entirely
+
+`createJournalEntriesForLoan(...)` (`JournalEntryWritePlatformServiceJpaRepositoryImpl.java:540`) delegates straight to a processor:
+
+```
+accountingProcessorForLoan.createJournalEntriesForLoan(loanDTO);   // :549
+```
+
+The Cash/Accrual processors build entries one leg at a time through `AccountingProcessorHelper`, and each `create{Debit,Credit}JournalEntryForLoan(...)` constructs a single `JournalEntry` and calls `persistJournalEntry(journalEntry)` directly, with no accumulation of batch totals and no final debit-equals-credit assertion:
+
+- `AccountingProcessorHelper.java:934-947` (credit leg) and `:969-982` (debit leg).
+
+So the LOAN batch is persisted leg-by-leg with no gate that would reject an unbalanced result.
+
+### What the code relies on instead
+
+Balance is an *invariant of construction*, not a checked postcondition. Every processor helper that moves money does so in matched debit/credit pairs for the same amount, e.g. `createDebitCreditJournalEntryForLoan` calls the debit and credit helpers with the same `amount` (`AccountingProcessorHelper.java:569-570`, `577-578`). Correctness depends on each processor code path pairing its legs correctly.
+
+The only runtime guards on the loan side are narrower amount-reconciliation checks, not a batch balance check:
+- The charge-splitting "meltdown" guards that the sum of per-charge credit/debit splits equals a single transaction amount (`AccountingProcessorHelper.java:428-439`), and the fee-charge sum guard at `:1445-1447`.
+
+These verify that a split adds up to its own transaction total; none verifies that the batch's total debits equal its total credits. If a processor emitted an unbalanced set of legs, nothing at runtime would reject it.

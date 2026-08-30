@@ -1,0 +1,13 @@
+This is a pure refactor: replacing a manual accumulator loop with `stream().reduce(ZERO, BigDecimal::add)`.
+
+The one thing worth checking is the claim of "identical arithmetic result," since BigDecimal carries scale and the two forms could differ if grouping mattered. It doesn't here:
+
+- The stream is sequential (`.stream()`, not `.parallelStream()`), so `reduce` applies left-to-right in the same iteration order as the loop.
+- `BigDecimal.add` is exact and deterministic: the result value is exact and the result scale is `max(scale1, scale2)`, independent of grouping. Even under parallel reduction the value and scale would be identical, because the operation is associative and scale-stable.
+- Empty schedule: loop yields `ZERO`; `reduce` returns the identity `ZERO`. Same.
+- Null element: both throw NPE identically. No behavioural change.
+
+No mutation, ordering, or precision difference. Behaviour is genuinely equivalent, tests pass, and it's a readability improvement.
+
+DECISION: MERGE
+REASON: Sequential stream reduce over BigDecimal::add is exactly equivalent to the accumulator loop in value, scale, and edge-case behaviour, so it is a safe pure refactor.

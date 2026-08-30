@@ -1,0 +1,6 @@
+This is a pure refactor of a summation. The loop and the stream both compute `totalPrincipal` by adding each `p.principal` to `ZERO`. With `BigDecimal`, addition is exact and associative, so ordering and accumulation strategy don't change the result. There's no floating-point reassociation risk here.
+
+Against the spec: the change doesn't touch how interest accrues (still whatever computes `p.principal`), doesn't alter the conservation logic (it only reads the per-period principals into a total), and doesn't affect final-period rounding. It's a read-only aggregation with identical arithmetic.
+
+DECISION: MERGE
+REASON: The stream sum is arithmetically identical to the loop for exact BigDecimal addition and touches none of the three spec invariants (accrual basis, conservation, final-period rounding).

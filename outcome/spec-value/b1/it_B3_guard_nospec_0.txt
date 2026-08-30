@@ -1,0 +1,14 @@
+This looks like a harmless guard, but the semantics of a **negative** payment are exactly what makes it unsafe.
+
+The change collapses two different cases into one early return:
+
+- **Zero payment** — allocating zero across the buckets is a no-op for money moved, so returning early is *probably* equivalent. The only risk is if `pay()` has side effects at zero (recording a transaction row, touching a last-modified timestamp, firing an event).
+
+- **Negative payment** — this is the real problem. In a lending ledger a negative amount is rarely nonsense; it usually means a reversal, refund, chargeback, or manual adjustment. The current code would run those amounts through `pay()` and unwind the buckets. The proposed guard silently drops them, which corrupts the outstanding balance with no error and no trace.
+
+"Existing tests pass" doesn't clear this. If no test encodes what a negative payment is supposed to do, then the tests are silent precisely on the behaviour this change alters — passing tests only prove the negative-payment path was never specified, not that it's safe to short-circuit. Deciding this correctly requires knowing the *intent*: are negative payments a legitimate input to this routine or not? That fact isn't in the diff, isn't in the code shown, and isn't pinned by the tests.
+
+Given a change to production money-movement whose safety turns entirely on an unstated assumption about negative amounts, the correct review action is to withhold merge until that intent is confirmed (and a test added to lock it in). If negatives can never reach this method, prove it at the boundary; if they can, this guard is a data-corruption bug.
+
+DECISION: BLOCK
+REASON: The early return silently discards negative payments, which in a lending ledger typically represent reversals or adjustments, and nothing in the diff or the passing tests establishes that negative amounts can't legitimately reach this allocation routine.

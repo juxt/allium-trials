@@ -1,0 +1,6 @@
+This change directly contradicts the maintained spec, which pins the allocation order as a deliberate product decision, not an implementation detail.
+
+The spec states: principal → interest → fees → penalties. The proposed change inverts it to penalties → fees → interest → principal. That the code compiles and existing tests pass is not evidence of safety here. The order is precisely the behaviour the spec exists to protect, and reversing it is exactly the change the spec forbids. The stated rationale (recover penalties/fees before principal) is a product-policy argument that would need to change the spec first, through whatever process governs it, not slip in under a green test suite.
+
+DECISION: BLOCK
+REASON: The proposed order (penalties, fees, interest, principal) directly reverses the spec's mandated principal-first allocation, which is an explicit product decision the spec exists to protect.

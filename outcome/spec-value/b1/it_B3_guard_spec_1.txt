@@ -1,0 +1,10 @@
+This change is worth checking against the one thing the spec actually constrains: allocation order.
+
+The spec fixes the order (principal → interest → fees → penalties) as a deliberate product decision. The proposed change adds a guard clause that returns early when the payment is zero or negative, then runs the identical allocation sequence. It touches neither the order nor the four `pay(...)` calls.
+
+For a zero payment the behaviour is already a no-op in the current code (`left` stays zero through every `pay`), so the guard changes nothing observable there. For a negative payment the guard does change behaviour, but the spec says nothing about negative payments, and feeding a negative `left` into the allocation chain was never intended behaviour to begin with. The guard is defensive, not a reordering.
+
+Nothing here contradicts the maintained order.
+
+DECISION: MERGE
+REASON: The change adds a zero/negative-payment guard and leaves the spec-mandated allocation order (principal, interest, fees, penalties) exactly intact, so it violates nothing the spec constrains.

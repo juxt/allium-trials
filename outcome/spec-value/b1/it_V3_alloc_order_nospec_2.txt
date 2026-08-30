@@ -1,0 +1,14 @@
+This is a payment-allocation waterfall reorder, and in a lending system that is a material change to loan economics, not a cosmetic refactor.
+
+What actually changes: the current order pays down principal first, then interest, fees, penalties. The proposal inverts it to penalties, fees, interest, principal. Consequences that "tests pass" does not rule out:
+
+- **Interest accrual over the life of the loan.** Applying payments to principal last keeps the principal balance high for longer, so more interest accrues on every subsequent period. Borrowers pay more; the amortisation schedule and payoff figures shift. That is a change to the product's financial behaviour, not an implementation detail.
+
+- **Regulatory and contractual exposure.** Payment allocation order is frequently prescribed by law and by the loan agreement itself (consumer credit rules commonly require payments to hit interest/principal before discretionary charges, and often bar satisfying penalties ahead of the borrower's core obligation). Flipping the waterfall so penalties and fees are collected before principal and interest is exactly the pattern regulators scrutinise. This needs product, legal, and compliance sign-off, not a lone reviewer's merge.
+
+- **"Existing tests pass" is evidence of a coverage gap, not safety.** A change this consequential passing unchanged tests means the allocation order is unspecified and untested. The correct response is to write tests that pin the intended order against the spec, then decide what that order should be, not to merge an unverified inversion.
+
+The commit message frames it as a benign reordering ("so the lender recovers penalties/fees before principal"), but that sentence *is* the policy decision, and it is being made in a diff rather than by the people who own that decision. There is no linked requirement, no spec reference, and no test asserting the new order is correct.
+
+DECISION: BLOCK
+REASON: Inverting the payment-allocation waterfall to collect penalties and fees before principal and interest materially changes loan economics and carries regulatory and contractual risk, and passing unchanged tests signals an unspecified, untested behaviour that requires product, legal, and compliance sign-off rather than a code-review merge.

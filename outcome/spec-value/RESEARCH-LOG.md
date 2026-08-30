@@ -56,3 +56,41 @@ reconvenes when RANKING.md carries a defensible SYNTHESIS.
   enough that model review becomes unreliable — but prior work (buried 14-constraint APR) showed the
   model catches even those, so escalation likely saturates too. Logged; may escalate if time permits.
 - B3 verdict for RANKING: LOW effect on catch/variance; value is qualitative (auditability/certifiability).
+
+## Iteration 3 — B2 amortisation CLEAN (no delegation) — SPEC ~30% CHEAPER, concentrated on the HARD task
+- 5 cold tasks x 2 arms, Task/Agent disallowed so all search is in-context and comparable. Verified
+  genuine (read T2 both arms; both are real deep answers, no delegation).
+- Totals: **nospec $6.86 (17/18 correct, 3715k tok); spec $4.79 (18/18, 2599k tok).** Spec ~30%
+  cheaper in $ and tokens. The 17-vs-18 correctness delta is within JUDGE NOISE (both arms nailed
+  every task on reading; do not claim a correctness win).
+- **The saving is NOT uniform amortisation — it is concentrated on the one retrieval-HARD task.**
+  Per task: T1 same ($1.81 vs $1.82); T3/T4/T5 within ~$0.15; **T2 charge-off: nospec $3.15 / 31
+  turns / 1.9M tok vs spec $0.88 / 20 turns / 427k.** On T2 the nospec arm explored broadly (chased
+  sibling methods), while the spec's explicit "two sides accumulated separately and never reconciled"
+  pointed the spec arm straight at it. Both prior runs (contaminated + clean) show nospec thrashing
+  on T2, so the direction is consistent, though it rests on ONE hard task at n=1.
+- **=> B2 is a REAL but SCOPED benefit: a spec saves large search cost exactly where blind retrieval
+  is expensive (hard-to-locate, non-lexical targets); on easy/lexically-findable tasks it adds ~0.**
+  Mechanism: the spec tells the model WHAT to look for, so it searches narrowly instead of broadly.
+
+## Iteration 4 — B1 intent / bug-prevention — hypothesis REFUTED; surfaced a HAZARD instead
+- 6 review cases (3 under-determined-intent violations, 3 benign), 4 reps, no delegation, decision
+  parsed mechanically (MERGE/BLOCK), reasons read.
+- **Violation-catching SATURATES.** nospec BLOCKED all 3 intent-flips 12/12 (rounding-residual removal,
+  declining->flat interest, reversed allocation order) WITHOUT the spec — reasoning "this silently
+  changes financial outcomes". My "under-determined intent the model can't know" premise was WRONG:
+  the model blocks ANY material behaviour change defensively. spec also 12/12. Intent lift = 0.
+- The spec changed the GROUNDS of the (already-correct) block: "violates documented intent X" vs the
+  vaguer "this changes behaviour, please confirm". Real but qualitative (same auditability theme as B3).
+- **The important finding is a COST: spec-induced TUNNEL VISION.** Benign case B3_guard (add a
+  zero/negative-payment early-return): nospec BLOCKED 4/4 and was RIGHT — it caught that the guard
+  silently drops NEGATIVE payments (reversals/refunds), a real data-corruption risk, and said withhold
+  merge until intent is confirmed. spec MERGED 4/4 by EXPLICIT tunnel vision: "the spec only constrains
+  allocation order... silent on zero/negative... blocking would be a false positive." The spec caused
+  the reviewer to DISMISS a real out-of-scope bug. Same over-reliance as amortisation T5.
+- **=> B1 does not establish intent as bug-prevention (saturates), and reveals that a spec can NARROW
+  attention and cause misses on issues outside its scope.** This is the SAME mechanism as B2's saving:
+  the spec focuses the model. In-scope hard target -> saves cost (B2 T2). Out-of-scope real issue ->
+  miss (B1 B3_guard). Net value depends on spec completeness and whether what matters is in scope.
+- UNIFYING INSIGHT (elevate to synthesis): **a spec concentrates the agent's attention on what it
+  covers** — a benefit for cost on hard in-scope retrieval, a hazard for out-of-scope correctness.

@@ -1,0 +1,10 @@
+This change reverses the partial-payment allocation order, which the maintained spec fixes deliberately.
+
+The spec is explicit on two counts. First, the order is normative: principal first, then interest, then fees, then penalties, "in this order and no other." Second, it pre-empts the exact rationale offered in the change: "The order is a deliberate product decision, not an implementation detail." The proposed reordering to penalties → fees → interest → principal is the direct inverse.
+
+That the code compiles and existing tests pass carries no weight here. The tests plainly don't pin the allocation order, or they would have failed on this diff. Passing tests tell you the change is internally consistent, not that it honours the product decision the spec records. This is precisely the case the spec exists to catch: a plausible-sounding local optimisation ("recover penalties/fees before principal") that silently overturns a deliberate policy. Allocation order also has real consumer and regulatory consequences, so the blast radius is not cosmetic.
+
+If the lender genuinely wants charges recovered first, that's a spec change to be argued and approved on its own terms, then reflected in code and tests, not smuggled in as a refactor.
+
+DECISION: BLOCK
+REASON: The change reverses the partial-payment allocation order that the maintained spec fixes as a deliberate product decision ("in this order and no other"), so it violates the spec regardless of compiling and passing the current tests.

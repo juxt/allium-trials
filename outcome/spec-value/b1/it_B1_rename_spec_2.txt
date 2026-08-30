@@ -1,0 +1,4 @@
+This is a pure local-variable rename. `outstanding` is a local inside the loop with no external referents, and renaming it to `balance` throughout leaves every computation identical: interest still accrues on the declining balance, the final period still sets `principal = balance` (absorbing the residual to close at zero), and conservation is untouched. The compiler guarantees consistent substitution, and the tests confirm behaviour is unchanged. None of the three spec invariants can be affected by renaming a local.
+
+DECISION: MERGE
+REASON: Renaming a local variable is a behaviour-preserving refactor that leaves all three spec invariants (declining-balance interest, principal conservation, final-period residual absorption) exactly intact.

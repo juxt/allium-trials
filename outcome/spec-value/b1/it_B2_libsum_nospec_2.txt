@@ -1,0 +1,15 @@
+This is a genuine equivalence question, so let me reason about whether the two forms can ever diverge.
+
+The loop accumulates left-to-right over the schedule's encounter order. `schedule.stream()` is sequential (not `parallelStream()`), so `reduce(ZERO, BigDecimal::add)` folds in exactly that same order. For `BigDecimal.add`:
+
+- The result value is exact regardless of order — no intermediate rounding, so even reordering couldn't change the value.
+- The result scale is `max` of the operand scales, which is order-independent too. So no hidden scale/trailing-zero drift that could later interact with a rounding or equality check.
+- Empty schedule: the loop yields `ZERO`; `reduce` with identity `ZERO` also yields `ZERO`. Same.
+- `null` element or `null` schedule: both NPE identically. No behaviour change.
+
+The only thing that would break equivalence is a switch to `parallelStream()`, but `BigDecimal::add` is associative so even that would be safe — and it isn't being done here anyway.
+
+No arithmetic, scale, or edge-case difference. Pure readability refactor, tests pass.
+
+DECISION: MERGE
+REASON: Sequential `reduce(ZERO, BigDecimal::add)` preserves the loop's iteration order, exact value, and max-scale result including the empty-list and null cases, so it is arithmetically identical with no behavioural risk.

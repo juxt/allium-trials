@@ -1,0 +1,12 @@
+The final-period special-casing isn't incidental, it's the mechanism that guarantees the loan closes to exactly 0. Each period rounds interest to 2 decimals, so `principal = emi - interest` carries a small rounding residual every period. `principal = outstanding` in the last period absorbs the accumulated residual and forces the closing balance to exactly zero.
+
+Removing it reintroduces that drift:
+
+- The closing balance becomes whatever the EMI schedule happens to leave, which is near zero for well-behaved inputs but not exactly zero. A loan that doesn't close to 0 is a real defect: the borrower is left owing (or owed) a few cents, and downstream logic that checks for a fully-settled loan can break.
+- The new test only asserts `within 0.05`. That is both too loose (it accepts a nonzero residual as "passing") and not guaranteed to hold across all loan parameters. For long tenors, high rates, or unfavourable EMI rounding, accumulated residual can exceed 0.05. Existing tests passing on a handful of cases doesn't cover that space.
+- The tolerance test enshrines the wrong invariant. The intended guarantee is "closes to exactly 0", not "closes to within 5 cents".
+
+This is a benign-looking simplification that quietly relaxes a hard correctness guarantee into a soft one. No merge.
+
+DECISION: BLOCK
+REASON: The final-period `principal = outstanding` absorbs accumulated per-period rounding to force an exact zero close; dropping it leaves a nonzero residual that the loose 0.05 tolerance neither eliminates nor reliably bounds across all loan parameters.

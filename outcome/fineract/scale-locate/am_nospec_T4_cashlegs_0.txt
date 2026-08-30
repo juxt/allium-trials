@@ -1,0 +1,21 @@
+I have the full chain. Here's the answer.
+
+## Cash-basis journalling of a normal loan repayment
+
+**Entry point / dispatch.** `CashBasedAccountingProcessorForLoan.createJournalEntriesForLoan(...)` (`fineract-provider/.../accounting/journalentry/service/CashBasedAccountingProcessorForLoan.java:52`) routes a repayment-type transaction to `createJournalEntriesForRepayments` (`:515`). For a loan not marked charged-off, that delegates to **`createJournalEntriesForLoanRepayments(...)` (`:727`)** — this is the method that journals a normal repayment.
+
+**Leg types journalled.** It splits the transaction into portions and posts one credit per non-zero portion, plus a single debit to the fund source for the total:
+
+- **Principal** → credit `CashAccountsForLoan.LOAN_PORTFOLIO` (`:748`)
+- **Interest** → credit `CashAccountsForLoan.INTEREST_ON_LOANS` (`:758`)
+- **Fees** → credit `CashAccountsForLoan.INCOME_FROM_FEES` (`:773`/`:779`, via `createCreditJournalEntryForLoanCharges`)
+- **Penalties** → credit `CashAccountsForLoan.INCOME_FROM_PENALTIES` (`:794`/`:801`, via `createCreditJournalEntryForLoanCharges`)
+- (Overpayment → credit `OVERPAYMENT` at `:814`, and any fee/penalty tax split off to liability accounts)
+- **Debit:** single entry to `CashAccountsForLoan.FUND_SOURCE` for `totalDebitAmount` (`:839`)
+
+**Where the per-type GL accounts come from.** The `CashAccountsForLoan` enum value is an account-mapping *type* placeholder that gets resolved against the loan product's configured mappings:
+
+- Principal, interest, fund source resolve through **`AccountingProcessorHelper.getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId)`** (`AccountingProcessorHelper.java:1179`). It looks up **`accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId, PortfolioProductType.LOAN, accountMappingTypeId)`** (`:1186`). For `FUND_SOURCE` it first tries a payment-channel-specific override, **`findByProductIdAndProductTypeAndFinancialAccountTypeAndPaymentTypeId(...)`** (`:1194`). Organization-level activities (transfers) instead resolve via `financialActivityAccountRepository` (`:1182`).
+- Fees and penalties resolve through **`getLinkedGLAccountForLoanCharges(loanProductId, accountMappingTypeId, chargeId)`** (`:1212`), which starts from the same `findCoreProductToFinAccountMapping` (`:1213`) then applies a charge-specific override, **`findProductIdAndProductTypeAndFinancialAccountTypeAndChargeId(...)`** (`:1224`), so each charge can point at its own income GL account.
+
+In each case the resolved `ProductToGLAccountMapping.getGlAccount()` (`:1207`, `:1231`) supplies the actual GL account for the entry.

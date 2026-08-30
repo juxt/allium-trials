@@ -1,0 +1,17 @@
+I'll reason about this on the merits.
+
+**What the spec governs:** the allocation *order* of a partial payment (principal → interest → fees → penalties), and nothing else. It's explicit that the order is the deliberate decision being protected.
+
+**What the change does:** adds a guard that returns early when `payment.isZeroOrNegative()`, and leaves the allocation sequence byte-for-byte identical.
+
+**Does it touch the protected behaviour?**
+- Allocation order: unchanged. The four `pay(...)` calls run in the same sequence for every payment that reaches them.
+- Zero payment: under the old code, `left = payment = 0` flows through all four `pay` calls, each allocating nothing. Net allocation effect is identical to returning early. No order to violate because nothing is allocated either way.
+- Negative payment: the old code fed a negative `left` into `pay(principalDue, ...)`, which at best allocates nothing and at worst risks a nonsensical negative allocation. Short-circuiting that is strictly safer, and a negative amount is not a "partial payment" the spec contemplates.
+
+**Risk of hidden behaviour change:** the only observable difference is for payments that were already non-positive. For those, the meaningful outcome (what gets applied to principal/interest/fees/penalties) is unchanged or made safer. The spec's invariant, order among the four buckets, cannot be affected by a code path that allocates to none of them.
+
+Blocking this would be timidity: the guard is defensive, order-preserving, and narrows an ill-defined edge case rather than redefining the product decision the spec protects. If there were a concern it would be about untested side effects (events/receipts) on the zero path, but that is outside the maintained spec and not evidenced here.
+
+DECISION: MERGE
+REASON: The guard only short-circuits zero-or-negative amounts and leaves the spec-protected allocation order (principal→interest→fees→penalties) exactly intact, so it cannot violate the maintained behaviour.

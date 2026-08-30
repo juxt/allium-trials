@@ -1,1 +1,10 @@
 [nospec T1_newtype 0] score=4/4 $1.814 turns=21 tok=856k
+[nospec T2_chargeoff 0] score=3/4 $3.148 turns=31 tok=1911k
+[nospec T3_guard 0] score=4/4 $0.570 turns=18 tok=348k
+[nospec T4_cashlegs 0] score=3/3 $0.492 turns=12 tok=306k
+[nospec T5_accrual 0] score=3/3 $0.839 turns=10 tok=294k
+[spec T1_newtype 0] score=4/4 $1.815 turns=20 tok=1218k
+[spec T2_chargeoff 0] score=4/4 $0.877 turns=20 tok=427k
+[spec T3_guard 0] score=4/4 $0.711 turns=16 tok=472k
+[spec T4_cashlegs 0] score=3/3 $0.550 turns=6 tok=207k
+[spec T5_accrual 0] score=3/3 $0.837 turns=8 tok=275k

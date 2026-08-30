@@ -1,0 +1,15 @@
+This change removes the mechanism that guarantees a loan closes to exactly zero.
+
+In an amortised schedule, per-period interest is rounded to 2 decimals, so small residuals accumulate across periods. The EMI alone won't drive the balance to exactly zero once rounding is applied. The final-period special-casing (`principal = outstanding`) exists precisely to absorb that accumulated residual, closing the account to a hard zero.
+
+With the change, the last period becomes `principal = emi - interest` like any other, and the closing balance is left at whatever the rounding drift produced. That residual can be a few cents either way:
+
+- A positive residual is a phantom balance the borrower still "owes" after their final scheduled payment. Accounts don't close, may keep accruing interest or fees, and break reconciliation.
+- A negative residual is a small overpayment the schedule never accounts for.
+
+The replacement test asserting "closing balance within 0.05" is materially weaker than the invariant it removed. `|balance| ≤ 0.05` is not `balance == 0`. It tolerates non-closing loans by design, and the residual is unbounded in principle: it scales with the number of periods and the size of the outstanding balance, so a tolerance that holds for the tested loan won't necessarily hold for a larger principal or a longer term. The existing tests passing tells you the sampled cases stayed under tolerance, not that the invariant holds.
+
+For a lending ledger, "the loan pays off to exactly zero" is a hard correctness property, not a within-tolerance nicety. This is a regression from an exact guarantee to an approximate one, on the money-critical path.
+
+DECISION: BLOCK
+REASON: The removed final-period residual absorption is what guarantees the loan closes to exactly zero; dropping it leaves an accumulated rounding residual so accounts don't fully close, and the "within 0.05" test tolerates that non-zero balance rather than preventing it.

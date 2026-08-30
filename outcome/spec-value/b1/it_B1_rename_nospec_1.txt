@@ -1,0 +1,6 @@
+This is a pure local-variable rename confined to a single loop body. `outstanding`/`balance` is a local, not a field or anything externally visible, so renaming it cannot alter control flow or arithmetic. Every read and write moves together, the interest/principal/EMI logic is untouched, and the final-period `principal = outstanding` assignment carries over unchanged. It compiles and existing tests pass, which also rules out a name collision in the enclosing scope.
+
+Nothing about the semantics changes; the readability gain is real and the risk is nil.
+
+DECISION: MERGE
+REASON: Renaming a single local variable throughout its scope is behaviour-preserving, and the change compiles with tests passing.

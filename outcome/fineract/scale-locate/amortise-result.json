@@ -10,6 +10,107 @@
       "in_tok": 855981,
       "out_tok": 15613,
       "err": false
+    },
+    {
+      "task": "T2_chargeoff",
+      "rep": 0,
+      "score": 3,
+      "max": 4,
+      "cost": 3.1475969999999998,
+      "turns": 31,
+      "in_tok": 1910859,
+      "out_tok": 46752,
+      "err": false
+    },
+    {
+      "task": "T3_guard",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.5700270000000001,
+      "turns": 18,
+      "in_tok": 348364,
+      "out_tok": 5846,
+      "err": false
+    },
+    {
+      "task": "T4_cashlegs",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.49231050000000004,
+      "turns": 12,
+      "in_tok": 306445,
+      "out_tok": 4008,
+      "err": false
+    },
+    {
+      "task": "T5_accrual",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.8387095,
+      "turns": 10,
+      "in_tok": 293855,
+      "out_tok": 3418,
+      "err": false
+    }
+  ],
+  "spec": [
+    {
+      "task": "T1_newtype",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 1.8151450000000002,
+      "turns": 20,
+      "in_tok": 1217914,
+      "out_tok": 11577,
+      "err": false
+    },
+    {
+      "task": "T2_chargeoff",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.8770184999999999,
+      "turns": 20,
+      "in_tok": 427144,
+      "out_tok": 10112,
+      "err": false
+    },
+    {
+      "task": "T3_guard",
+      "rep": 0,
+      "score": 4,
+      "max": 4,
+      "cost": 0.710861,
+      "turns": 16,
+      "in_tok": 472141,
+      "out_tok": 6548,
+      "err": false
+    },
+    {
+      "task": "T4_cashlegs",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.550243,
+      "turns": 6,
+      "in_tok": 206776,
+      "out_tok": 2560,
+      "err": false
+    },
+    {
+      "task": "T5_accrual",
+      "rep": 0,
+      "score": 3,
+      "max": 3,
+      "cost": 0.8370584999999999,
+      "turns": 8,
+      "in_tok": 275354,
+      "out_tok": 3182,
+      "err": false
     }
   ]
 }

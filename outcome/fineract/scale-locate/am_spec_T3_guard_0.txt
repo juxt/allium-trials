@@ -1,0 +1,31 @@
+## Answer: No. There is no runtime check that rejects a loan-generated journal batch for debit ≠ credit.
+
+### The check that does exist guards a different route
+
+The one debit=credit assertion in the ledger is `checkDebitAndCreditAmounts`, which sums both sides and throws `DEBIT_CREDIT_SUM_MISMATCH` on inequality:
+
+- `fineract-provider/.../journalentry/service/JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-324`
+
+It is called only from `createJournalEntry(JsonCommand)` (same file, `:147`), the handler for **operator-submitted manual entries** posted through an accounting rule (`:197`, `:217`). It never runs on the loan posting path. This matches the spec's claim that the assertion guards the manual route, not the loan-generated one.
+
+### The loan path posts each leg one-sided, then flushes it unconditionally
+
+The loan path is `AccountingProcessorForLoan` → `CashBasedAccountingProcessorForLoan` / `AccrualBasedAccountingProcessorForLoan` → `AccountingProcessorHelper.createDebitJournalEntryForLoan` / `createCreditJournalEntryForLoan`. Each of those builds a single `JournalEntry` of one type and persists it:
+
+- `createDebitJournalEntryForLoan` builds one `JournalEntryType.DEBIT` row and calls `persistJournalEntry` — `AccountingProcessorHelper.java` (the base method shown at the `createDebitJournalEntryForLoan(... final GLAccount account ...)` overload)
+- `persistJournalEntry` is just `saveAndFlush` plus an event notification, with no balance logic: `AccountingProcessorHelper.java:1408-1415`
+
+So a debit leg added without its matching credit persists silently. Balance is emergent: it holds only because each per-type branch in the two processors is hand-written to call both a debit and a credit helper for the same amount.
+
+### Charge-off repayment is the confirmed hazard
+
+`createJournalEntriesForChargeOffLoanRepayments` (`CashBasedAccountingProcessorForLoan.java:527`) accumulates the two sides into *separate* maps on a balance holder, then persists each side in independent loops with no reconciliation between them:
+
+- credits: iterate `glAccountBalanceHolder.getCreditBalances()` → `createCreditJournalEntryForLoan` (`:689-693`)
+- debits: iterate `glAccountBalanceHolder.getDebitBalances()` → `createDebitJournalEntryForLoan` (`:706-711`)
+
+Nothing compares credit-total against debit-total before or after the flush.
+
+### What the code relies on instead
+
+Correctness rests on authorship, not enforcement: every per-type branch in the cash and accrual loan processors is written so its debit and credit calls carry equal amounts (mostly via paired helpers like `createJournalEntriesForLoan` at `AccountingProcessorHelper.java:565-571`, which emit both sides from one amount). The only "totals" assertion anywhere on the loan path is a *per-side* one, `createJournalEntriesForLoanCharges` checking that the sum of charge debits equals the transaction amount (`AccountingProcessorHelper.java:437`), which is not a debit-vs-credit balance check across the batch.

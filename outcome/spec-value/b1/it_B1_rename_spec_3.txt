@@ -1,0 +1,4 @@
+This is a pure local-variable rename. `outstanding` → `balance` is a lexical substitution within a single method scope; the identifier name has no bearing on runtime behaviour. The interest-on-declining-balance loop, the conservation property, and the final-period residual absorption (`if (p == n - 1) principal = outstanding;`) all depend on the *operations*, not the variable's name. Renaming every occurrence consistently leaves the computation identical, so no spec clause can be violated.
+
+DECISION: MERGE
+REASON: Renaming a local variable consistently is behaviour-preserving and cannot alter interest accrual, principal conservation, or final-period rounding.

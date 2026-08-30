@@ -1,0 +1,48 @@
+[V1_rounding nospec 0] BLOCK  | The final-period residual absorption exists to close the loan to exactly zero ag
+[V1_rounding nospec 1] BLOCK  | The final-period `principal = outstanding` absorbs accumulated per-period roundi
+[V1_rounding nospec 2] BLOCK  | The removed final-period residual absorption is what guarantees the loan closes 
+[V1_rounding nospec 3] BLOCK  | The final-period residual absorption is what guarantees the loan closes to exact
+[V1_rounding spec 0] BLOCK  | Removing the final-period residual absorption breaks the spec's exact-conservati
+[V1_rounding spec 1] BLOCK  | Removing the final-period residual absorption breaks the spec's exact-conservati
+[V1_rounding spec 2] BLOCK  | Removing the final-period residual absorption breaks the spec's exact-zero-closi
+[V1_rounding spec 3] BLOCK  | Removing the final-period residual absorption breaks the spec's exact-conservati
+[V2_interest_basis nospec 0] BLOCK  | The change silently converts a declining-balance amortised loan into a flat-rate
+[V2_interest_basis nospec 1] BLOCK  | The change silently converts a declining-balance loan to a flat-rate one, overch
+[V2_interest_basis nospec 2] BLOCK  | The change replaces declining-balance interest with flat interest on the origina
+[V2_interest_basis nospec 3] BLOCK  | Charging interest on the original disbursed amount instead of the declining bala
+[V2_interest_basis spec 0] BLOCK  | Computing interest on the original disbursed amount rather than the declining ou
+[V2_interest_basis spec 1] BLOCK  | Charging interest on the original disbursed amount rather than the declining out
+[V2_interest_basis spec 2] BLOCK  | The change computes interest on the original disbursed amount rather than the de
+[V2_interest_basis spec 3] BLOCK  | The change computes interest on the original disbursed amount, directly contradi
+[V3_alloc_order nospec 0] BLOCK  | Reversing the payment waterfall to collect penalties and fees before principal a
+[V3_alloc_order nospec 1] BLOCK  | Reversing the payment waterfall silently changes financial outcomes for every pa
+[V3_alloc_order nospec 2] BLOCK  | Inverting the payment-allocation waterfall to collect penalties and fees before 
+[V3_alloc_order nospec 3] BLOCK  | Reversing payment allocation to charges-before-principal materially changes borr
+[V3_alloc_order spec 0] BLOCK  | The proposed order (penalties, fees, interest, principal) is the exact reverse o
+[V3_alloc_order spec 1] BLOCK  | The proposed order (penalties, fees, interest, principal) directly inverts the s
+[V3_alloc_order spec 2] BLOCK  | The proposed order (penalties, fees, interest, principal) directly reverses the 
+[V3_alloc_order spec 3] BLOCK  | The change reverses the partial-payment allocation order that the maintained spe
+[B1_rename nospec 0] MERGE  | Renaming a method-local variable is semantically inert when it compiles, and not
+[B1_rename nospec 1] MERGE  | Renaming a single local variable throughout its scope is behaviour-preserving, a
+[B1_rename nospec 2] MERGE  | A consistent rename of a method-local variable is semantically neutral in Java a
+[B1_rename nospec 3] MERGE  | Renaming a method-local variable is behaviour-preserving by construction, and th
+[B1_rename spec 0] MERGE  | Renaming a local variable is semantics-preserving and leaves all three behaviour
+[B1_rename spec 1] MERGE  | Renaming a local variable is a semantics-preserving refactor that leaves every s
+[B1_rename spec 2] MERGE  | Renaming a local variable is a behaviour-preserving refactor that leaves all thr
+[B1_rename spec 3] MERGE  | Renaming a local variable consistently is behaviour-preserving and cannot alter 
+[B2_libsum nospec 0] MERGE  | Sequential stream reduction with the same ZERO identity and exact, associative B
+[B2_libsum nospec 1] MERGE  | The sequential stream reduces left-to-right from the same ZERO identity over the
+[B2_libsum nospec 2] MERGE  | Sequential `reduce(ZERO, BigDecimal::add)` preserves the loop's iteration order,
+[B2_libsum nospec 3] MERGE  | Sequential stream reduce over BigDecimal::add is exactly equivalent to the accum
+[B2_libsum spec 0] MERGE  | The change only rewrites a summation of already-computed principals into an equi
+[B2_libsum spec 1] MERGE  | The stream `reduce` folds the same `BigDecimal::add` over the same elements in t
+[B2_libsum spec 2] MERGE  | The stream sum is arithmetically identical to the loop for exact BigDecimal addi
+[B2_libsum spec 3] MERGE  | The stream reduce is arithmetically identical to the loop and only reads the sch
+[B3_guard nospec 0] BLOCK  | The early return silently discards negative payments, which in a lending ledger 
+[B3_guard nospec 1] BLOCK  | `isZeroOrNegative()` silently early-returns on negative payments, which may be l
+[B3_guard nospec 2] BLOCK  | The early `return` exits the whole method, silently skipping any post-allocation
+[B3_guard nospec 3] BLOCK  | The guard silently discards negative payments as well as zero, and nothing estab
+[B3_guard spec 0] MERGE  | The guard only short-circuits zero-or-negative payments and leaves the principal
+[B3_guard spec 1] MERGE  | The change adds a zero/negative-payment guard and leaves the spec-mandated alloc
+[B3_guard spec 2] MERGE  | The guard only short-circuits zero-or-negative amounts and leaves the spec-prote
+[B3_guard spec 3] MERGE  | The guard only short-circuits zero-or-negative payments before allocation and le

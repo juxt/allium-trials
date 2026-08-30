@@ -1,0 +1,34 @@
+I have the full picture. Here's the map.
+
+## Where goodwill-credit postings are emitted
+
+A posted loan-family transaction reaches the ledger through one of **three** hand-written posting regimes, selected by product accounting type. Each has a per-transaction-type branch, and a new type like goodwill credit must be wired into all three or it either posts nothing or posts one-sided. Goodwill credit is already threaded through them, so it serves as the concrete map.
+
+**1. Cash basis** — `CashBasedAccountingProcessorForLoan.java`
+- Dispatch: `createJournalEntriesForLoan` routes repayment-type transactions at `:81`, then `createJournalEntriesForRepayments` (`:515`) forks on charge-off state (`:518`).
+- Normal repayment: `createJournalEntriesForLoanRepayments` (`:727`) — goodwill debit legs at `:750`, `:760`, `:782`, `:805`, `:816`, emitted at `:830`.
+- Charge-off repayment: `createJournalEntriesForChargeOffLoanRepayments` (`:527`) — goodwill branches at `:572`, `:600`, `:627`, `:655`, `:681`.
+
+**2. Accrual basis** — `AccrualBasedAccountingProcessorForLoan.java`
+- Dispatch at `:87` → `createJournalEntriesForRepayments` (`:1369`).
+- Charge-off repayment: goodwill branches at `:1433`, `:1461`, `:1491`, `:1529`, `:1564`.
+- Normal repayment: `createJournalEntriesForLoanRepayments` (`:1695`) — goodwill debit legs at `:1723`, `:1740`, `:1776`, `:1806`, `:1823`, emitted at `:1847`.
+
+**3. Working-capital accrual** — `AccrualWithDeferredRevenueAmortizationAccountingProcessorForWorkingCapitalLoan.java`
+- Dispatch `switch` at `:70`, `GOODWILL_CREDIT` case at `:80` → `postGoodwillCreditJournalEntries` (`:114`).
+
+This third regime is the one the maintained spec omits (it names only two). It is a separate `WorkingCapitalLoanAccountingProcessor` implementation with its own switch that throws `NotImplementedException` for unhandled types (`:90`), so a new type that isn't added here fails loudly for working-capital loans but silently for the other two regimes.
+
+## What guarantees the postings balance
+
+Nothing on the loan path asserts it. Balance is emergent, exactly as the spec says, and it holds only because each branch was hand-written to pair a debit with a matching credit:
+
+- The charge-off and capitalised-income paths route through `populateCreditDebitMaps` (cash `:197`, accrual `:963`), which adds the *same* amount to both the credit map and the debit map, then emits the two maps in separate loops (e.g. cash `:184`/`:190`). Balanced by construction per call, but the two accumulators are never reconciled against each other, so a branch that populates only one side would post unbalanced undetected. This is the sharpest hazard, and it's where the goodwill charge-off legs live.
+- The normal-repayment paths track credits as `totalDebitAmount` and build the offsetting goodwill debits in a parallel `debitAccountMapForGoodwillCredit` via `populateDebitAccountEntry` (accrual `:1724` etc). Again matched leg-for-leg by hand; no code checks that the debit map sums to `totalDebitAmount`.
+- The working-capital `postGoodwillCreditJournalEntries` (`:114`) hand-writes three debits and four credits; they net because `overpaymentPortion` is derived as the residual (`:67`), not because anything checks the totals.
+
+Each leg is persisted independently through `AccountingProcessorHelper.persistJournalEntry` (`AccountingProcessorHelper.java:1408`), which saves one one-sided row and cannot see the others.
+
+The only debit=credit assertion in the ledger is `checkDebitAndCreditAmounts`, which throws `DEBIT_CREDIT_SUM_MISMATCH` at `JournalEntryWritePlatformServiceJpaRepositoryImpl.java:324`. It is reached only from the operator-submitted manual-entry route (`createJournalEntry` at `:197`/`:217` and `validateBusinessRulesForJournalEntries` at `:651`). None of the three loan processors call it. So a goodwill-credit branch that emits a debit without its matching credit posts unbalanced, silently, with nothing to catch it.
+
+The upshot for adding the type: the debit/credit pairing in all three processors, plus the `GOODWILL_CREDIT` and `INCOME_FROM_GOODWILL_CREDIT_*` account-mapping constants (`AccountingConstants.java`) each branch references, are the load-bearing surface. Correctness rests entirely on getting each branch's two sides to match by hand.

@@ -1,0 +1,14 @@
+This change violates the maintained spec directly, on two of its three invariants.
+
+**What the spec requires:**
+- Principal repaid across the schedule equals the disbursed amount *exactly* (conservation).
+- The final period absorbs the rounding residual so the loan closes to *exactly* zero.
+
+**What the change does:** It deletes `principal = outstanding` in the final period. Every period now computes `principal = emi - interest`, where `interest` is rounded to 2 decimals each period (`setScale(2, HALF_UP)`). Those per-period rounding errors accumulate and are never reconciled. The closing balance lands *near* zero but not *exactly* zero, and the summed principal no longer equals the disbursed amount exactly.
+
+**Why the green tests don't clear it:** The new test asserts the closing balance is within 0.05. That tolerance is precisely the guarantee the spec forbids weakening: "EXACTLY zero" is not "within 0.05". The existing tests passing tells you the code compiles and closes *approximately*, not that the invariant holds. A residual of a few cents left on the books, or an over-collection of a few cents from the borrower, is exactly the class of defect the final-period absorption exists to prevent. In a lending system that residual is real money and a reconciliation/audit failure.
+
+The change is coherent and simpler, but simplicity here is bought by dropping a load-bearing invariant. The residual has to go somewhere; the spec says it goes in the final period.
+
+DECISION: BLOCK
+REASON: Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-closing invariants, leaving a rounding residual that the loosened "within 0.05" test is written to tolerate rather than catch.

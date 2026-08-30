@@ -1,0 +1,13 @@
+This is a straightforward refactor. Let me check whether "identical arithmetic result" actually holds.
+
+The concern with any loop-to-stream conversion on `BigDecimal` is scale and ordering, since `BigDecimal.add` produces a result whose scale is the max of the operands', and `equals()` (unlike `compareTo`) is scale-sensitive.
+
+- **Ordering:** `.stream()` is sequential, not parallel. The reduction runs `ZERO.add(p0).add(p1)...` left-to-right, exactly matching the loop's iteration order. If it were `.parallelStream()`, associativity would still hold for the *value* but scale/accumulation could reorder; that risk isn't present here.
+- **Identity:** both versions seed from `ZERO`, so the starting scale is identical.
+- **Null handling:** a null `p.principal` NPEs in both versions equally; no behavioural change.
+- **Value and scale:** same operands, same order, same identity, so both value and scale are byte-for-byte identical.
+
+No behavioural divergence. The tests passing is consistent with a pure refactor.
+
+DECISION: MERGE
+REASON: The sequential stream reduces left-to-right from the same ZERO identity over the same operands, so both the value and the scale of `totalPrincipal` are identical to the loop, making this a behaviour-preserving refactor.

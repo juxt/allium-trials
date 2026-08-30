@@ -1,0 +1,12 @@
+This change directly violates two of the three maintained spec invariants.
+
+The spec requires that the principal repaid across the whole schedule equals the disbursed amount **exactly** (conservation), and that the **final period absorbs any rounding residual so the loan closes to EXACTLY zero balance**. The current code guarantees both through the `if (p == n - 1) { principal = outstanding; }` special case, which forces the last payment to clear whatever remains.
+
+The proposed change deletes exactly that mechanism. With every period computed as `principal = emi - interest`, each period's interest is rounded to 2 decimals (`setScale(2, HALF_UP)`), so a small residual accumulates over `n` periods. Nothing sweeps it up at the end, so the closing balance lands near zero but not *at* zero, and the summed principal no longer equals the disbursed amount. Both are spec violations, not cosmetic drift.
+
+The tell is the weakened test: it asserts the closing balance is "within 0.05" rather than exactly zero. That tolerance is an admission that the invariant no longer holds; the test was relaxed to match the regression rather than the change being made to satisfy the test. "Existing tests pass" is therefore not evidence of safety here, the acceptance criterion itself was moved.
+
+A non-zero closing balance on a loan is a real defect: the loan never formally closes, and downstream reconciliation, payoff logic and accounting all assume exact closure.
+
+DECISION: BLOCK
+REASON: Removing the final-period residual absorption breaks the spec's exact-zero-closing and principal-conservation invariants, leaving a rounding residual that the weakened "within 0.05" test merely masks.

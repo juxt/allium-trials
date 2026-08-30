@@ -1,0 +1,12 @@
+This is a pure rename of a local variable (`outstanding` → `balance`), applied consistently throughout the loop, with no change to control flow, arithmetic, scaling, or the final-period assignment.
+
+Checking against each spec invariant:
+
+- Interest accrues on the declining balance: `interest = balance.multiply(rate)...` where `balance` is decremented each period. Unchanged.
+- Principal conserves to the disbursed amount: the final period still assigns `principal = balance` (the full remaining balance), so the sum still equals `disbursed`. Unchanged.
+- Final period absorbs rounding to close at zero: the `if (p == n - 1)` branch is untouched. Unchanged.
+
+A local variable's name is not observable behaviour. It compiles, tests pass, and nothing in the spec constrains identifier names. There is no shadowing risk flagged (rename is "throughout", and it compiles cleanly). Blocking this would be timidity, not diligence.
+
+DECISION: MERGE
+REASON: Renaming a local variable is a semantics-preserving refactor that leaves every spec invariant (declining-balance interest, principal conservation, final-period rounding closure) intact.

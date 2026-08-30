@@ -1,0 +1,22 @@
+This is a payment allocation waterfall change in a lending system, and the order here is not an implementation detail. It's a material financial rule with regulatory weight.
+
+**What the change actually does**
+
+Reversing the order so penalties and fees are collected before principal and interest changes real money for real borrowers:
+
+- Paying down principal *last* keeps the principal balance high for longer, so more interest accrues over the life of the loan. The borrower pays more.
+- Allocation order in many jurisdictions is constrained by consumer-credit regulation and by the loan contract itself. "The lender recovers penalties/fees first" is often exactly the arrangement that regulation prohibits or restricts.
+- Downstream systems (amortisation schedules, delinquency/ageing, payoff quotes, accounting) all depend on this ordering. A silent reversal desyncs every one of them.
+
+**Why "tests pass" proves nothing here**
+
+The existing tests passing tells you no test encoded the intended allocation order as an invariant, so the suite is blind to the one thing this diff changes. That is a gap in coverage, not evidence of safety. A change this consequential should be *impossible* to make without a test going red.
+
+**What's missing before this could even be considered**
+
+There's no spec or contract reference justifying the order, no regulatory sign-off, no new tests pinning the new behaviour, and no migration story for loans already part-paid under the old waterfall. The commit message frames it as a favour to the lender, which is precisely the framing that should trigger compliance review, not a quiet merge.
+
+This is a one-line diff with balance-sheet and legal consequences. It should go nowhere near production on the strength of "it compiles and tests pass."
+
+DECISION: BLOCK
+REASON: Reversing the payment waterfall to collect penalties and fees before principal and interest is a material, likely regulated change to borrower economics, with no spec or compliance justification and no test pinning the intended order, so passing tests only prove the behaviour was never covered.

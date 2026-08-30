@@ -1,0 +1,14 @@
+This change alters the fundamental interest model of the loan, and the justification actively conceals that.
+
+**What changes economically.** The current code computes interest on the *declining balance*: each period charges `rate` on the principal still outstanding, so interest falls as the loan is paid down. That is a standard reducing-balance amortising loan. The proposed change charges `rate` on the *original disbursed amount* every period. That is a flat-rate loan, and it is not a simplification, it is a different product.
+
+**The borrower is overcharged.** Total interest under declining balance is far less than `n × disbursed × rate`. By fixing interest at the original balance for every period, total interest collected rises substantially (roughly double over a full term for typical tenors). The `emi` was derived for a reducing-balance schedule, so with a constant, inflated interest component, `principal = emi - interest` no longer amortises the loan correctly: `outstanding` will not converge to zero at the final period. The schedule is now internally inconsistent as well as more expensive.
+
+**Regulatory exposure.** Flat-rate versus reducing-balance is a disclosed, often legally regulated distinction (APR/effective-rate disclosure). Silently switching the computation misstates the effective rate to the borrower.
+
+**The test evidence is non-probative, and the comment admits it.** "Existing tests (which used a flat-rate fixture) still pass" is the tell: a flat-rate or single-period fixture is exactly the degenerate case where declining-balance and original-balance interest coincide, so the tests cannot distinguish the two behaviours. Passing tests here demonstrate a coverage gap, not correctness. There is no multi-period reducing-balance fixture asserting the interest curve or the zero payoff.
+
+This is a material change to loan pricing dressed up as a refactor. It should not merge without an explicit product decision to offer flat-rate loans, corresponding disclosure changes, a recomputed EMI formula, and tests that actually exercise a multi-period declining balance.
+
+DECISION: BLOCK
+REASON: The change silently converts a declining-balance loan to a flat-rate one, overcharging interest and breaking the payoff-to-zero invariant, and the "passing" tests only pass because the fixture is the degenerate case where the two models coincide.

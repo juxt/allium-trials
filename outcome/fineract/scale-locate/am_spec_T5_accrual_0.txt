@@ -1,0 +1,50 @@
+The two processors diverge on the interest leg exactly where the spec says they should. Here is the mechanism, with citations.
+
+## Cash basis: interest reaches the ledger only when cash moves
+
+The cash dispatcher has no accrual branch at all. Its transaction switch handles disbursement, repayment, recovery, refunds, write-off, etc., but nothing for an accrual event (`CashBasedAccountingProcessorForLoan.java:74-133`). Interest touches the ledger for the first time at repayment, in the interest branch of `createJournalEntriesForLoanRepayments`:
+
+```java
+this.helper.createCreditJournalEntryForLoan(office, currencyCode, CashAccountsForLoan.INTEREST_ON_LOANS, ...)
+```
+
+`CashBasedAccountingProcessorForLoan.java:756-759`. The credit goes straight to the income account `INTEREST_ON_LOANS`, matched by a single debit to fund source (the cash actually received). Income is recognised at the moment of payment.
+
+## Accrual basis: interest reaches the ledger when it accrues, ahead of payment
+
+The accrual dispatcher adds a branch the cash one lacks:
+
+```java
+if (transactionType.isAccrual() || transactionType.isAccrualAdjustment()) {
+    createJournalEntriesForAccruals(loanDTO, loanTransactionDTO, office);
+}
+```
+
+`AccrualBasedAccountingProcessorForLoan.java:80-82`. That method recognises interest income at accrual time, before any cash arrives, by posting the receivable against income:
+
+```java
+this.helper.createJournalEntriesForLoan(office, currencyCode,
+        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(),   // debit
+        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(),     // credit (income)
+        ...interestAmount);
+```
+
+`AccrualBasedAccountingProcessorForLoan.java:2037-2039` (inside `createJournalEntriesForAccruals`, defined at line 2015; the `isAccrualAdjustment` case at 2033-2035 reverses the same pair). Debit `INTEREST_RECEIVABLE`, credit `INTEREST_ON_LOANS`: the income hits the ledger now, and an asset (receivable) is booked for the not-yet-paid interest.
+
+When repayment later arrives, the accrual repayment path does **not** credit income again. It clears the receivable instead:
+
+```java
+final GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+```
+
+`AccrualBasedAccountingProcessorForLoan.java:1729-1739` (interest branch of `createJournalEntriesForLoanRepayments`, defined at line 1695). The credit target is `INTEREST_RECEIVABLE`, matched by the fund-source debit for the cash received. Repayment retires the asset booked at accrual, with no second income recognition.
+
+## The difference in one line
+
+Same interest amount, same debit=credit shape, different **when** and different **credit account**:
+
+- **Cash** posts once, at repayment: credit `INTEREST_ON_LOANS` (income) — `:756-759`.
+- **Accrual** posts twice: credit `INTEREST_ON_LOANS` (income) at accrual — `:2037-2039` — then credit `INTEREST_RECEIVABLE` (clearing the asset) at repayment — `:1729-1739`.
+
+The code that implements the difference is the `isAccrual()` dispatch branch (`:80-82`) routing to `createJournalEntriesForAccruals` (`:2015`), which the cash processor has no equivalent of. Principal is the same shape on both sides, as the spec notes; only interest and fees move their recognition point forward on accrual basis.

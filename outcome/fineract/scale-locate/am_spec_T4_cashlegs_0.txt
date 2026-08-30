@@ -1,0 +1,32 @@
+## Answer
+
+On cash basis, a **normal loan repayment** (loan not marked charge-off) is dispatched at `CashBasedAccountingProcessorForLoan.java:81-84` into `createJournalEntriesForRepayments`, which at line 518-522 routes the non-charged-off case to:
+
+**`createJournalEntriesForLoanRepayments`** — `CashBasedAccountingProcessorForLoan.java:727-853`
+
+### Leg types journalled
+
+For a plain repayment it credits one account per component that is present and posts a **single debit** to fund source for the total:
+
+| Leg | Credit account (per-type) | Site |
+|-----|---------------------------|------|
+| Principal | `LOAN_PORTFOLIO` | `:748` |
+| Interest | `INTEREST_ON_LOANS` | `:758` |
+| Fees | `INCOME_FROM_FEES` (net of tax; tax split to liability) | `:773`/`:779` |
+| Penalties | `INCOME_FROM_PENALTIES` (net of tax) | `:794`/`:801` |
+| Overpayment | `OVERPAYMENT` | `:814` |
+| (single debit) | `FUND_SOURCE` for `totalDebitAmount` | `:839` |
+
+So on cash basis all four of principal, interest, fees and penalties are journalled at repayment (plus overpayment), because cash-basis interest/fees reach the ledger only when cash moves.
+
+### Where the per-type GL accounts come from
+
+The `CashAccountsForLoan.*` enum values are placeholder account-type IDs, resolved to real GL accounts by two lookups in `AccountingProcessorHelper.java`:
+
+- **`getLinkedGLAccountForLoanProduct(loanProductId, accountMappingTypeId, paymentTypeId)`** — `AccountingProcessorHelper.java:1179`. Used for principal, interest and overpayment (and the fund-source debit). It reads `ProductToGLAccountMapping` via `accountMappingRepository.findCoreProductToFinAccountMapping(loanProductId, LOAN, accountMappingTypeId)` (`:1186`), with a payment-channel-specific override for `FUND_SOURCE` (`:1193-1200`), or falls back to a `FinancialActivityAccount` for organisation-level types (`:1181-1184`).
+
+- **`getLinkedGLAccountForLoanCharges(loanProductId, accountMappingTypeId, chargeId)`** — `AccountingProcessorHelper.java:1212`. Reached via `createCreditJournalEntryForLoanCharges` for the fee and penalty legs, giving a charge-specific mapping (falling back to the core product mapping).
+
+The credit-side calls at `:748/:758/:814` go through the `createCreditJournalEntryForLoan(... int accountMappingTypeId ...)` overload at `AccountingProcessorHelper.java:880`, whose body calls `getLinkedGLAccountForLoanProduct` at `:883`.
+
+One note tying back to the spec: balance here is emergent, not asserted. The method sums each credited component into `totalDebitAmount` and posts a single matching `FUND_SOURCE` debit (`:839`), so debits equal credits only because the branch is hand-written that way, with nothing on this path checking it.

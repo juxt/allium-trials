@@ -1,0 +1,6 @@
+This change directly contradicts the maintained spec. The spec states the allocation order is principal → interest → fees → penalties, and marks it as "a deliberate product decision, not an implementation detail." The proposed change reverses it to penalties → fees → interest → principal.
+
+That the code compiles and existing tests pass is not reassuring here. It tells us the test suite doesn't pin the allocation order, which is exactly the kind of deliberate behaviour the spec exists to protect. The commit message frames it as a lender-favourable recovery tweak, but reordering payment allocation has real consequences: it changes how much principal gets paid down, affects interest accrual going forward, and in most jurisdictions consumer-lending allocation order is regulated. A change like this needs product and compliance sign-off, not a silent reorder that slips through because no test happened to cover it.
+
+DECISION: BLOCK
+REASON: The proposed order (penalties, fees, interest, principal) is the exact reverse of the maintained spec's mandated principal-first allocation, which the spec explicitly calls a deliberate product decision.

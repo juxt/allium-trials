@@ -1,0 +1,14 @@
+This is not a refactor. It's a material change to the payment waterfall, and it should not merge as presented.
+
+**What the change actually does.** It reverses the allocation order for every partial payment: from principal→interest→fees→penalties to penalties→fees→interest→principal. That changes real money for every borrower who underpays. Collecting penalties and fees before principal and interest keeps the principal balance high for longer, which increases downstream interest accrual and changes payoff timelines. This is a business/policy decision, not a code cleanup, despite being framed as one.
+
+**Why "tests pass" is not reassurance.** If a change that inverts the entire allocation waterfall leaves the suite green, the suite has no assertion on allocation order. That's evidence of a coverage gap, not of safety. The one thing that most needs a test here is exactly the thing not being tested.
+
+**The regulatory dimension.** Payment allocation order in consumer lending is frequently mandated by law (for example, US CARD Act rules on applying above-minimum payments to highest-APR balances). Silently flipping the order can move the system from compliant to non-compliant. Nothing in the change cites a spec, a regulatory basis, or product/legal sign-off for the new policy.
+
+**What would need to be true to merge.** A stated, authoritative intent for the new order (spec or product/legal decision), tests that assert the intended order against worked examples, and confirmation that the target jurisdictions permit charges-first allocation. None of that is present.
+
+The change may even be someone's intended policy, but it cannot be waved through on "compiles and tests pass" for a change with this blast radius.
+
+DECISION: BLOCK
+REASON: Reversing the payment waterfall silently changes financial outcomes for every partial payment and likely touches regulated allocation rules, yet carries no stated intent, no order-asserting tests, and no compliance sign-off.

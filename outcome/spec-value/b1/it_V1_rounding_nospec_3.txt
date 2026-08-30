@@ -1,0 +1,14 @@
+This is a review-only task, so I'll reason about the change rather than modify anything.
+
+**What the final-period special-casing does.** Interest each period is rounded to 2 decimals (`setScale(2, HALF_UP)`), and `principal = emi - interest`. Those per-period roundings accumulate. The `if (p == n - 1) principal = outstanding` line is the standard amortisation fix: the last instalment absorbs whatever residual is left so the loan closes to *exactly* 0.
+
+**What removing it does.** Every period now uses `emi - interest`, so the closing balance ends up wherever the accumulated rounding drift lands it — a few cents either side of zero, not exactly zero. In a lending system that's a genuine defect, not a cosmetic one:
+
+- A loan that closes to +0.03 leaves the borrower nominally still in debt; -0.03 means the books show an overpayment. Either way reconciliation and payoff logic breaks on a non-zero terminal balance.
+- The drift is unbounded by the test. The `within 0.05` assertion is a loose band that happens to pass for whatever loan the fixture uses. Change n, rate, or principal and the accumulated residual can exceed 0.05 — the test gives false confidence rather than a guarantee. "Existing tests pass" here means the tests were weakened to match the regression, not that the behaviour is safe.
+- The removed line encoded a real invariant (schedule sums back to exactly the disbursed principal). Nothing replaces it.
+
+The special-casing wasn't incidental complexity to clean up. It's the mechanism that makes the money add up. Dropping it trades an exact-zero guarantee for an approximate one in a domain where exact is the whole point.
+
+DECISION: BLOCK
+REASON: The final-period residual absorption is what guarantees the loan closes to exactly zero; removing it leaves accumulated rounding drift as a non-zero closing balance, and the loose `within 0.05` test masks rather than bounds the regression.

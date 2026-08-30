@@ -1,0 +1,17 @@
+This change directly violates the maintained spec.
+
+The spec carries two invariants that the final-period special-casing exists to satisfy:
+
+- **Conservation**: principal repaid across the schedule equals the disbursed amount *exactly*.
+- **Exact close**: the final period absorbs rounding residual so the balance closes to *exactly zero*.
+
+`principal = outstanding` in the last period is precisely the mechanism that enforces both. Each period's interest is rounded to 2 decimals (`setScale(2, HALF_UP)`), so `emi - interest` carries a per-period rounding residual. Over `n` periods those residuals accumulate. The special case sweeps the accumulated residual into the final principal payment, guaranteeing the sum of principal equals `disbursed` and the balance lands on 0.00.
+
+Dropping it makes the final period `principal = emi - interest` like any other, so the closing balance is only *approximately* zero. The residual is left dangling: conservation breaks (principal repaid ≠ disbursed) and the loan no longer closes to exactly zero.
+
+The reassurance that "existing tests pass" is hollow here: the new test asserts closing balance within 0.05, which is a strictly weaker property than the spec's "EXACTLY zero". A test tolerant of ±0.05 cannot detect a violation of an exact-conservation invariant. Passing tests measure the code against a lowered bar, not against the spec you maintain.
+
+There's no benign reading of this. The interest-on-outstanding invariant (#1) survives, but #2 and #3 are broken by construction, and those are exactly the guarantees a lending system's correctness rests on. Non-zero closing balances mean loans that don't reconcile.
+
+DECISION: BLOCK
+REASON: Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-close invariants, and the new ±0.05 test is too weak to catch the resulting non-zero closing balance.

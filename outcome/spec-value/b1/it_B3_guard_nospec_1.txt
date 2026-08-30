@@ -1,0 +1,17 @@
+I'll assess this on its merits as a production review.
+
+The change looks defensive and harmless on the surface: skip allocation when there's nothing to allocate. But `isZeroOrNegative()` bundles two distinct cases, and the negative case is the problem.
+
+In a lending system, a negative "payment" is not obviously a no-op. It can represent a reversal, refund, chargeback, or manual adjustment. The original code would route a negative amount through `pay(...)` for each bucket. Whatever that did (possibly wrong, possibly load-bearing), the proposed change replaces it with a silent early `return`: no allocation, no error, no log, no record. If negative amounts are a legitimate transaction type upstream, this drops them on the floor invisibly, which is exactly the kind of money-movement bug that surfaces months later in reconciliation.
+
+Two things I cannot confirm from what's in front of me:
+
+- **What a negative payment is supposed to mean here.** Nothing in the diff, the surrounding code, or a spec establishes that discarding it is intended behaviour. The comment asserts the guard is safe but doesn't cite the rule that makes it safe.
+- **That "tests pass" covers this.** The existing suite passing tells us nothing about whether negative-payment semantics are specified or exercised. Absence of a failing test is not evidence of correct behaviour for an unspecified case.
+
+The zero case is probably fine. The negative case is under-determined and affects money. If a guard is warranted, the safer shape is to reject/throw on negative (surface it loudly) and handle zero separately, not to fold both into a silent return. Merging as-is trades a possible existing bug for a silent one, which is worse because it's harder to detect.
+
+Block pending clarification of what a negative payment means and confirmation that dropping it is intended and covered.
+
+DECISION: BLOCK
+REASON: `isZeroOrNegative()` silently early-returns on negative payments, which may be legitimate reversals or adjustments, and nothing in the code or tests establishes that discarding them is intended.

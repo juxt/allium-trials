@@ -1,0 +1,8 @@
+This is a pure local-variable rename. `outstanding` is a method-local `BigDecimal`, declared and used only within the shown loop, and every reference is updated consistently to `balance`. Renaming a local variable in Java is semantically neutral: it cannot change control flow, arithmetic, rounding, or the final-period principal adjustment.
+
+The one thing worth checking is accidental capture, whether `balance` already exists in the enclosing scope. Even if a field named `balance` existed, the local declaration `BigDecimal balance = disbursed;` shadows it locally and all reads/writes stay bound to the local, so the loop's behaviour is identical. The code compiles and existing tests pass, which is consistent with a no-op refactor.
+
+There is no encoded intent at risk here, no rounding, allocation, or basis logic touched. The change does exactly what it claims.
+
+DECISION: MERGE
+REASON: A consistent rename of a method-local variable is semantically neutral in Java and cannot alter the schedule's arithmetic or behaviour.

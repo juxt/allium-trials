@@ -1,0 +1,6 @@
+This change adds a guard clause that returns early on a zero-or-negative payment, before any allocation runs. It does not touch the allocation order, which is what the spec governs.
+
+Checking against the spec's single constraint: principal, interest, fees, penalties, in that order and no other. The proposed diff leaves those four `pay(...)` calls in exactly that sequence. The only new behaviour is short-circuiting a degenerate input. A zero payment would allocate nothing anyway (each `pay` is a no-op on zero), and a negative payment is not a "partial payment" under any reasonable reading, so guarding it is at worst harmless and at best prevents mis-application of a negative amount. The deliberate product decision the spec protects is untouched.
+
+DECISION: MERGE
+REASON: The guard only short-circuits zero-or-negative payments before allocation and leaves the spec-mandated principal→interest→fees→penalties order exactly as before.

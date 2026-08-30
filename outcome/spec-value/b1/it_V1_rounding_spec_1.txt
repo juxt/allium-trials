@@ -1,0 +1,15 @@
+This change removes exactly the mechanism the spec requires.
+
+The maintained spec states three invariants:
+- interest accrues on the outstanding balance (unchanged by this diff),
+- principal repaid across the schedule equals the disbursed amount **exactly** (conservation),
+- the **final period absorbs any rounding residual** so the loan closes to **exactly zero**.
+
+The current code satisfies the last two precisely because of the line being deleted: `principal = outstanding` in the final period forces the sum of principals to equal `disbursed` exactly and drives the closing balance to 0.
+
+Dropping it makes every period `principal = emi - interest`, each rounded to 2 dp. Those rounding residuals accumulate and are never reconciled, so the closing balance lands a few cents off zero and the sum of principals no longer equals the disbursed amount. That breaks both the conservation invariant and the exact-zero-closure invariant.
+
+The new test asserting "within 0.05" is strictly weaker than the spec's "EXACTLY zero", so passing tests does not mean the spec holds. Tests passing here masks a real spec violation.
+
+DECISION: BLOCK
+REASON: Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-closure invariants, leaving a nonzero closing balance that the weakened "within 0.05" test fails to catch.

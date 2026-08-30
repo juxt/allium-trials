@@ -1,0 +1,8 @@
+This change directly violates the first maintained invariant.
+
+The spec states: *interest each period accrues on the OUTSTANDING (declining) balance, not the original principal.* The proposed line computes `disbursed.multiply(rate)` instead of `outstanding.multiply(rate)`, which is exactly the prohibited behaviour, converting a declining-balance (amortising) loan into flat-rate interest.
+
+The knock-on effects hit the other two invariants too. With interest held constant and higher in later periods than a declining-balance schedule would produce, `principal = emi.subtract(interest)` no longer sums to the disbursed amount, breaking conservation, and the final balance won't close to zero. The "existing tests still pass" note is the tell: a flat-rate fixture makes `disbursed` and `outstanding` interest coincide, so the fixture cannot discriminate the two behaviours. Passing tests here indicate a coverage gap, not safety.
+
+DECISION: BLOCK
+REASON: Computing interest on the original disbursed amount rather than the declining outstanding balance directly violates the spec's declining-balance invariant and breaks principal conservation and zero-closing, and the passing tests only reflect a non-discriminating flat-rate fixture.

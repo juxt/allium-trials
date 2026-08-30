@@ -1,0 +1,6 @@
+This is a faithful refactor. The loop and the stream compute the same value: `reduce(ZERO, BigDecimal::add)` over a sequential stream folds left-to-right in encounter order, exactly as the loop does, and `BigDecimal.add` is exact arithmetic with no rounding or floating-point reordering hazard. Even order-independence holds, since BigDecimal addition is exact.
+
+Against the spec, the operation is a read-only sum of `p.principal`. It computes a total; it does not change how interest accrues on the outstanding balance, how principal is apportioned across periods (conservation), or how the final period absorbs the rounding residual. None of the three maintained invariants pass through this line, so none can be affected by rewriting how the sum is accumulated.
+
+DECISION: MERGE
+REASON: The stream reduce is arithmetically identical to the loop and only reads the schedule's principals, touching none of the spec's invariants on interest basis, conservation, or final-period rounding.

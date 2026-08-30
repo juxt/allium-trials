@@ -1,0 +1,12 @@
+This change replaces a manual accumulation loop with a stream reduction that sums the same values, in the same sequential order, using the same `BigDecimal::add`. The result is identical.
+
+Checking against each invariant:
+
+- **Interest on declining balance** — untouched. This code doesn't compute interest.
+- **Principal conservation** — untouched. This only computes a *total* of principals already fixed in the schedule; it doesn't alter any `p.principal`.
+- **Final-period rounding residual** — untouched. The residual absorption happens when the schedule is built, not when it's summed afterwards.
+
+The refactor is confined to how an existing total is aggregated. `stream().reduce(ZERO, BigDecimal::add)` on a sequential stream visits elements in encounter order and applies the same addition, so it produces the same sum as the loop with no change to scale or rounding behaviour. It reads no state the spec constrains and writes nothing back into the schedule.
+
+DECISION: MERGE
+REASON: The change only rewrites a summation of already-computed principals into an equivalent sequential stream reduction, leaving interest accrual, principal conservation, and final-period rounding untouched.

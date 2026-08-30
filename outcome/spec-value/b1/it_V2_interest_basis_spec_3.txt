@@ -1,0 +1,8 @@
+This change directly violates the first invariant of the maintained spec.
+
+The spec states interest "accrues on the OUTSTANDING (declining) balance, not the original principal." The proposed change computes `disbursed.multiply(rate)` — interest on the original principal, constant every period. That is precisely the behaviour the spec forbids, stated almost word for word.
+
+The "existing tests pass" reassurance is a trap: the note admits the fixture used a flat rate, so the test suite never exercised the declining-balance behaviour the spec requires. Passing tests here demonstrate a coverage gap, not correctness. Beyond the interest rule itself, inflating interest in later periods shrinks the principal component (`emi - interest`), which knocks out the conservation invariant and the exact-zero closure too.
+
+DECISION: BLOCK
+REASON: The change computes interest on the original disbursed amount, directly contradicting the spec's requirement that interest accrue on the declining outstanding balance, and the passing tests only reflect a flat-rate fixture that never covered this behaviour.

@@ -1,0 +1,14 @@
+This is a pure local-variable rename. `outstanding` is a method-local `BigDecimal`; renaming it to `balance` throughout has no effect on runtime behaviour, since local identifiers carry no semantics beyond their scope.
+
+Things I checked for that could make a "rename" unsafe:
+
+- **Field/outer-scope shadowing.** If the enclosing class had a field named `balance`, the new local would shadow it. But every reference in this block is to the local (declared, read, and reassigned within the loop), and nothing here reads a pre-existing `balance`. The compile-and-tests-pass result rules out an accidental capture that changed resolution.
+- **Reflection / serialization by name.** Local variable names aren't visible to reflection or serialization, so no external contract keys off `outstanding`.
+- **The actual logic is untouched.** Interest = `balance * rate` rounded HALF_UP, principal = `emi - interest`, final-period principal forced to the residual `balance`, then `balance -= principal`. Identical before and after.
+
+The rename is if anything a small readability win, and `balance` is the more conventional term for a remaining amortised amount.
+
+Nothing here needs a spec to adjudicate: renaming a local is behaviour-preserving by construction, and the build confirms no collision.
+
+DECISION: MERGE
+REASON: Renaming a method-local variable is behaviour-preserving by construction, and the successful compile plus passing tests confirm no shadowing or name-collision was introduced.

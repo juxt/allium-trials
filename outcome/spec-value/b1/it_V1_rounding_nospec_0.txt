@@ -1,0 +1,18 @@
+This change removes a deliberate, documented invariant. Let me look at what the final-period special-casing actually does.
+
+**What the residual absorption is for**
+
+Each period rounds interest to 2 decimals (`setScale(2, HALF_UP)`). That rounding introduces a small error every period, and those errors accumulate across the schedule. The `emi` is a single fixed payment computed up front; because the per-period interest is rounded, the sum of `(emi - interest)` over all n periods does **not** equal the disbursed principal exactly. The final-period line `principal = outstanding` sweeps up whatever is left so the balance closes to exactly 0. The comment says this in plain words: "absorb residual: pay off whatever remains, closes to exactly 0."
+
+**What the change does**
+
+Dropping it means the last period pays `emi - interest` like any other, leaving the accumulated rounding drift as a non-zero closing balance. The loan no longer fully amortises. In a lending system that residual is a real liability: the account doesn't zero out, books don't reconcile, and the borrower is left owing (or owed) a few cents that must be written off or chased.
+
+**Why "tests pass" doesn't clear it**
+
+The test only asserts the closing balance is within 0.05. That tolerance is looser than the actual intent, which is *exactly* 0. Passing it proves the drift happened to stay under 5 cents for the tested inputs, not that the schedule closes correctly. The tolerance also isn't robust: drift scales with the number of periods and the rate, so a longer-term or higher-rate loan can breach even 0.05, and nothing here caps it. The passing test is measuring the wrong thing.
+
+This isn't timidity about a harmless refactor. The removed line encodes a specific financial invariant (loan closes to exactly zero), the change demonstrably breaks it, and the guarding test is too weak to catch the cases where it breaks worst.
+
+DECISION: BLOCK
+REASON: The final-period residual absorption exists to close the loan to exactly zero against accumulated per-period interest-rounding drift; removing it leaves a non-zero closing balance so the loan never fully amortises, and the within-0.05 test is too loose to guarantee correctness.

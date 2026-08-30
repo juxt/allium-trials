@@ -1,0 +1,12 @@
+This change bundles two very different cases behind one guard, and only one of them is safe.
+
+**Zero payment:** returning early is harmless. With `left = 0`, each `pay(due, 0)` allocates nothing anyway. The only behavioural difference is whether the pay path has side effects on a zero amount (a recorded zero transaction, a timestamp, an event). Probably fine, possibly a minor change.
+
+**Negative payment:** this is the problem. Previously a negative `payment` flowed through `pay(principalDue, ...)` and onward. Now it silently returns and does nothing. In a lending system a negative amount is not obviously noise, it can represent a reversal, refund, adjustment or chargeback. If any such value reaches this method, the change makes it vanish with no record and no error. Silently dropping a financial movement is exactly the kind of defect that passes tests and surfaces in reconciliation weeks later.
+
+The justification for merging would be "negative payments can never reach this point, they're rejected upstream." That may well be true, but nothing in the diff, the code shown, or "existing tests pass" establishes it. The guard itself is evidence the author is unsure what arrives here. If negatives are truly impossible, the negative half of the condition is dead code hiding a no-op; if they're possible, it's a silent data-loss bug. Either way the safe form is `isZero()` (or an explicit reject/throw on negative), not `isZeroOrNegative() → return`.
+
+I can't confirm which world we're in from what's provided, and the failure mode on the wrong guess is a silently discarded reversal in production. That asymmetry decides it.
+
+DECISION: BLOCK
+REASON: The guard silently discards negative payments as well as zero, and nothing establishes that negatives can't reach this code, so it risks dropping reversals/adjustments without a trace.

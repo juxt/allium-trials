@@ -1,0 +1,386 @@
+[
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "The final-period residual absorption exists to close the loan to exactly zero against accumulated per-period interest-rounding drift; removing it leaves a non-zero closing balance so the loan never fully amortises, and the within-0.05 test is too loose to guarantee correctness."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "The final-period `principal = outstanding` absorbs accumulated per-period rounding to force an exact zero close; dropping it leaves a nonzero residual that the loose 0.05 tolerance neither eliminates nor reliably bounds across all loan parameters."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "The removed final-period residual absorption is what guarantees the loan closes to exactly zero; dropping it leaves an accumulated rounding residual so accounts don't fully close, and the \"within 0.05\" test tolerates that non-zero balance rather than preventing it."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "The final-period residual absorption is what guarantees the loan closes to exactly zero; removing it leaves accumulated rounding drift as a non-zero closing balance, and the loose `within 0.05` test masks rather than bounds the regression."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-close invariants, and the new ±0.05 test is too weak to catch the resulting non-zero closing balance."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-closure invariants, leaving a nonzero closing balance that the weakened \"within 0.05\" test fails to catch."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "Removing the final-period residual absorption breaks the spec's exact-zero-closing and principal-conservation invariants, leaving a rounding residual that the weakened \"within 0.05\" test merely masks."
+  },
+  {
+    "id": "V1_rounding",
+    "violating": true,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "Removing the final-period residual absorption breaks the spec's exact-conservation and exact-zero-closing invariants, leaving a rounding residual that the loosened \"within 0.05\" test is written to tolerate rather than catch."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "The change silently converts a declining-balance amortised loan into a flat-rate one, overcharging borrowers interest on already-repaid principal, and the passing tests only reflect a flat-rate fixture that can't detect the difference."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "The change silently converts a declining-balance loan to a flat-rate one, overcharging interest and breaking the payoff-to-zero invariant, and the \"passing\" tests only pass because the fixture is the degenerate case where the two models coincide."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "The change replaces declining-balance interest with flat interest on the original principal, overcharging borrowers and leaving a non-zero residual balance at term end, and the passing tests only coincide because the fixture is flat-rate."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "Charging interest on the original disbursed amount instead of the declining balance converts an amortising loan into a flat-rate one, systematically overcharging borrowers and breaking the pay-to-zero invariant, hidden only because the test fixture uses a flat rate where the two coincide."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "Computing interest on the original disbursed amount rather than the declining outstanding balance directly violates the spec's declining-balance invariant and breaks principal conservation and zero-closing, and the passing tests only reflect a non-discriminating flat-rate fixture."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "Charging interest on the original disbursed amount rather than the declining outstanding balance contradicts the spec's core invariant and breaks both principal conservation and the exact-zero final balance, overcharging borrowers."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "The change computes interest on the original disbursed amount rather than the declining outstanding balance, directly violating the spec's core invariant and breaking principal conservation and zero-balance closure."
+  },
+  {
+    "id": "V2_interest_basis",
+    "violating": true,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "The change computes interest on the original disbursed amount, directly contradicting the spec's requirement that interest accrue on the declining outstanding balance, and the passing tests only reflect a flat-rate fixture that never covered this behaviour."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "Reversing the payment waterfall to collect penalties and fees before principal and interest is a material, likely regulated change to borrower economics, with no spec or compliance justification and no test pinning the intended order, so passing tests only prove the behaviour was never covered."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "Reversing the payment waterfall silently changes financial outcomes for every partial payment and likely touches regulated allocation rules, yet carries no stated intent, no order-asserting tests, and no compliance sign-off."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "Inverting the payment-allocation waterfall to collect penalties and fees before principal and interest materially changes loan economics and carries regulatory and contractual risk, and passing unchanged tests signals an unspecified, untested behaviour that requires product, legal, and compliance sign-off rather than a code-review merge."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "Reversing payment allocation to charges-before-principal materially changes borrower interest cost and delinquency handling and is often regulated, so it needs an explicit specified/approved allocation order and behaviour-pinning tests rather than a merge justified only by passing an existing suite that never covered the order."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "The proposed order (penalties, fees, interest, principal) is the exact reverse of the maintained spec's mandated principal-first allocation, which the spec explicitly calls a deliberate product decision."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "The proposed order (penalties, fees, interest, principal) directly inverts the spec's mandated allocation order (principal, interest, fees, penalties), which is an explicit product decision, so it must not be merged regardless of tests passing."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "The proposed order (penalties, fees, interest, principal) directly reverses the spec's mandated principal-first allocation, which is an explicit product decision the spec exists to protect."
+  },
+  {
+    "id": "V3_alloc_order",
+    "violating": true,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "The change reverses the partial-payment allocation order that the maintained spec fixes as a deliberate product decision (\"in this order and no other\"), so it violates the spec regardless of compiling and passing the current tests."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "MERGE",
+    "reason": "Renaming a method-local variable is semantically inert when it compiles, and nothing here alters the schedule's arithmetic or control flow."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "MERGE",
+    "reason": "Renaming a single local variable throughout its scope is behaviour-preserving, and the change compiles with tests passing."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "MERGE",
+    "reason": "A consistent rename of a method-local variable is semantically neutral in Java and cannot alter the schedule's arithmetic or behaviour."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "MERGE",
+    "reason": "Renaming a method-local variable is behaviour-preserving by construction, and the successful compile plus passing tests confirm no shadowing or name-collision was introduced."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "MERGE",
+    "reason": "Renaming a local variable is semantics-preserving and leaves all three behavioural invariants (declining-balance interest, principal conservation, final-period residual absorption) intact."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "MERGE",
+    "reason": "Renaming a local variable is a semantics-preserving refactor that leaves every spec invariant (declining-balance interest, principal conservation, final-period rounding closure) intact."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "MERGE",
+    "reason": "Renaming a local variable is a behaviour-preserving refactor that leaves all three spec invariants (declining-balance interest, principal conservation, final-period residual absorption) exactly intact."
+  },
+  {
+    "id": "B1_rename",
+    "violating": false,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "MERGE",
+    "reason": "Renaming a local variable consistently is behaviour-preserving and cannot alter interest accrual, principal conservation, or final-period rounding."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "MERGE",
+    "reason": "Sequential stream reduction with the same ZERO identity and exact, associative BigDecimal::add produces an identical value and scale to the loop, with no change to empty-list or null behaviour."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "MERGE",
+    "reason": "The sequential stream reduces left-to-right from the same ZERO identity over the same operands, so both the value and the scale of `totalPrincipal` are identical to the loop, making this a behaviour-preserving refactor."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "MERGE",
+    "reason": "Sequential `reduce(ZERO, BigDecimal::add)` preserves the loop's iteration order, exact value, and max-scale result including the empty-list and null cases, so it is arithmetically identical with no behavioural risk."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "MERGE",
+    "reason": "Sequential stream reduce over BigDecimal::add is exactly equivalent to the accumulator loop in value, scale, and edge-case behaviour, so it is a safe pure refactor."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "MERGE",
+    "reason": "The change only rewrites a summation of already-computed principals into an equivalent sequential stream reduction, leaving interest accrual, principal conservation, and final-period rounding untouched."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "MERGE",
+    "reason": "The stream `reduce` folds the same `BigDecimal::add` over the same elements in the same order from the same identity, producing an identical total without touching any schedule-construction logic the spec constrains."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "MERGE",
+    "reason": "The stream sum is arithmetically identical to the loop for exact BigDecimal addition and touches none of the three spec invariants (accrual basis, conservation, final-period rounding)."
+  },
+  {
+    "id": "B2_libsum",
+    "violating": false,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "MERGE",
+    "reason": "The stream reduce is arithmetically identical to the loop and only reads the schedule's principals, touching none of the spec's invariants on interest basis, conservation, or final-period rounding."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 0,
+    "decision": "BLOCK",
+    "reason": "The early return silently discards negative payments, which in a lending ledger typically represent reversals or adjustments, and nothing in the diff or the passing tests establishes that negative amounts can't legitimately reach this allocation routine."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 1,
+    "decision": "BLOCK",
+    "reason": "`isZeroOrNegative()` silently early-returns on negative payments, which may be legitimate reversals or adjustments, and nothing in the code or tests establishes that discarding them is intended."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 2,
+    "decision": "BLOCK",
+    "reason": "The early `return` exits the whole method, silently skipping any post-allocation side effects for zero payments and swallowing negative amounts with no error, and the diff doesn't show the method tail or state the intended negative-payment semantics needed to confirm either is safe."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "nospec",
+    "rep": 3,
+    "decision": "BLOCK",
+    "reason": "The guard silently discards negative payments as well as zero, and nothing establishes that negatives can't reach this code, so it risks dropping reversals/adjustments without a trace."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "spec",
+    "rep": 0,
+    "decision": "MERGE",
+    "reason": "The guard only short-circuits zero-or-negative payments and leaves the principal→interest→fees→penalties allocation order fully intact for every real payment, so it cannot violate the maintained spec."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "spec",
+    "rep": 1,
+    "decision": "MERGE",
+    "reason": "The change adds a zero/negative-payment guard and leaves the spec-mandated allocation order (principal, interest, fees, penalties) exactly intact, so it violates nothing the spec constrains."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "spec",
+    "rep": 2,
+    "decision": "MERGE",
+    "reason": "The guard only short-circuits zero-or-negative amounts and leaves the spec-protected allocation order (principal→interest→fees→penalties) exactly intact, so it cannot violate the maintained behaviour."
+  },
+  {
+    "id": "B3_guard",
+    "violating": false,
+    "arm": "spec",
+    "rep": 3,
+    "decision": "MERGE",
+    "reason": "The guard only short-circuits zero-or-negative payments before allocation and leaves the spec-mandated principal→interest→fees→penalties order exactly as before."
+  }
+]

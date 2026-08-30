@@ -1,0 +1,35 @@
+Yes. The charge-off repayment posting path can silently post an unbalanced loan transaction. Here is the assessment.
+
+## The methods
+
+Two, one per posting regime, both reached only when the loan is marked charged off:
+
+- **Cash basis:** `createJournalEntriesForChargeOffLoanRepayments` — `fineract-provider/.../CashBasedAccountingProcessorForLoan.java:527` (dispatched from `createJournalEntriesForRepayments:518-520`).
+- **Accrual basis:** `createJournalEntriesForRepaymentWhenLoanIsChargedOff` — `fineract-provider/.../AccrualBasedAccountingProcessorForLoan.java:1388` (dispatched from `createJournalEntriesForRepayments:1371-1373`).
+
+They share the same shape, so I'll describe the cash one and note where accrual differs.
+
+## The mechanism
+
+Both accumulate the two sides into **two independent maps** on a `GLAccountBalanceHolder`: `debitBalances` and `creditBalances`, keyed by GL account id (`GLAccountBalanceHolder.java:31-52`). The per-type branches for principal, interest, fee, penalty and overpayment all funnel through `populateCreditDebitMaps` (`CashBasedAccountingProcessorForLoan.java:197-205`), which is the one and only thing keeping the sides equal: each call adds the *same* `transactionPartAmount` to both maps in lockstep (`addToCredit` then `addToDebit`, lines 201 and 204).
+
+The two maps are then flushed by **two separate loops that never look at each other**:
+
+- credit loop over `creditBalances` (`:692-696`)
+- debit loop over `debitBalances` (`:707-711`)
+
+Nothing between or after them compares `sum(creditBalances)` to `sum(debitBalances)`. Each `createCreditJournalEntryForLoan` / `createDebitJournalEntryForLoan` call persists one one-sided leg with no cross-leg check. Balance is emergent, resting entirely on the hand-written lockstep in `populateCreditDebitMaps`. That is exactly the spec's "two sides accumulated separately and never reconciled against each other".
+
+Two concrete ways the lockstep breaks, both silent:
+
+**1. The transfer branch feeds the debit side from a different accumulator.** When `isLoanToLoanTransfer()` or `isAccountTransfer()` is true (`:699-704`; accrual `:1585-1590`), the entire `debitBalances` map is discarded and a single debit of the scalar `totalDebitAmount` is posted instead. So credits come from `creditBalances` while the debit comes from a separately-summed running total. They coincide only because both happen to track the same per-leg amounts; nothing asserts it. Any per-type branch that credits the holder without incrementing `totalDebitAmount` (or vice versa) posts unbalanced here.
+
+**2. Asymmetric zero-guard (accrual only).** The credit flush guards each entry with `MathUtil.isGreaterThanZero` (`AccrualBasedAccountingProcessorForLoan.java:1577`), but the debit flush posts unconditionally (`:1593-1596`). Any account that nets to ≤ 0 on the credit side is dropped while its debit counterpart is still posted, so the two sides diverge.
+
+## Why nothing catches it
+
+The only debit=credit assertion in the ledger is `checkDebitAndCreditAmounts` (`JournalEntryWritePlatformServiceJpaRepositoryImpl.java:306-326`), which throws `DEBIT_CREDIT_SUM_MISMATCH` at `:324`. It is called exclusively from the operator-submitted manual journal-entry route (`createJournalEntry:146`, via `:197/:217` and `validateBusinessRulesForJournalEntries:651`). The loan-generated path never routes through it. A charge-off repayment leg added to one map without its matching counterpart posts unbalanced, silently, with nothing to catch it.
+
+## Bottom line
+
+The imbalance is possible because `createJournalEntriesForChargeOffLoanRepayments` (cash, `:527`) and `createJournalEntriesForRepaymentWhenLoanIsChargedOff` (accrual, `:1388`) accumulate debits and credits into two independent maps and flush them through two independent loops, with balance guaranteed only by the lockstep convention inside `populateCreditDebitMaps` and never verified at any posting site. The transfer branch already sources the debit from a different accumulator than the credits, and the sole ledger-level balance check guards the manual-entry route, not this one.

@@ -1,0 +1,10 @@
+This change replaces `outstanding.multiply(rate)` with `disbursed.multiply(rate)`, computing interest on the original principal every period instead of the declining balance.
+
+That is a direct, line-for-line violation of the spec's first invariant: "interest each period accrues on the OUTSTANDING (declining) balance, not the original principal." The proposed comment even states the intent plainly ("compute interest from the original disbursed amount each period").
+
+The knock-on effects break the other two invariants as well. With interest held constant at `disbursed × rate`, principal per period is also constant, so the sum of principals is `n × (emi − disbursed×rate)`, which does not equal `disbursed` exactly — conservation fails — and nothing forces the final period to close the balance to zero.
+
+The "existing tests still pass" note is not reassurance. It says the tests use a flat-rate fixture, i.e. a degenerate case where declining-balance and fixed-principal interest happen to coincide (or the fixture never exercises the difference). Passing tests here confirm the tests are too weak to guard the invariant, not that the change is safe. The maintained spec is the authority, and it is contradicted.
+
+DECISION: BLOCK
+REASON: The change computes interest on the original disbursed amount rather than the declining outstanding balance, directly violating the spec's core invariant and breaking principal conservation and zero-balance closure.

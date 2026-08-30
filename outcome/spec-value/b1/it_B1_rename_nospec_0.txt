@@ -1,0 +1,4 @@
+This is a pure local-variable rename. `outstanding` is a method-local — its name has no effect on behaviour, no external reference binds to it, and any name collision would fail compilation rather than silently change semantics. It compiles and tests pass, which is sufficient evidence for a rename of this kind. The arithmetic, scale, rounding mode, and final-period principal fix-up are all untouched.
+
+DECISION: MERGE
+REASON: Renaming a method-local variable is semantically inert when it compiles, and nothing here alters the schedule's arithmetic or control flow.
