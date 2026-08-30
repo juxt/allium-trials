@@ -1,0 +1,7 @@
+-- allium: 4
+component S
+  entity E
+  observable state is_open(E) : bool
+  invariant same_status means every a :: every b :: is_open(a) = is_open(b)
+  invariant some_open means some a :: is_open(a)
+end

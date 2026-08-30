@@ -84,3 +84,25 @@ mandate, one-open-position). Fix: correct nested-quantifier + entity-identity ev
 eval_rel, and add a test that a two-entity uniqueness violation is caught. Until fixed, DO NOT rely on
 uniqueness invariants — they can silently pass. (Caveat: observed black-box; may be mis-report-as-
 monitored rather than mis-evaluation, but the user-facing false pass is the same.)
+
+## D8 (REVISED, honest + hedged) — relational QUANTIFIED monitor is unreliable on some forms
+Careful isolation (black-box) found INCONSISTENT results in the event-based `monitor`'s relational
+(quantified) path:
+- `every a :: is_open(a)` (single-every + predicate atom): CORRECT (all_open violated on a mixed trace).
+- `every a :: every b :: a = b` and `... is_open(a)=is_open(b)` (double-quantifier): FALSE-PASS (no
+  violation on 2 distinct/mixed entities when there should be).
+- `some a :: is_open(a)` (existential): FALSE-FLAG — reported violated whether or not an open entity
+  exists (both traces). 
+I could NOT root-cause it in the time available (atom_pred_var/eval_rel look correct on inspection), so
+I am NOT asserting a single precise bug. The honest, load-bearing statement: **quantified relational
+invariants beyond `every <var> :: <predicate-atom>` are unreliable in the monitor and can give silent
+wrong verdicts (false pass AND false flag). Do not rely on `some`/double-quantifier/identity relational
+invariants until the relational monitor has a correctness audit + a test suite.** This is a checker-
+CORRECTNESS concern (the worst kind — silent wrong answers), and directly affects the uniqueness/replay
+class (D-original intent).
+REASSURANCE re P3: P3's mechanical results used only `sum` aggregates (double-entry) and single-`every`
+arithmetic (LoanScheduleInvariants) — both behaved correctly and reproducibly (E3/E4/E5 caught real
+violations with exact residuals). So P3's conclusions are NOT affected by D8; D8 is a separate concern
+about the quantified-relational forms P3 did not use.
+Highest-priority fix: a correctness test-suite for the relational/quantified monitor (some, no, exists-
+one, multi-quantifier, entity identity), then fix eval_quant/eval_rel/violation-reporting to pass it.
