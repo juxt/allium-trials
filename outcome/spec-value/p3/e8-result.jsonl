@@ -1,0 +1,7 @@
+credit sites in cash processor: 11
+{"site":1,"compile":true,"changed":"no","caught_traces":0,"cash_traces":7}
+{"site":2,"compile":true,"changed":"no","caught_traces":0,"cash_traces":7}
+{"site":3,"compile":true,"changed":"no","caught_traces":0,"cash_traces":7}
+{"site":4,"compile":true,"changed":"no","caught_traces":0,"cash_traces":7}
+{"site":5,"compile":true,"changed":"no","caught_traces":0,"cash_traces":7}
+reverted (guards remain: 0)

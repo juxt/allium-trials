@@ -70,3 +70,13 @@
 - Solver deficiencies compiled in SOLVER-DEFICIENCIES.md (D1 reference-oracle = highest value; D2 per-
   invariant tolerance; D3 skipped-invariant coverage; D4 vacuity/reachability; D5 trace coverage; D6
   standard mutation operators). All fixable; several have prior art in TLA+/Alloy/model-based testing.
+
+## E8 (real-code single-site accounting suite) — NULL / uninformative (honest)
+- Guarded the first 5 individual createCredit sites in the cash processor, one at a time; ran the leg
+  dumper each time. All 5: changed=no, caught=0 — those sites are NOT exercised by the dumper's 14
+  fixtures (the exercised credit paths were only hit by E4's blanket guard, which caught 4/7).
+- => E8 does NOT strengthen the single-site real-code claim; it only shows sites 1-5 are dead code for
+  these fixtures. A proper single-site real-code suite needs a fixture->site coverage map first (more
+  work than this budget). The structure-assembling catch claim therefore rests on: E4 (blanket real-code
+  omit, 4/7 caught, exact residuals) + E5 (single-leg trace-level, 60/60) + E3 (structural injections,
+  600/600). Not overclaimed. Repo reverted clean.
