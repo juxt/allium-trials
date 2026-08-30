@@ -1,0 +1,27 @@
+## Errors (the spec asserts something false of the intended behaviour)
+
+**`level_payment` is wrong.** `every p, q :: emi(p) = emi(q)` forces *all* instalments to be identical. The intended behaviour explicitly says the opposite: the instalment is constant for every period *except the last*, which is adjusted to close the balance to exactly zero. As written this invariant forbids the very last-period adjustment the loan requires. Against discrete `Money` (rounded amounts), it also collides with `full_repayment` and `ends_at_zero`: you generally cannot make every payment exactly equal *and* land on zero, so the three together are jointly unsatisfiable for arbitrary `rate` and term. The invariant should quantify over non-last periods only, e.g. `every p, q :: (not is_last(p) and not is_last(q)) => emi(p) = emi(q)`.
+
+That is the only outright false assertion. Everything else that is present (`composition`, `interest_on_balance`, `full_repayment`, `ends_at_zero`, the two non-negativity constraints) is correct as far as it goes. The real damage is in what is missing.
+
+## Omissions (intended behaviour left unconstrained)
+
+**The roll-forward recurrence is absent entirely.** This is the core of a declining-balance loan and the spec never states it. There is nothing saying `outstanding_start(next period) = outstanding_start(p) - principal(p)`. Without it, `outstanding_start` is very nearly a free variable: it feeds `interest` and `principal`, but nothing pins its value period to period. A schedule whose balances jump around, or even *increase* from one period to the next, satisfies every invariant in the spec. So the intended guarantees "rolls forward as previous balance minus principal paid" and "never increases" are both unconstrained.
+
+Watch out for the trap in the naming: `principal_reduces_balance` sounds like it delivers this, but its body (`principal = emi - interest`) is just `composition` rearranged. It says nothing about reducing any balance. A reviewer skimming the names would think the roll-forward is covered when it is not.
+
+**No period ordering.** `Period` is an entity with no notion of first, next, or succession. There is no way to *express* the recurrence above, or to say which period is last, until an ordering exists.
+
+**The initial condition is missing.** Nothing ties the opening balance to the amount borrowed: `outstanding_start(first period) = disbursed`. `disbursed` appears only inside `full_repayment`. The loan could start from any balance and still satisfy the spec.
+
+**`is_last` is unanchored.** It is a free boolean with no link to the (missing) ordering. Nothing forces exactly one period to be last, nor that the "last" period is actually the terminal one. If `is_last` is never true, `ends_at_zero` holds vacuously and the loan need never close to zero at all.
+
+**Non-negativity gaps.** `rate >= 0` is not stated, so `interest = rate * outstanding_start` could go negative. Similarly `interest` and `emi` are unconstrained in sign if `Money` is signed. Minor next to the above, but real.
+
+## Redundancy worth flagging
+
+`composition` (`emi = interest + principal`) and `principal_reduces_balance` (`principal = emi - interest`) are the same equation. Harmless mathematically, but the second one's name over-promises and, combined with the missing recurrence, is likely what would let this spec pass a casual read.
+
+## Bottom line
+
+One false invariant (`level_payment`), and one structural hole that dominates everything: with no ordering, no roll-forward recurrence, and no opening-balance condition, the spec does not actually describe an amortising schedule. It constrains the algebra *within* each period and the total principal, but not how the balance moves *between* periods, which is the whole point of declining-balance amortisation.

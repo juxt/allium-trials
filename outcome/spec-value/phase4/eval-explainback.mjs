@@ -24,7 +24,11 @@ const MODEL = "claude-opus-4-8";
 const REPS = Number(process.argv[process.argv.indexOf("--reps") + 1] ?? "3");
 const SPEC = readFileSync("/Users/hgarner/code/allium-trials/outcome/spec-value/phase2/spec_llm.allium", "utf8");
 
-const INTENT = `Intended behaviour: a standard amortising (declining-balance) loan. Borrow a principal, repay in equal periodic instalments over the term; each instalment splits into interest (charged on the CURRENT outstanding balance) and principal; the outstanding balance ROLLS FORWARD each period as previous balance minus principal paid and never increases; over the whole term the principal repaid equals the amount borrowed; the final balance is exactly zero. Note: real amortising schedules keep the instalment constant for all periods EXCEPT the last, which is adjusted to close the loan to exactly zero.`;
+// INFORMAL intent only — the same vague guidance the spec was distilled from. A reviewer given only
+// this has NO basis to flag the level_payment over-claim (the informal intent also says "equal
+// instalments") nor to demand a roll-forward invariant. This is the realistic case: human intent is
+// incomplete, so review-against-intent cannot catch what the code-check (monitor) can.
+const INTENT = `Intended behaviour (as the product owner described it): a standard amortising loan. The customer borrows an amount and pays it back in equal periodic instalments over the term. Each instalment is part interest, part principal; interest is charged on what they still owe. Over the life of the loan they pay off exactly what they borrowed, and at the end the balance is zero.`;
 
 const PROSE = `Explanation of the spec: it defines a Period entity with emi, interest, principal, outstanding_start and is_last. It states: each instalment equals interest plus principal; every period has the same emi; interest equals rate times outstanding_start; principal equals emi minus interest; the sum of principal over all periods equals the disbursed amount; at the last period outstanding_start equals principal; and outstanding_start and principal are non-negative.`;
 

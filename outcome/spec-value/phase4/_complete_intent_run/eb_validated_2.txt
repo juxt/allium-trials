@@ -1,0 +1,31 @@
+## Errors (spec asserts something false of the intended behaviour)
+
+**`level_payment` over-constrains the instalment.** It states `every p, q :: emi(p) = emi(q)`, so *every* period's instalment is equal, including the last. The intended behaviour is explicit that the final instalment is adjusted to close the loan to exactly zero, so it generally differs from the rest. The faithfulness monitor confirms this: the invariant fails on real multi-period loans with a worst residual of 0.04, and that residual is precisely the adjusted last payment. This is a real over-constraint, not a monitoring artefact. It should be scoped to non-last periods, e.g. `every p, q :: (not is_last(p) and not is_last(q)) => emi(p) = emi(q)`.
+
+That is the only outright error. Everything else the spec asserts is true of the intended behaviour. The larger problem is what it leaves out.
+
+## Omissions (intended behaviour left unconstrained)
+
+**The balance roll-forward is missing entirely.** This is the core of a declining-balance loan and the spec never states it: nothing links one period's outstanding balance to the next. The intended recurrence is `outstanding_start(next(p)) = outstanding_start(p) - principal(p)` for every non-last period. Its absence is the direct cause of both mutation blind spots. A corrupted roll-forward and a non-monotonic (increasing) balance both satisfy every current invariant, so detection is 0% on each. Add this and both blind spots close.
+
+**There is no ordering on `Period`.** The entity has no successor or index, so "rolls forward each period", "over the term" and "the last" have no temporal structure to attach to. You cannot even *write* the roll-forward invariant above without a `next`/successor relation. `is_last` is a free boolean floating with no connection to any sequence. This is the structural gap underneath the roll-forward omission, and it needs fixing first.
+
+**The initial balance is not pinned.** Nothing says the loan starts with the full principal outstanding: `outstanding_start(first) = disbursed`. Without it the schedule can start from any balance and still satisfy `full_repayment` and `ends_at_zero`. Together with the roll-forward and `nonneg_principal`, this initial condition is what actually forces the balance to descend from `disbursed` to zero.
+
+**The balance is never required to be non-increasing.** The intended behaviour says it never increases. `nonneg_balance` only bounds it below. Monotonicity would follow for free from the roll-forward plus `nonneg_principal`, but with the roll-forward absent it is wide open, which is why the increasing-balance mutation survives.
+
+**`is_last` cardinality and placement are unconstrained.** Nothing says exactly one period is the last, nor that it is the maximal one in the sequence. As written, zero or several periods could be flagged, or the flagged period could sit in the middle, and `ends_at_zero` would apply vacuously or in the wrong place.
+
+Minor, worth a line each: `interest(p) >= 0`, `emi(p) >= 0`, `rate >= 0` and `disbursed > 0` are all unstated. Most follow from the others once the balance is bounded, so these are low priority.
+
+## Redundancy that likely hid the real gap
+
+`principal_reduces_balance` (`principal(p) = emi(p) - interest(p)`) is algebraically identical to `composition` (`emi(p) = interest(p) + principal(p)`). It adds nothing. More damaging is the name: "principal reduces balance" reads as though the balance reduction is covered, when the invariant says nothing about the balance at all. That mislabelling is a plausible reason the missing roll-forward went unnoticed. Rename or drop it, and put a real balance-reduction invariant in its place.
+
+## Validation caveat to carry forward
+
+`interest_on_balance` is the spec's only statement of *how* interest is computed, and it is UNCHECKED: `rate` is absent from the execution traces, so the monitor could evaluate it against nothing. Treat it as unproven rather than confirmed. If the traces genuinely never expose the rate, the invariant cannot be validated as written and you have no faithfulness evidence for the interest calculation either way.
+
+## Bottom line
+
+Trust it as a partial statement only. One assertion is false (`level_payment`), and the specification's spine, the period-to-period balance recurrence with its initial condition, is absent, which is why mechanical completeness sits at 63% with two 0%-detected blind spots. Priority order for the fix: add an ordering to `Period`, then the roll-forward invariant, then the initial balance, then scope `level_payment` to non-last periods. That set alone would resolve the one error and the two blind spots.

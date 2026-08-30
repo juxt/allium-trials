@@ -1,0 +1,25 @@
+## Errors (things the spec asserts that are false of the intended behaviour)
+
+**`level_payment` is wrong.** `every p, q :: emi(p) = emi(q)` forces *every* instalment equal, including the last. The intended behaviour explicitly says the instalment is constant for all periods *except* the last, which is adjusted to close the loan to exactly zero. So this invariant contradicts the spec.
+
+It's not just a slightly-too-strong constraint, it's generally infeasible. At the last period `ends_at_zero` gives `principal = outstanding_start`, so `emi_last = interest + principal = rate·balance + balance = balance·(1+rate)`. There's no reason that equals the annuity-derived level payment of the earlier periods, so for arbitrary `rate` and term the conjunction of `level_payment` + `ends_at_zero` + full repayment has no solution. The fix is to exempt the last period (e.g. `every p, q :: !is_last(p) & !is_last(q) => emi(p) = emi(q)`).
+
+## Omissions (intended behaviour left unconstrained)
+
+**The roll-forward relation is missing entirely — this is the core defect.** The defining property of a declining-balance loan is `outstanding_start(next) = outstanding_start(this) − principal(this)`. Nothing in the spec links one period's balance to the next. As written, the `outstanding_start` values are free: any set of non-negative balances that individually satisfy `interest = rate·outstanding_start` and whose principals sum to `disbursed` passes, whether or not they form a declining schedule. The spec does not actually describe amortisation.
+
+**No initial condition.** Nothing says `outstanding_start(first) = disbursed`. `disbursed` appears only in `full_repayment` (the sum). The opening balance of the loan is never tied to the amount borrowed, so the schedule can start from any balance.
+
+**`Period` has no ordering.** There is no successor, no first, no last, no term length. Amortisation is inherently sequential; here `Period` is an unordered set. This is what makes the roll-forward and initial-balance omissions possible in the first place.
+
+**`is_last` is unconstrained, so closure can be evaded.** Nothing forces `is_last` to be true for exactly one period, and nothing ties it to "the period with no successor". If `is_last` is false everywhere, `ends_at_zero` is vacuously satisfied and *nothing* forces the loan to ever reach zero. If it's true for several periods, you get multiple contradictory closure constraints. `ends_at_zero` itself is correctly *formulated* (last opening balance = last principal ⇒ closing balance zero), but it's toothless without both a pinned `is_last` and the roll-forward.
+
+**"Balance never increases" is not captured.** The monotonic non-increase would follow from roll-forward plus `nonneg_principal`, but roll-forward is absent, so the property isn't guaranteed.
+
+## Minor
+
+Non-negativity is asserted only for `outstanding_start` and `principal`. `interest` and `emi` are left free, and the sign of `rate` is unconstrained, so negative interest is admissible. Harmless if `rate ≥ 0` is assumed elsewhere, but it isn't stated.
+
+---
+
+The one-line summary: `full_repayment`, `interest_on_balance`, `principal_reduces_balance`, `composition` and `nonneg_*` are fine; `ends_at_zero` is fine in form but inert; `level_payment` is an outright error; and the spec omits the three things that make it an amortising loan — the roll-forward recurrence, the initial balance `= disbursed`, and a well-defined ordering with a single, properly-pinned last period.

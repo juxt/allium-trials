@@ -1,0 +1,36 @@
+This spec captures the arithmetic of a single period well but almost nothing about how periods connect. That is exactly the wrong place to be thin for an amortising loan, where the defining behaviour *is* the connection between periods.
+
+## Errors (asserts something false of the intended behaviour)
+
+**`level_payment` is wrong as stated.** `every p, q :: emi(p) = emi(q)` claims *all* instalments are equal. The intended behaviour explicitly exempts the last instalment, which is adjusted to close the loan to zero. This is a genuine false assertion, not a validation artefact, and the faithfulness monitor confirms it: it fails on real multi-period schedules with a residual of 0.04, which is precisely the adjusted final payment. The fix is to restrict it to non-final periods:
+
+```
+invariant level_payment means every p, q ::
+  (not is_last(p) and not is_last(q)) => emi(p) = emi(q)
+```
+
+That is the only outright error. Everything else is either a gap or a quality problem.
+
+## The redundancy that hides the real gap
+
+`principal_reduces_balance` (`principal(p) = emi(p) - interest(p)`) is algebraically identical to `composition` (`emi(p) = interest(p) + principal(p)`). It adds nothing. Worse, its *name* promises the one property the spec is actually missing: that paying principal reduces the outstanding balance. A reviewer skimming the invariant list sees "principal_reduces_balance" and reasonably assumes balance reduction is covered. It is not. The formula never mentions a balance from any other period. This is a decoy, and it is probably why the omission below is easy to miss.
+
+## Omissions (intended behaviour left unconstrained)
+
+**1. The balance roll-forward. This is the central missing invariant.** Nothing links one period's balance to the next. The intended behaviour says the balance rolls forward as previous balance minus principal paid, but no invariant expresses `outstanding_start(next) = outstanding_start(p) - principal(p)`. Without it, `outstanding_start` is a free variable per period. `interest_on_balance` charges interest on a number that nothing forces to be the actual running balance, and `full_repayment` only ties the *totals*, leaving every intermediate balance floating. This is exactly the mutation battery's 0%-detection blind spot for a corrupted roll-forward.
+
+**2. No period ordering exists to state it with.** `entity Period` is an unordered set. There is no first, no successor, no last beyond the free boolean `is_last`. You cannot write roll-forward, or "the last instalment", or "never increases", until Period carries a succession structure (a `next` relation or an index). This is the structural root of omissions 1, 3 and 4.
+
+**3. Monotonic non-increasing balance.** The intended behaviour says the balance never increases. `nonneg_balance` only bounds it below by zero. The non-increasing property (`outstanding_start(next) <= outstanding_start(p)`) is unstated, which is the battery's second blind spot. Note this one comes for free once you have roll-forward plus `nonneg_principal`, so fixing omission 1 largely closes it.
+
+**4. `is_last` is unconstrained and `ends_at_zero` is vacuously satisfiable.** Nothing forces exactly one period to be flagged last, nor that the flagged period is the true final one. A schedule where `is_last` is never true satisfies `ends_at_zero` trivially and never closes the loan. `is_last` needs to be pinned to the maximal period (which again requires ordering).
+
+**5. The starting balance is unanchored.** Nothing states `outstanding_start(first) = disbursed`. The whole schedule floats free of the amount borrowed at its start. Strictly this is *derivable* once roll-forward, `ends_at_zero` and `full_repayment` are all present (telescoping the recurrence pins the first balance to the sum of principals, which equals `disbursed`). But since roll-forward is absent, right now nothing anchors the schedule at either end reliably, so state it explicitly.
+
+## One caveat on the report, not the spec
+
+`interest_on_balance` is faithful as written; interest on the current outstanding balance is correct. Its UNCHECKED status is a validation limitation (`rate` never appears in the execution traces), not a spec defect. But it is worth flagging that the spec's core claim about how interest is computed is currently unverified against real behaviour, so it should not be treated as confirmed.
+
+## Priority
+
+Add a period ordering and the roll-forward recurrence first; that single change plus `nonneg_principal` restores balance monotonicity, lets you anchor the first balance and constrain `is_last`, and closes both mutation blind spots. Then correct `level_payment` to exempt the last period. Drop or rename `principal_reduces_balance` so it stops standing in for a property it does not express.

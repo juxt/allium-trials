@@ -1,0 +1,25 @@
+## Errors
+
+**`level_payment` contradicts the last-period adjustment.** The invariant `every p, q :: emi(p) = emi(q)` forces *every* instalment equal, including the last. The intended behaviour explicitly says the instalment is constant for all periods *except* the last, which is adjusted to close the loan to exactly zero. As written, this either forbids that adjustment or, combined with `ends_at_zero` and `interest_on_balance`, makes the spec unsatisfiable for a general term and rate (the closing payment almost never equals the level payment exactly). The quantifier should exclude the last period, e.g. equal emi for all non-last `p, q`.
+
+That is the only outright false assertion. The rest of the spec's problems are things it fails to say.
+
+## Omissions
+
+**The balance roll-forward is entirely missing — this is the core defect.** Nothing links `outstanding_start` across consecutive periods. The declining-balance mechanism *is* the recurrence `outstanding_start(next) = outstanding_start(p) - principal(p)`, and it is absent. As it stands, each `outstanding_start(p)` floats free: `interest_on_balance` charges interest on a balance that never actually declines from one period to the next. Almost everything else the loan is supposed to do depends on this one constraint.
+
+**No period ordering.** `entity Period` has no sequence, no first period, no successor relation. Without ordering you cannot express the roll-forward, cannot define "the last period", and cannot state the opening condition. Several of the omissions below are downstream of this.
+
+**No initial condition.** Nothing says `outstanding_start(first) = disbursed`. The opening balance is never tied to the amount borrowed, so the schedule could start from any figure.
+
+**`is_last` is unconstrained.** It is a free boolean over periods. Nothing forces exactly one period to be last, nor that the last flagged period is actually the final one in the sequence. It could be true for none (then `ends_at_zero` is vacuous), for many, or for the wrong period.
+
+**"Never increases" is not captured.** The monotonic non-increase of the balance would follow from roll-forward plus `nonneg_principal`, but with roll-forward missing it is not implied.
+
+**No cap on principal per period.** `principal(p) <= outstanding_start(p)` — you should not repay more principal than is owed. This too would fall out of roll-forward plus `nonneg_balance`, but neither delivers it as written.
+
+## Notes
+
+`full_repayment` (`sum p :: principal(p) = disbursed`) is correct and currently doing load-bearing work: it is the *only* thing connecting the principals to the amount borrowed. But it constrains the total, not the period-by-period decline, so it masks rather than repairs the missing recurrence. Once roll-forward and the initial condition are added, it becomes derivable.
+
+Minor: `rate` sign is unconstrained, so `interest = rate * outstanding_start` isn't guaranteed non-negative; and `emi` non-negativity is never stated. Both are worth pinning down, though they are secondary to the roll-forward gap.

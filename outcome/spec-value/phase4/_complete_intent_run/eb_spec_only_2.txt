@@ -1,0 +1,39 @@
+## Errors
+
+**`level_payment` is too strong — it forbids the last-instalment adjustment.**
+
+`every p, q :: emi(p) = emi(q)` forces *every* instalment equal, including the final one. The intended behaviour is explicit that the instalment is constant for all periods *except* the last, which is adjusted to close the balance to exactly zero. As written this invariant directly contradicts that adjustment. Combined with `interest_on_balance`, `ends_at_zero`, and `full_repayment`, a strictly level payment across all periods will generically be unsatisfiable (or force a wrong schedule), because the arithmetic almost never lands the final balance on exactly zero with an unadjusted last payment. It should be restricted to non-last periods, e.g. `every p, q :: (!is_last(p) & !is_last(q)) => emi(p) = emi(q)`.
+
+## Omissions
+
+**The roll-forward recurrence is entirely missing — this is the core defect.**
+
+Nothing links `outstanding_start` across periods. The intended behaviour is that the balance rolls forward as *previous balance minus principal paid*: `outstanding_start(next) = outstanding_start(p) - principal(p)`. Without it, the periods are disconnected. Each period's `outstanding_start` is free (bounded only by `>= 0` and the interest relation), so nothing forces the balance to actually decline by the principal repaid, nothing forces interest to fall over the term, and the same balance could repeat every period. Almost the entire amortisation structure rests on this one invariant, and it isn't there.
+
+**No sequential structure on `Period`.**
+
+`Period` has no ordering, no successor, no `is_first`. You cannot even *state* the roll-forward without "the next period", and you cannot anchor "the first period". A linear order over periods (with a successor relation) is presupposed by the intended behaviour but never declared.
+
+**No initial anchor: `outstanding_start(first) = disbursed`.**
+
+The opening balance must equal the amount borrowed. Nothing ties the first period's `outstanding_start` to `disbursed`. (With the recurrence plus this anchor, `ends_at_zero` would actually follow from `full_repayment`; absent both, `ends_at_zero` is carrying weight it shouldn't have to.)
+
+**No existence/uniqueness for the last period.**
+
+`is_last` is an unconstrained predicate. Nothing requires exactly one period to satisfy it, nothing requires it to be the maximal period in the order, and nothing requires a last period to exist at all. Zero or several "last" periods satisfy the spec as written.
+
+**"Balance never increases" is only implicit.**
+
+It follows from `nonneg_principal` *together with* the roll-forward recurrence. Since the recurrence is missing, the monotone-decline property the intended behaviour calls out is not actually pinned down.
+
+**Sign/range constraints on the givens are absent.**
+
+No `disbursed > 0`, no `rate >= 0`. A negative `rate` would make `interest` negative and let the balance grow while still satisfying every stated invariant.
+
+## Minor
+
+`principal_reduces_balance` (`principal = emi - interest`) is just algebra from `composition` (`emi = interest + principal`). Harmless, but redundant — worth collapsing.
+
+## Summary
+
+One substantive error (`level_payment` should exclude the last period) and one structural hole that dominates everything else: there is no ordering on periods and no roll-forward recurrence, so the spec never says the balance actually declines from `disbursed` by each period's principal. Add the order, the initial anchor `outstanding_start(first) = disbursed`, the recurrence `outstanding_start(next) = outstanding_start(p) - principal(p)`, and existence/uniqueness of the last period; loosen `level_payment` to non-last periods.

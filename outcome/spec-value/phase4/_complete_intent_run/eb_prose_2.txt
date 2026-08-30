@@ -1,0 +1,27 @@
+## Review of `AmortisingLoan`
+
+The spec captures the per-period algebra well but leaves the defining mechanic of a declining-balance loan, the balance recurrence, entirely unstated. Two invariant names (`principal_reduces_balance`, `ends_at_zero`) create the impression that roll-forward is covered when it is not.
+
+### Errors (asserts something false of the intended behaviour)
+
+**`level_payment` over-constrains the final instalment.** It forces `emi(p) = emi(q)` for *every* pair including the last. The intended behaviour is explicit that the final instalment is adjusted to close the loan to exactly zero, so it generally differs from the rest. As written, `level_payment` together with `full_repayment` and `ends_at_zero` is over-determined: for arbitrary `disbursed`, `rate` and term there is no exactly-constant payment that also lands the balance on zero. The last period must be exempted, e.g. `every p, q :: (not is_last(p) and not is_last(q)) => emi(p) = emi(q)`.
+
+### Omissions (intended behaviour left unconstrained)
+
+**The balance recurrence is missing entirely.** Nothing states that the balance rolls forward as `outstanding_start(next p) = outstanding_start(p) - principal(p)`. This is the core of a declining-balance loan and it is absent. `principal_reduces_balance` does *not* reduce any balance; it only restates the algebra `principal = emi - interest`, which already follows from `composition`. The name is misleading. Without the recurrence, the `outstanding_start` values across periods are mutually unconstrained: interest, principal and balance could jump arbitrarily period to period while still satisfying every invariant.
+
+**No ordering or succession on `Period`.** There is no first period, no successor relation, no ordering. Without this the recurrence above cannot even be expressed, "rolls forward" has no meaning, and neither does "never increases".
+
+**First-period balance is not tied to `disbursed`.** The loan should start with `outstanding_start(first) = disbursed`. `full_repayment` fixes only the *sum* of principals, not the opening balance, so the schedule's starting point is free.
+
+**`is_last` is under-constrained.** Nothing requires that exactly one period carries `is_last = true`, nor that it is the terminal period in the ordering. If `is_last` is false everywhere, `ends_at_zero` is vacuously satisfied and the loan never closes to zero; if true for several periods, the constraint is applied in the wrong places.
+
+**"Never increases" is not stated.** Monotonic non-increase of the balance should follow from roll-forward plus `nonneg_principal`, but with roll-forward absent, `nonneg_principal` alone does not link consecutive balances, so nothing prevents the balance rising.
+
+**Term / period count is not given.** There is no `given` for the number of periods and no bound on the `Period` domain, so the schedule length is undefined.
+
+### What is correct
+
+`composition`, `interest_on_balance`, `full_repayment`, `nonneg_balance` and `nonneg_principal` are all faithful. `ends_at_zero` correctly expresses "final balance is zero" (`outstanding_start(last) = principal(last)` clears the balance) *given* a well-defined last period, which the `is_last` omission above does not guarantee.
+
+**Bottom line:** one error (`level_payment` should exempt the last period) and one structural gap that dominates the rest, the absence of period ordering and the balance recurrence. Fixing the recurrence, the opening-balance link and the `is_last` uniqueness would turn a set of locally-true facts into an actual amortisation schedule.

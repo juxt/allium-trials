@@ -79,3 +79,18 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
   eb_validated_0.txt = the session-limit error string.)
 - Past END_EPOCH (16:30) and API session limit reached. Terminating with the synthesis. All three
   gates were closed on solid, verified evidence independent of Phase 4.
+
+## Iteration 9 — Phase 4 clean (complete intent) = SATURATES; design flaw fixed with informal-intent re-run
+- Clean re-run (real reviews, verified 3800-4800 char outputs): spec_only 3/3, prose 3/3, validated 3/3
+  — ALL arms caught BOTH flaws (F1 over-claim, F2 blind spot). Model review SATURATES.
+- But this is an ARTEFACT of my giving the reviewer the COMPLETE intent (incl. "the last instalment
+  differs, adjusted to close to zero"), which trivially reveals F1. In reality the human's intent is
+  INFORMAL — the same vague "equal instalments, pays to zero" the spec was distilled from. A reviewer
+  with only that has NO basis to flag level_payment (the informal intent ALSO says "equal instalments")
+  and no reason to demand a roll-forward invariant.
+- THE REAL MECHANISM: mechanical validation (monitor) checks the spec against the CODE (objective ground
+  truth); human/model review checks it against STATED INTENT. When the intent is informal/incomplete
+  (the realistic case, and the very reason the LLM spec was wrong), review-against-intent MISSES exactly
+  the flaws the code-check CATCHES. Re-running Phase 4 with informal intent to isolate this: prediction —
+  spec_only/prose MISS F1; the `validated` arm (handed the monitor result "level_payment FAILS resid
+  0.04") CATCHES it. If so, the confidence-builder is validation-against-code, not review/explanation.

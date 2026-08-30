@@ -1,0 +1,43 @@
+## Review of `AmortisingLoan`
+
+The spec captures the per-period arithmetic (each instalment splits into interest and principal, total principal equals the amount borrowed, the loan closes at zero) but it has no dynamics: nothing connects one period's balance to the next. That single gap is the root of both mechanical blind spots. There is also one outright false assertion.
+
+### Errors (asserts something untrue of the intended behaviour)
+
+**1. `level_payment` over-constrains — the last instalment is not equal to the others.**
+`every p, q :: emi(p) = emi(q)` demands *all* instalments be identical. The intended behaviour explicitly adjusts the final instalment to close the loan to exactly zero, so this is false of every real multi-period schedule. The monitor confirms it (fails, worst residual 0.04). It should exclude the last period:
+
+```
+invariant level_payment means every p, q ::
+  (not is_last(p) and not is_last(q)) => emi(p) = emi(q)
+```
+
+### Omissions (intended behaviour left unconstrained)
+
+**2. No balance roll-forward — the critical gap.**
+Nothing links `outstanding_start` across periods. The intended "balance rolls forward as previous balance minus principal paid" is never stated, so a corrupted roll-forward passes silently (mechanical blind spot 1). This is also almost certainly the invariant the author *meant* to write as `principal_reduces_balance`: that rule is named as if it reduces the balance, but its body (`principal = emi - interest`) is just `composition` rearranged and says nothing about the balance. The real content should be:
+
+```
+invariant principal_reduces_balance means every p ::
+  (not is_last(p)) => outstanding_start(next(p)) = outstanding_start(p) - principal(p)
+```
+
+This requires giving `Period` a successor relation (see 5).
+
+**3. No monotonicity — balance may increase.**
+The intended balance "never increases" is unstated (blind spot 2). It follows for free once roll-forward (2) and `nonneg_principal` both hold, so fixing 2 largely closes this; otherwise state it directly (`outstanding_start(next(p)) <= outstanding_start(p)`).
+
+**4. No initial condition anchoring the first balance to `disbursed`.**
+Nothing says the balance at the start of period one equals the amount borrowed. `full_repayment` constrains the *sum* of principal, not the balance level. With roll-forward (2) and `ends_at_zero` present, `outstanding_start(first) = disbursed` is derivable by telescoping, but as the spec stands the whole balance sequence floats free of the disbursement. State it explicitly.
+
+**5. `Period` has no ordering.**
+It is an unstructured entity, so `every p, q` ranges over an unordered set and no inter-period rule (2, 3) is even expressible. Amortisation is inherently sequential; the spec needs a first period and a successor/next relation before the roll-forward can be written.
+
+**6. `is_last` is unconstrained — no existence or uniqueness.**
+Nothing guarantees exactly one period satisfies `is_last`, nor that it is genuinely the final one. If no period is last, `ends_at_zero` is vacuous and the loan never has to close. Constrain `is_last` to hold for precisely one period, the one with no successor.
+
+### Caveat on `interest_on_balance`
+
+The invariant itself is correct (interest on the current balance). But the monitor reports it UNCHECKED because `rate` never appears in the execution traces, so in practice it offers no protection. Worth confirming whether `rate` is genuinely observable; if not, this rule is decorative and the interest-vs-balance relationship is effectively unvalidated. Minor related gap: no `nonneg_interest`/positive-`emi` bound, though these follow from `interest_on_balance` once it can actually be checked.
+
+**Summary:** one error (`level_payment` must exempt the last period) and the decisive omission is the absent roll-forward recurrence — restore it (correcting the misnamed `principal_reduces_balance`), add period ordering, an initial condition, and `is_last` uniqueness, and both mechanical blind spots close.

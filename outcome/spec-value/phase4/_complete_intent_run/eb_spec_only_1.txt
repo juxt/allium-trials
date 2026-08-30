@@ -1,0 +1,33 @@
+I don't need tools for this — it's an analysis. Here's my review.
+
+## The spec is missing its core mechanic, and one invariant is outright wrong
+
+### Errors (asserts something false of the intended behaviour)
+
+**`level_payment` is too strong.** It says `every p, q :: emi(p) = emi(q)` — *all* instalments equal. But the intended behaviour states the instalment is constant for every period *except the last*, which is adjusted to close the balance to exactly zero. So this invariant directly contradicts the spec of record. Worse, it's not just imprecise: combined with `interest_on_balance` and `ends_at_zero`, forcing every EMI equal makes the schedule inconsistent in general (the closing payment almost never coincides with the level payment). It should be restricted to non-last periods, e.g. `every p, q :: (!is_last(p) & !is_last(q)) => emi(p) = emi(q)`.
+
+That's the one error a reviewer must catch. Everything else is omission.
+
+### Omissions (intended behaviour left unconstrained)
+
+**The balance roll-forward is absent.** This is the big one. The intended behaviour is "outstanding balance rolls forward each period as previous balance minus principal paid". Nothing in the spec links `outstanding_start` across periods. You'd expect something like `outstanding_start(next(p)) = outstanding_start(p) - principal(p)`. Without it, the whole declining-balance mechanic is unstated: interest need not decline, the balance sequence is free, and "never increases" is not captured (nonneg_principal only implies non-increasing balance *if* the roll-forward holds).
+
+**There's no period ordering to hang any of this on.** `Period` is an unordered entity. There's no first, no successor, no last-as-a-position — `is_last` is just a free boolean predicate. You can't even *state* the roll-forward, the opening condition, or "exactly one last period" until Period has a sequence structure. This is the structural root of most of the gaps below.
+
+**The opening balance is never tied to `disbursed`.** You need `outstanding_start(first) = disbursed`. As written, `disbursed` appears only in `full_repayment`. Nothing pins the first period's interest base, so the entire schedule floats free of the amount borrowed except in aggregate.
+
+**`is_last` existence and uniqueness are unconstrained.** Exactly one period should be last. If no period satisfies `is_last`, `ends_at_zero` is vacuous and the loan need never close. If several do, the constraints conflict.
+
+**Minor sign constraints.** `rate >= 0` (hence `interest(p) >= 0`) and `emi(p) >= 0` are unstated. Probably intended, cheaply added.
+
+### Redundancy worth flagging
+
+**`principal_reduces_balance` does nothing and its name misleads.** `principal(p) = emi(p) - interest(p)` is algebraically identical to `composition` (`emi = interest + principal`). It reduces no balance. The name promises exactly the roll-forward that is actually missing, which makes the gap easy to overlook on a skim — the spec *reads* as if balance reduction is covered when it isn't.
+
+### What's actually correct
+
+`ends_at_zero` is right: in the last period `outstanding_start = principal` means you retire the whole remaining balance, closing to zero. `interest_on_balance`, `composition`, `full_repayment`, `nonneg_balance` and `nonneg_principal` are all sound as far as they go. The problem is what sits between them.
+
+---
+
+Net: fix `level_payment` to exempt the last period, give `Period` an ordering, then add the two missing invariants (roll-forward and `outstanding_start(first) = disbursed`) plus `is_last` existence/uniqueness. Those four changes turn this from a set of loosely related facts into an actual amortisation schedule.
