@@ -11,17 +11,26 @@ const MODEL = "claude-opus-4-8";
 const argv = process.argv.slice(2);
 const REPS = Number(argv[argv.indexOf("--reps") + 1] ?? "3");
 const ARMS = (argv[argv.indexOf("--arms") + 1] ?? "nospec,prose,v4").split(",");
+const PRODUCT = argv[argv.indexOf("--product") + 1] ?? "standard"; // standard | flat
+const ORACLE = argv[argv.indexOf("--oracle") + 1] ?? ""; // dir; empty = default Fineract traces
+const OUT = argv[argv.indexOf("--out") + 1] ?? "build-result.json";
+const CFG = {
+  standard: { req: "amortising loan repayment schedule", prose: "specs/prose.txt", v4: "specs/v4.allium" },
+  flat: { req: "consumer instalment loan repayment schedule (equal monthly instalments)", prose: "specs/flat_prose.txt", v4: "specs/flat_v4.allium" },
+}[PRODUCT];
 
-const TASK = `Implement this function in Python:
+const TASK = [
+  "Implement this function in Python:",
+  "",
+  "    def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:",
+  "        # returns a list of length months; each element a dict with float keys:",
+  '        #   "emi", "interest", "principal", "outstanding_start"',
+  "",
+  `It computes a ${CFG.req}. Output ONLY a single ` + "```python code block with the complete function (and any imports/helpers). No prose.",
+].join("\n");
 
-    def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-        # returns a list of length `months`; each element a dict with float keys:
-        #   "emi", "interest", "principal", "outstanding_start"
-
-It computes an amortising loan repayment schedule. Output ONLY a single \`\`\`python code block with the complete function (and any imports/helpers). No prose.`;
-
-const PROSE = readFileSync(join(HERE, "specs/prose.txt"), "utf8");
-const V4 = readFileSync(join(HERE, "specs/v4.allium"), "utf8");
+const PROSE = readFileSync(join(HERE, CFG.prose), "utf8");
+const V4 = readFileSync(join(HERE, CFG.v4), "utf8");
 
 const PROMPTS = {
   nospec: () => `You are a senior engineer. ${TASK}`,
@@ -43,7 +52,9 @@ function extractPy(text) {
   return m ? m[1] : text;
 }
 function grade(pyPath) {
-  const r = spawnSync("python3", [join(HERE, "grade.py"), pyPath], { encoding: "utf8", maxBuffer: 1 << 25, timeout: 120000 });
+  const env = { ...process.env };
+  if (ORACLE) env.ORACLE_DIR = join(HERE, ORACLE);
+  const r = spawnSync("python3", [join(HERE, "grade.py"), pyPath], { encoding: "utf8", maxBuffer: 1 << 25, timeout: 120000, env });
   try { return JSON.parse(r.stdout || "{}"); } catch { return { error: r.stderr?.slice(-200) || "grade failed" }; }
 }
 
@@ -54,13 +65,13 @@ for (const arm of ARMS) {
   for (let i = 0; i < REPS; i++) {
     const a = claude(PROMPTS[arm]() + (i ? `\n(attempt ${i + 1})` : ""));
     const py = extractPy(a.text);
-    const pyPath = join(HERE, "arms", `${arm}_${i}.py`);
+    const pyPath = join(HERE, "arms", `${PRODUCT}_${arm}_${i}.py`);
     writeFileSync(pyPath, py);
     const g = grade(pyPath);
     const row = { rep: i, cost: a.cost, tok: a.tok, ...g };
     results[arm].push(row);
     console.error(`[${arm} ${i}] match0.5=${g["matched_0.50"]}/150 struct=${g.struct_ok} closes=${g.closes_to_zero} crashes=${g.crashes} medres=${g.median_residual_finite} | $${a.cost.toFixed(3)} ${(a.tok/1000).toFixed(0)}k`);
-    writeFileSync(join(HERE, "build-result.json"), JSON.stringify(results, null, 2));
+    writeFileSync(join(HERE, OUT), JSON.stringify(results, null, 2));
   }
 }
 const mean = (a, k) => a.length ? (a.reduce((s, x) => s + (Number(x[k]) || 0), 0) / a.length) : 0;

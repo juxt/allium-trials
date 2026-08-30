@@ -1,0 +1,10 @@
+Specification — consumer instalment loan repayment schedule (our product).
+A loan of `disbursed` is repaid over `months` equal monthly instalments at `annual_rate_pct` annual rate.
+Our product uses ADD-ON (flat) interest, NOT declining-balance interest:
+- Total interest for the whole loan = disbursed * (annual_rate_pct/100) * (months/12), charged on the ORIGINAL principal.
+- Each period's interest line is total_interest / months (equal every period).
+- The instalment (emi) = (disbursed + total_interest) / months, equal for all periods except the last.
+- Each period: principal = emi - interest; outstanding_start of the next period = this outstanding_start - principal.
+- The FINAL period absorbs any rounding residual: its principal = the remaining outstanding balance (loan closes to exactly zero), and its interest line = total_interest minus the interest already charged in earlier periods.
+- All monetary values rounded to 2 decimals using round-half-up.
+- Sum of principal over all periods = disbursed; sum of instalments = disbursed + total_interest.

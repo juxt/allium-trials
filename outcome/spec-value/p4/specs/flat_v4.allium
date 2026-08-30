@@ -1,0 +1,23 @@
+-- allium: 4
+-- Consumer instalment loan with ADD-ON (FLAT) interest (not declining balance).
+component FlatLoan
+  entity Period
+  given disbursed : Money
+  given annual_rate_pct : Rate
+  given months : Rate
+  given total_interest means disbursed * annual_rate_pct / 100 * months / 12
+  given flat_interest means disbursed * annual_rate_pct / 1200   -- = total_interest / months
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state is_last(Period) : bool
+  -- Interest is FLAT on the original principal: every non-final period charges the same flat_interest.
+  invariant interest_flat means every p :: not is_last(p) implies interest(p) = flat_interest
+  invariant principal_split means every p :: principal(p) = emi(p) - interest(p)
+  invariant emi_constant means every p :: every q :: (not is_last(p) and not is_last(q)) implies emi(p) = emi(q)
+  invariant balance_rolls means every p :: every next :: follows(next, p) implies outstanding_start(next) = outstanding_start(p) - principal(p)
+  invariant conservation means sum p :: principal(p) = disbursed
+  invariant closes_to_zero means every p :: is_last(p) implies outstanding_start(p) - principal(p) = 0
+  -- convention: round-half-up to 2 decimals; final period absorbs residual (principal + interest).
+end

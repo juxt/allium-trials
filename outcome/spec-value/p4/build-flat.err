@@ -1,0 +1,4 @@
+[nospec 0] match0.5=54/150 struct=150 closes=150 crashes=0 medres=6.21 | $0.096 21k
+[nospec 1] match0.5=54/150 struct=150 closes=150 crashes=0 medres=6.21 | $0.081 21k
+[nospec 2] match0.5=54/150 struct=150 closes=150 crashes=0 medres=6.2167 | $0.061 21k
+[prose 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.087 21k

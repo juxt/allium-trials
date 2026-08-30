@@ -6,7 +6,7 @@
 #   each element a dict/obj with keys emi, interest, principal, outstanding_start (floats).
 import sys, os, json, importlib.util, math
 
-TRACES = "/Users/hgarner/code/allium-trials/outcome/fineract/traces_baseline"
+TRACES = os.environ.get("ORACLE_DIR", "/Users/hgarner/code/allium-trials/outcome/fineract/traces_baseline")
 
 def load_trace(path):
     periods = []

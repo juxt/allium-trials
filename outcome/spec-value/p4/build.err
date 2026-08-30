@@ -1,17 +1,6 @@
-file:///Users/hgarner/code/allium-trials/outcome/spec-value/p4/run-build.mjs:18
-        # returns a list of length `months`; each element a dict with float keys:
-                                    ^^^^^^
-
-SyntaxError: Unexpected identifier 'months'
-    at compileSourceTextModule (node:internal/modules/esm/utils:354:16)
-    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:91:18)
-    at #translate (node:internal/modules/esm/loader:451:20)
-    at afterLoad (node:internal/modules/esm/loader:507:29)
-    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:512:12)
-    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:555:36)
-    at afterResolve (node:internal/modules/esm/loader:603:52)
-    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:609:12)
-    at onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:628:32)
-    at TracingChannel.tracePromise (node:diagnostics_channel:362:14)
-
-Node.js v25.8.1
+[nospec 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0.0083 | $0.073 20k
+[nospec 1] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.080 20k
+[prose 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.082 22k
+[prose 1] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.057 21k
+[v4 0] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.095 22k
+[v4 1] match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | $0.077 21k
