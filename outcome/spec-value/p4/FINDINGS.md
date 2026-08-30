@@ -49,3 +49,16 @@ Distill->rebuild: a distiller writes a spec from a reference impl; a fresh model
    code/its traces (`check`+`monitor`) and drift/errors caught and fixed — making an LLM-authored spec
    TRUSTWORTHY without a human eyeballing it. Prose cannot be mechanically validated. [strength = the
    complex-product result]
+
+## FINDING 4 — TOKEN EFFICIENCY: honest negative for v4 (correctness, not cost, is the axis)
+Cost measured mechanically (total_cost_usd) alongside oracle correctness. Flat product:
+- build:  nospec $0.079 -> 54/150 (cheap but WRONG); prose $0.082 -> 150/150; v4 $0.108 -> 150/150.
+- elicit: nospec $0.082 -> 54/150; prose $0.38, v3 $0.36, v4 $0.40 -> all 150/150.
+- validated distill: v4 $0.57 (flat) / $1.29 (complex) -> 150/150 (extra check+fix calls).
+- => no-spec is NOT cheaper in any useful sense: it produces a WRONG build, so correct-output-per-dollar
+  is low. The efficient path to a CORRECT build is a spec. BUT among spec forms v4 is NOT more token-
+  efficient than prose — it costs a small premium (reading a formal spec; validation adds more). v4's
+  value is correctness/trust, NOT token savings. We should NOT pitch token efficiency for v4.
+- Untested angle (candidate, not claimed): no-spec cannot converge on a system-specific convention by
+  trial-and-error without being told it, so a spec may save large iteration cost in a build-test-fix
+  loop. Not measured here; flagged.
