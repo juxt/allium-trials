@@ -2,3 +2,4 @@
 [distill v4 1] rebuild match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | distill $0.068
 [distill v4 2] rebuild match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | distill $0.080
 [distill prose 0] rebuild match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | distill $0.062
+[distill prose 1] rebuild match0.5=150/150 struct=150 closes=150 crashes=0 medres=0 | distill $0.028

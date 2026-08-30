@@ -1,5 +1,40 @@
 # Programme 4 findings — data-driven value proposition (executable oracles only, NO LLM judge)
 
+## EXECUTIVE SUMMARY (the coherent value proposition, backed by executable data)
+Every number below is mechanical: a Python build graded against real Fineract traces, or the v4
+monitor's holds/fails. No model judged anything.
+
+1. A SPEC IS NECESSARY, and it is the biggest win. For behaviour the model can't guess (a system-
+   specific convention) or an underspecified request, NO-SPEC ships the plausible default and is wrong
+   ~64% of the time; ANY spec/elicitation -> 100% correct. Clear air over no-spec, both the build and
+   elicit directions. (F1, F2)
+2. NOTATION AND MODEL DON'T MOVE CORRECTNESS. Given the spec content, v4 == prose == v3, and opus ==
+   haiku, on build/distill correctness and on tokens. One-shot correctness SATURATES; do not pitch v4
+   as more correct or cheaper than a prose spec. (F3, F4, F6-control)
+3. v4's REAL, UNIQUE, DELIVERABLE EDGE is that the spec is EXECUTABLE. A v4 spec is machine-checkable
+   (syntax + semantic faithfulness vs the code's own traces) and a STANDING DETERMINISTIC REGRESSION
+   GATE. It caught 3/3 convention-breaking developer edits with 0 false positives; prose can do none of
+   this. This is clear air over prose AND v3 — in VERIFIABILITY and GATING, not in correctness rate. (F5)
+4. THE LANGUAGE FEATURES SHIPPED THIS SESSION each closed a distinct real bug-class gap the gate can now
+   catch: DIVISION -> value bugs (a wrong interest rate: relational-only spec 0/144, +absolute-invariant
+   spec 144/144, on real Fineract traces); TEMPORAL ORDERING -> sequencing bugs (12/12 caught). The
+   "why v4 is better" is an expanding set of bug classes it can mechanically gate against. (F6, F7)
+
+Bottom line: sell v4 as the spec that is NECESSARY for correctness (over no-spec) and that STAYS TRUE
+and CATCHES DRIFT because it is executable (over prose/v3). Do not sell it on one-shot correctness or
+tokens vs prose — the data says those saturate.
+
+## DATA AT A GLANCE (all executable; match = schedules matching the oracle at 0.50 tol, /150)
+| experiment                              | no-spec | prose | v3 | v4 |
+|---|---|---|---|---|
+| build, standard product (F1)            | 150 | 150 | -  | 150 |  (saturates: guessable)
+| build, flat/non-default product (F1)    |  54 | 150 | -  | 150 |  (spec necessary)
+| elicit->build, underspecified (F2)      |  54 | 150 | 150| 150 |  (elicitation necessary)
+| distill->rebuild, complex (F3)          |  -  | 150 | -  | 150 |  (saturates; even haiku 150)
+| regression gate: convention edits (F5)  |  -  | inert (not executable) | - | 3/3 caught, 0 FP |
+| real-trace value-drift, 144 traces (F6) |  -  | (relational) 0/144 | - | (+absolute) 144/144 |
+| temporal ordering mutants (F7)          |  -  | inert | - | 12/12 caught, 0 FP |
+
 Substrate: real Fineract behaviours reimplemented in Python, graded mechanically against oracle traces
 (150 schedules). Metrics: schedules matched at tolerance, structural checks, tokens/$, monitor
 holds/fails. Arms cold + isolated, no delegation. Every number below is executable and reproducible.
