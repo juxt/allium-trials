@@ -106,3 +106,18 @@ violations with exact residuals). So P3's conclusions are NOT affected by D8; D8
 about the quantified-relational forms P3 did not use.
 Highest-priority fix: a correctness test-suite for the relational/quantified monitor (some, no, exists-
 one, multi-quantifier, entity identity), then fix eval_quant/eval_rel/violation-reporting to pass it.
+
+## D8 — FIX ATTEMPTED, reverted; root cause narrowed (repro preserved)
+Attempted fix: route the relational violation DECISION through `eval_rel` (which evaluates every/some/
+no/exists-one) instead of `find_witness` (universal-only), keeping find_witness for the witness string.
+Rebuilt and re-tested: it did NOT resolve the bug — `eval_rel`/`eval_quant` ITSELF mis-handles two
+forms, so the fix was ineffective and I REVERTED it (tool restored to its committed state; do not ship
+unverified). Narrowed characterization (all confirmed on the current tool):
+- `every a :: is_open(a)` (single-every + predicate): CORRECT — holds on all-open, violates on mixed.
+- `some a :: is_open(a)` (existential): WRONG — flagged violated even when an open entity exists.
+- `every a :: every b :: a = b` (identity, multi-quantifier): WRONG — false-passes on distinct entities.
+Root cause is in eval_quant/eval_rel for the `Some` quantifier and entity-identity leaves (not only
+find_witness), and I could not pin it precisely by inspection in the time available. Repro specs+traces:
+outcome/spec-value/p3/temporal/{some.allium,iso.allium,uniq.allium,*.trace}. Recommended: add a
+relational-monitor correctness test-suite (every/some/no/exists-one x single/multi-quantifier x
+identity) FIRST, then fix eval_quant/eval_rel to pass it. This is the top checker-correctness item.
