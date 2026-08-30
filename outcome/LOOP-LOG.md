@@ -110,6 +110,13 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 12 — harness: robustify the SURFACING win across 4 features
+- Added overdraft + multi-currency features (taskC/taskD + rubrics) to the surfacing eval, now 4
+  diverse banking features x 4 arms (nospec/prose/v3elicit/v4elicit) x 2 reps. Launched (runsurf4).
+  GOAL: confirm the earlier clear-air surfacing result (v4/v3 elicit ~8.6 surfaced / ~0 guessed vs
+  prose ~4 / ~5.5 guessed, prose WORSE than none) holds beyond the original 2 features — this is
+  v4's ONE proven clear-air value, so it must be robust. Collect next wake. Commit: allium-trials.
+
 ### Iteration 11 — v4: fixed the over-broad rate-pinning (general-purpose + honest)
 - Removed the arith `lower` rate-pin (Rate states were globally pinned to 1/10, a loan hack). Rate
   states are now variables; `rate * balance` is honestly nonlinear -> skipped + PARTIAL. Verified
