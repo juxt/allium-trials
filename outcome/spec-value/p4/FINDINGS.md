@@ -188,3 +188,15 @@ were shipped this programme, end-to-end with tests + executable gate demonstrati
   real banking invariant it unlocked, and each measurably widened the executable gate's reach. v4 can
   now express the arithmetic of real loan/fee products (rates, caps, tiers) and gate against their drift.
   Remaining gap noted: the day-count-exact rate factor for penny-perfect interest laws.
+
+## FINDING 10 — generality: the pattern holds in a SECOND domain (payment allocation)
+Payment allocation (split a partial payment across penalty/fee/interest/principal), 42 oracle cases:
+- With a NON-DEFAULT convention (pro-rata, not the waterfall the model defaults to): no-spec 21/42
+  (guesses waterfall — right only where the two coincide); a complete prose spec 42/42.
+- With a GUESSABLE convention (charges-first waterfall): no-spec 42/42 — saturates, as expected.
+- => F1 generalises beyond loan schedules: a spec is necessary exactly when the convention is non-
+  default; when it's guessable, no-spec saturates. Same law, second domain.
+- Honest caveat: the v4 arm scored 24/42 here — but that reflects an INCOMPLETE v4 spec I wrote (one
+  invariant pinning only the penalty share), not the language. Free prose was easier to make COMPLETE
+  than a set of formal invariants — consistent with the recurring finding that v4 carries a
+  fluency/completeness cost that prose does not, which its checkability is meant to offset.

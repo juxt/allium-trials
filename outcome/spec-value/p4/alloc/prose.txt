@@ -1,0 +1,4 @@
+Specification — partial-payment allocation for our loan product.
+Allocate the payment PRO-RATA (proportionally): each due receives payment * (its due / total due).
+Cap the total applied at the total due; any excess payment is "unapplied". Round each amount to 2 dp.
+Return a dict with keys "penalty","fee","interest","principal","unapplied".

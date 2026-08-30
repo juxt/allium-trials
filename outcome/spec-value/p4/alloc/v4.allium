@@ -1,0 +1,17 @@
+-- allium: 4
+-- Partial-payment allocation: PRO-RATA (proportional) split across the dues.
+component Allocation
+  entity Payment
+  given payment : Money
+  given penalty_due : Money
+  given fee_due : Money
+  given interest_due : Money
+  given principal_due : Money
+  given total_due means penalty_due + fee_due + interest_due + principal_due
+  given pen_applied means payment * penalty_due / total_due
+  given fee_applied means payment * fee_due / total_due
+  given int_applied means payment * interest_due / total_due
+  given prin_applied means payment * principal_due / total_due
+  observable state penalty(Payment) : Money
+  invariant prorata means penalty(Payment) = pen_applied
+end
