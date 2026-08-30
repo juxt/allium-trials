@@ -1,0 +1,9 @@
+-- allium: 4
+component S
+  entity Period
+  given rate : Rate
+  given expected_interest(bal) means rate * bal
+  observable state interest(Period) : Money
+  observable state outstanding_start(Period) : Money
+  invariant interest_ok means every p :: interest(p) = expected_interest(outstanding_start(p))
+end

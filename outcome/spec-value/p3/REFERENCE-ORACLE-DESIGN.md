@@ -47,3 +47,15 @@ addition small, natural, and verifiable.
 Ship the `let` construct next session with tests (RED->GREEN), then re-run the E7 wrong-rate mutant
 using a `let expected_interest` oracle end-to-end. The capability's VALUE is already demonstrated (E7);
 `let` makes it ergonomic and composable without changing v4's feel.
+
+## SHIPPED (P3c) — implemented via the existing `means` definitional form, not a new construct
+The reference oracle is DONE and TESTED, and it needed NO new syntax: v4 already parses
+`given f(params) means body` (a defined given). The only gap was EVAL — the monitors didn't inline the
+call. Added `inline_defs`/`substitute` (a pre-eval pass) in monitor.rs, applied in BOTH `monitor` and
+`monitor_schedule`. So `given expected_interest(bal) means rate * bal` + `invariant interest_ok means
+every p :: interest(p) = expected_interest(outstanding_start(p))` now inlines to `rate *
+outstanding_start(p)` and CATCHES the wrong-rate value bug (residual 10; witness shows the inlined
+expression). Test: reference_oracle_defined_given (51 allium-v4 tests pass). This is the OCaml `let f x
+= e` idea expressed maximally naturally in v4 (reusing `means`), closing the E2 value-blindness
+constructively. Not yet done: full trace/implementation refinement; recursion in definitions (v0 is
+inline-only, non-recursive).

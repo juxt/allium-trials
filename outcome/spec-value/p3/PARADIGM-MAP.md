@@ -7,7 +7,7 @@ paradigm a spec language has catches a different bug class. Here is where v4 sta
 | paradigm | catches bug class | v4 capability (evidence) | prior art for the gap |
 |---|---|---|---|
 | Relational / algebraic invariants (Sigma, =, <=, between quantities) | desync / structural: omitted-mismatched parts, broken conservation | **STRONG** — E3 600/600, E5 60/60, E4 real 4/7 | (this is our strength) |
-| Absolute / input-anchored invariants (output = f(reference input)) | value errors (wrong rate/amount) | **EXPRESSIBLE, under-used** — E7 + E7-real catch wrong-rate 114/120 once you add `interest=rate*balance` + emit the input; static analyse can't do nonlinear but the runtime MONITOR can | within-paradigm; fix = D1/D3 |
+| Absolute / input-anchored + reference FUNCTIONS (output = f(input)) | value errors (wrong rate/amount) | **WORKS (added P3c)** — `given f(params) means body` (OCaml-style pure fn) now INLINES in both monitors; `interest = expected_interest(bal)` catches wrong-rate (resid 10, test reference_oracle_defined_given). E7 mechanism now ergonomic + composable | — |
 | Light-sequential arithmetic (follows-guarded numeric roll-forward) | wrong state-transition ARITHMETIC | **PARTIAL** — balance_rolls works (monitored, E3 caught rollforward) but only when the consequent is NUMERIC | — |
 | Temporal / ordering — IMMEDIATE past (`old`, previous event) | immediate-precedence / state-step: capture-not-directly-preceded-by-auth | **WORKS (event-based `monitor`)** — cap_after_auth = `is_capture implies old(is_auth)`: GOOD holds; BAD caught (kind temporal, witness "is_capture=T, old is_auth=F"). A real, useful ordering class | — |
 | Temporal / ordering — MULTI-STEP (`before`/`precedes`/`after`, arity-2) | out-of-order over a distance, prior-event-required | **NOW WORKS (added P3c)** — event-timeline order wired into the monitor + analyse; auth-anywhere-before-capture caught (test multistep_ordering_before). | (added; v3/TLA+/MFOTL prior art) |
@@ -16,7 +16,7 @@ paradigm a spec language has catches a different bug class. Here is where v4 sta
 | Uniqueness / at-most-one / no-duplicate (quantified entity identity) | replay/idempotency, double-open, single-active-mandate | **WORKS** (D8 was a trace-format error, retracted): at-most-one VIOLATES on two-open, holds on one; some/every/no/exists-one correct with `entity=` traces | — |
 | Liveness / eventuality (something good eventually happens) | stuck/never-settles | **GAP** — no eventually/until; monitor is finite-trace pointwise | TLA+ temporal; runtime verification |
 | Concurrency / interleaving (atomicity, races, linearizability) | race conditions, lost updates | **ABSENT** | TLA+, P, model checkers |
-| Refinement / reference-model (impl refines an abstract spec) | value errors generally, behavioural equivalence | **ABSENT (D1)** | TLA+ refinement; model-based testing |
+| Refinement / reference-model | value errors generally, behavioural equivalence | **PARTIAL (added P3c)** — pure reference FUNCTIONS work (absolute-oracle use case covered); full trace/impl refinement still absent | TLA+ refinement; model-based testing |
 
 ## The answer, precisely
 Two distinct kinds of "miss" hide in the P3 law:
