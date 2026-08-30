@@ -96,6 +96,7 @@ Not from catch-rate: accuracy saturates everywhere (P1, even ~1M LOC).
    genuine beyond-context (full-subsystem) mutation at scale.
 
 ## E7 — the value-blindness is largely FIXABLE (constructive, demonstrated)
+(Confirmed on REAL code in E7-real: baseline held 114/120, M1 wrong-rate caught 114/120 at tol 0.01; ~5% noise = day-count rounding, fixable via exact rate factor or per-invariant tolerance.)
 E2's spec missed value bugs because its traces omitted the reference input (rate), so the one ABSOLUTE
 invariant (interest = rate x outstanding) was SILENTLY SKIPPED (deficiency D3). Fix it — put the
 reference rate in the trace, keep the absolute invariant — and the monitor CATCHES the canonical

@@ -80,3 +80,14 @@
   work than this budget). The structure-assembling catch claim therefore rests on: E4 (blanket real-code
   omit, 4/7 caught, exact residuals) + E5 (single-leg trace-level, 60/60) + E3 (structural injections,
   600/600). Not overclaimed. Repo reverted clean.
+
+## E7-real (REAL code traces, post-hoc, no gradle) — value-blindness fix CONFIRMED on real code
+- Added intended rate (annualRate/1200, from filename) as rate_factor to the real baseline traces and
+  the M1 wrong-rate mutant traces (Programme 2); monitored interest_on_outstanding at tol 0.01.
+- **baseline: held 114/120 (95%); M1 wrong-rate: CAUGHT 114/120 (95%).** The relations-only spec caught
+  0/20 of these value bugs (E2); the input-anchored absolute invariant catches ~95% on real traces.
+- ~5% baseline false-positive + ~5% M1 false-negative = day-count/rounding noise at tol 0.01 (intended
+  rate diverges from the code's exact day-count factor on some fixtures, e.g. 9.99%). Fixable with the
+  model's EXACT rate factor (getRateFactorPlus1) or a per-invariant tolerance (D2/D3). Not a fault.
+- => CONFIRMED on real code, not just the E7 hand-demo: value-blindness is fixable by input-anchored
+  absolute invariants + emitting the reference input. This is the constructive counterpart to E2.
