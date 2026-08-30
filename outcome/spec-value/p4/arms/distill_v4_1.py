@@ -1,35 +1,42 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_EVEN
+
+
+def _r2(x):
+    return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN))
 
 
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    def r2(x) -> float:
-        return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    f = annual_rate_pct / 1200
+    fee = _r2(disbursed * 0.0025)
 
-    total_interest = r2(disbursed * (annual_rate_pct / 100) * (months / 12))
-    per_interest = r2(total_interest / months)
-    emi_regular = r2((disbursed + total_interest) / months)
-
-    def ref_interest(i: int) -> float:
-        if i == months - 1:
-            return r2(total_interest - per_interest * (months - 1))
-        return per_interest
+    if f == 0:
+        base = _r2(disbursed / months)
+    else:
+        base = _r2(disbursed * f * (1 + f) ** months / ((1 + f) ** months - 1))
 
     rows = []
-    outstanding = r2(disbursed)
+    bal = disbursed
     for i in range(months):
-        interest = ref_interest(i)
-        if i == months - 1:
-            principal = outstanding
-            emi = r2(interest + principal)
+        is_final = i == months - 1
+        pure = _r2(bal * f)
+
+        if is_final:
+            principal = bal
+            base_inst = _r2(pure + bal)
         else:
-            emi = emi_regular
-            principal = r2(emi_regular - interest)
+            principal = _r2(base - pure)
+            base_inst = base
+
+        emi = _r2(base_inst + fee)
+        interest = _r2(pure + fee)
+
         rows.append({
             "emi": emi,
             "interest": interest,
             "principal": principal,
-            "outstanding_start": outstanding,
+            "outstanding_start": bal,
         })
-        outstanding = r2(outstanding - principal)
+
+        bal = _r2(bal - principal)
 
     return rows

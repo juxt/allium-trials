@@ -1,31 +1,39 @@
+from decimal import Decimal, ROUND_HALF_EVEN
+
+
+def _round(value):
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN))
+
+
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    from decimal import Decimal, ROUND_HALF_UP
+    f = annual_rate_pct / 1200
+    fee = _round(disbursed * 0.0025)
 
-    def r2(x):
-        return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    if f == 0:
+        base_emi = _round(disbursed / months)
+    else:
+        base_emi = _round(disbursed * f * (1 + f) ** months / ((1 + f) ** months - 1))
 
-    total_interest = r2(disbursed * (annual_rate_pct / 100) * (months / 12))
-    per_int = r2(total_interest / months)
-    emi = r2((disbursed + total_interest) / months)
-
-    rows = []
+    result = []
     balance = disbursed
-    for i in range(months):
-        outstanding_start = r2(balance)
-        if i < months - 1:
-            interest = per_int
-            principal = r2(emi - interest)
-            instalment = emi
-            balance = r2(balance - principal)
+    for period in range(months):
+        outstanding_start = _round(balance)
+        pure_int = _round(balance * f)
+
+        if period == months - 1:
+            principal = _round(balance)
+            period_base = _round(pure_int + principal)
         else:
-            interest = r2(total_interest - per_int * (months - 1))
-            principal = outstanding_start
-            instalment = r2(interest + principal)
-            balance = r2(balance - principal)
-        rows.append({
-            "emi": instalment,
-            "interest": interest,
-            "principal": principal,
+            principal = _round(base_emi - pure_int)
+            period_base = base_emi
+
+        result.append({
             "outstanding_start": outstanding_start,
+            "principal": principal,
+            "interest": _round(pure_int + fee),
+            "emi": _round(period_base + fee),
         })
-    return rows
+
+        balance = _round(balance - principal)
+
+    return result

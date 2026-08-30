@@ -33,8 +33,11 @@ Distill->rebuild: a distiller writes a spec from a reference impl; a fresh model
   v4-validated rebuilt **150/150** (recovered the drift; 2 validation rounds). Prose can't be
   mechanically validated (eyeball only).
 - On the SIMPLE flat product both reach 150 -> parity (v4's check compensates for its fluency cost).
-- COMPLEX product (declining + flat service fee + fiddly splits) result: <PENDING validated-complex> —
-  the test of whether v4's mechanical check beats prose's eyeball when BOTH forms' distillation drifts.
+- COMPLEX product (declining + flat service fee + fiddly splits), naive distill (fixed harness), 4 reps:
+  **v4 150/150, prose 150/150** — BOTH reliable. The earlier flat "v4 drift to 54/150" was a harness
+  artefact (max-turns empties), NOT real v4 unreliability. With a working harness + strong model,
+  distillation SATURATES: v4 == prose on rebuild correctness (prose slightly cheaper, $0.13 vs $0.19).
+  Validation rarely fires because there is no drift to catch. So distill correctness = no clear air.
 
 ## LANGUAGE / TOOL improvements shipped this programme (all tested)
 - DIVISION operator `/` added end-to-end (was entirely missing; `x/1200` silently became `x`). Essential
@@ -62,3 +65,41 @@ Cost measured mechanically (total_cost_usd) alongside oracle correctness. Flat p
 - Untested angle (candidate, not claimed): no-spec cannot converge on a system-specific convention by
   trial-and-error without being told it, so a spec may save large iteration cost in a build-test-fix
   loop. Not measured here; flagged.
+
+## FINDING 5 — the CATEGORICAL v4 win: an Allium spec is an EXECUTABLE STANDING GATE; prose is inert
+The one place v4 clearly beats prose is not a correctness RATE (saturated) but a CAPABILITY prose
+lacks: a v4 spec can be mechanically checked, monitored, and run as a regression gate. Demonstrated
+(no model calls, deterministic):
+- Two-layer checkability on the complex product: `check` catches syntax errors; `monitor` catches
+  SEMANTIC drift — a spec with the wrong service fee (0.5% vs 0.25%) fails `interest_line` at residual
+  12.5, a faithful spec holds.
+- Regression gate: take a correct implementation, apply developer edits that break a convention, run
+  the v4 spec-monitor on the resulting trace:
+    baseline (correct)                 -> passes
+    fee 0.25% -> 0.30%                  -> CAUGHT (interest_line)
+    dropped the service fee             -> CAUGHT (interest_line)
+    flat instead of declining interest -> CAUGHT (interest_line)
+    benign refactor (no behaviour change) -> passes (no false positive)
+  3/3 convention-breaking edits caught, deterministically, with the named invariant; 0 false positives.
+- Prose can do NONE of this (it is not executable). This is categorical, not a matter of degree.
+
+## COHERENT VALUE PROPOSITION (data-backed, honest)
+1. A SPEC IS NECESSARY (any form) for correct builds of non-textbook behaviour and underspecified
+   requests: no-spec ships the plausible default / silent guess and is wrong ~64% of schedules; a
+   spec/elicitation -> 100%. Huge, executable clear air over no-spec. (Findings 1-2.)
+2. On one-shot build / elicit / distill CORRECTNESS and on TOKENS, v4 ~= prose ~= v3. A frontier model
+   makes NOTATION irrelevant when the spec content is right; distillation and transmission SATURATE.
+   Do NOT pitch v4 as more correct or cheaper than a prose spec — the data says it is not. (F1-4.)
+3. v4's UNIQUE, deliverable value is that the spec is EXECUTABLE: machine-checkable (syntax + semantic
+   faithfulness vs the code's traces) and a STANDING DETERMINISTIC REGRESSION GATE that catches
+   convention-breaking drift a prose spec cannot. This is where v4 has clear air over prose — in
+   VERIFIABILITY and GATING, not in build-correctness rate. In a regulated setting (audit, no silent
+   drift) that is the whole game. (F5.)
+4. Enablers shipped this programme so v4 can express real financial specs: DIVISION operator, 0-ary
+   reference constants (given k means <arith>), plus temporal ordering + reference-oracle (prior).
+
+## HONEST LIMITS / NON-CLAIMS
+- No clear air for v4 over prose on build/elicit/distill correctness or tokens (saturation). 
+- The regression-gate win requires the spec's invariants to be monitorable (reference inputs emitted in
+  traces) — a real setup cost.
+- All on one behaviour family (loan schedules) + a strong model. See the weak-model probe next.

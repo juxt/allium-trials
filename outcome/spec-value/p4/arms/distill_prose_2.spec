@@ -1,60 +1,55 @@
-# Add-on (flat) interest loan schedule
+# SME term loan schedule — behavioural specification
 
-## What this computes
+## Purpose
 
-Given a disbursed principal amount, an annual interest rate as a percentage, and a term in whole months, produce a repayment schedule: one row per month, each row carrying the total instalment due, the interest portion, the principal portion, and the outstanding balance at the start of that month.
+Produce a period-by-period repayment schedule for a fixed-term SME loan that carries a declining-balance interest charge plus a flat monthly service fee. Given the disbursed principal, an annual interest rate, and a term in whole months, the routine returns one row per month describing what the customer pays, how that payment splits between interest and principal, and the balance outstanding at the start of the period.
 
-This is a flat (add-on) interest product. Interest is charged on the original disbursed principal for the whole term, not on the declining balance. This is the load-bearing distinction: the interest total does not depend on how principal is repaid over time.
+## Inputs
 
-## Rounding convention
+Three inputs: the disbursed principal (the amount actually advanced), the annual interest rate expressed as a percentage (for example, 12 means 12% per annum), and the term as a whole number of months.
 
-Every monetary figure is rounded to two decimal places using HALF_UP (round half away from zero, so 0.005 becomes 0.01). Round at each step described below, not only at the end. Intermediate quantities that feed a later rounded quantity are themselves already rounded to 2dp before reuse.
+## Numeric conventions
 
-## Interest
+All monetary values are rounded to two decimal places using banker's rounding, HALF_EVEN: ties round to the nearest even last digit rather than always up. Apply this rounding by converting the value to its string form first, then quantising to two places, so the rounding acts on the decimal value as written rather than on a binary approximation. Call this operation "round-2" below. Every stored or reported money figure passes through round-2 at the point stated; intermediate factors (the monthly rate, the compounding term) are held at full precision until a money figure is formed.
 
-Compute the total interest for the whole loan up front:
+**Monthly interest factor.** Derive a monthly factor `f` by dividing the annual percentage rate by 1200. This folds together the conversion from percent to fraction (divide by 100) and from annual to monthly (divide by 12). Hold `f` at full floating-point precision; do not round it.
 
-    total_interest = round2( disbursed × (annual_rate_pct / 100) × (months / 12) )
+**Service fee.** Compute a flat monthly service fee once, up front, as 0.25% of the original disbursed principal (multiply the disbursed amount by 0.0025), then round-2. This fee is a constant: the same amount is added to every period regardless of the declining balance. It is computed from the original disbursement, never from the running balance.
 
-This is the annual rate applied to the full disbursed principal, scaled by the term expressed in years. It is a single figure for the life of the loan, fixed once at origination.
+## Base instalment (before fee)
 
-Divide it into an equal per-period interest line:
+Compute a base instalment that would amortise the principal over the term using standard declining-balance amortisation, ignoring the service fee entirely.
 
-    per_int = round2( total_interest / months )
+If the monthly factor is exactly zero (a zero interest rate), the base instalment is simply the principal divided by the number of months.
 
-Every month except the last charges exactly `per_int` in interest. The last month charges whatever interest remains so the interest lines sum exactly to `total_interest`:
+Otherwise, use the annuity formula: `principal × f × (1+f)^months ÷ ((1+f)^months − 1)`.
 
-    last_interest = round2( total_interest − per_int × (months − 1) )
+Round-2 the resulting base instalment and hold it fixed for use in every non-final period.
 
-The residual from rounding `per_int` is absorbed entirely into the final month. Do not spread it.
+## Period loop
 
-## Instalment (EMI)
+Maintain a running balance, starting at the full disbursed principal. Iterate once per month, in order. For each period:
 
-The equal monthly instalment is the total repayable divided evenly across the term:
+1. **Pure interest** on the current balance: multiply the balance by `f`, then round-2. This is the interest actually earned this period on the declining balance. It excludes the service fee.
 
-    emi = round2( (disbursed + total_interest) / months )
+2. **Principal repaid and base instalment**, split by whether this is the final period:
+   - For every period except the last: the principal repaid is the base instalment minus the pure interest, rounded-2. The base instalment for the period is the fixed base instalment computed above.
+   - For the final period: the principal repaid is the entire remaining balance (so the loan closes to exactly zero with no residual left over). The base instalment for this period is recomputed as pure interest plus that principal, rounded-2, so the final base instalment absorbs any accumulated rounding residual rather than carrying it forward.
 
-Every month except the last bills exactly this `emi`. In those months the principal portion is the instalment less the interest line:
+3. **Reported interest line**: pure interest plus the service fee, rounded-2. The fee is reported as part of the interest line, not as a separate field.
 
-    principal = round2( emi − per_int )
+4. **Reported instalment (the `emi` the customer pays)**: the period's base instalment plus the service fee, rounded-2. The fee sits on top of the amortising instalment; it is not part of the principal calculation.
 
-The last month does not use `emi`. Its principal is the entire outstanding balance still owed at the start of that month, and its instalment is that principal plus the last month's interest:
+5. **Emit the row** with four fields: the reported instalment (`emi`), the reported interest line (`interest`), the principal repaid (`principal`), and the balance at the start of the period (`outstanding_start`, the current running balance rounded-2).
 
-    last_principal = outstanding balance at start of final month
-    last_instalment = round2( last_interest + last_principal )
+6. **Advance the balance**: subtract the principal repaid from the running balance and round-2. Carry this forward to the next period.
 
-This guarantees two closure properties: the principal portions sum exactly to `disbursed`, and the instalments sum exactly to `disbursed + total_interest`. Both rounding residuals, on principal and on interest, land in the final row.
+## Load-bearing points that are easy to get wrong
 
-## Balance tracking
+The service fee is a fixed amount added on top of, and outside of, the amortisation. It never enters the principal-versus-interest split: principal is always `base instalment − pure interest`, using the fee-free base instalment. The fee only ever appears by being added into the reported interest line and the reported instalment.
 
-Track a running balance, starting at the disbursed amount. For each month, before deducting anything:
+The pure interest is charged on the running declining balance, not on the original principal. The base instalment is fixed for all periods except the last.
 
-- record `outstanding_start` as the current balance, rounded to 2dp;
-- emit the row (instalment, interest, principal, outstanding_start);
-- reduce the balance by that month's principal: `balance = round2( balance − principal )`.
+The final period is special in two ways at once: its principal is set to the whole remaining balance (not the formula split), and its base instalment is rebuilt as interest-plus-principal so the loan repays exactly and any rounding drift is absorbed there. After the final period the balance should be zero.
 
-Because the final month's principal is defined as the balance itself, the balance reaches exactly zero after the last row regardless of accumulated rounding drift. Outstanding balance strictly declines each month by the principal repaid; it never reflects interest.
-
-## Row order and count
-
-Emit exactly `months` rows, in chronological order, month 0 through month `months − 1`. Only the last row uses the residual-absorbing branch; all earlier rows are identical in structure (equal instalment, equal interest, equal principal).
+Rounding is HALF_EVEN to two places, applied via the string-then-quantise route, at each of these points: the fee, the base instalment, each period's pure interest, each non-final principal, the final base instalment, the reported interest line, the reported instalment, the start-of-period balance, and the balance carried to the next period.

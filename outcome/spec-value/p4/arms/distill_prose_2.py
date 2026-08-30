@@ -1,35 +1,46 @@
+from decimal import Decimal, ROUND_HALF_EVEN
+
+
+def _round2(value) -> float:
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN))
+
+
 def schedule(disbursed: float, annual_rate_pct: float, months: int) -> list:
-    from decimal import Decimal, ROUND_HALF_UP
+    f = annual_rate_pct / 1200
+    fee = _round2(disbursed * 0.0025)
 
-    def round2(x):
-        return float(Decimal(str(x)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-
-    total_interest = round2(disbursed * (annual_rate_pct / 100) * (months / 12))
-    per_int = round2(total_interest / months)
-    last_interest = round2(total_interest - per_int * (months - 1))
-    emi = round2((disbursed + total_interest) / months)
-    principal = round2(emi - per_int)
+    if f == 0:
+        base_instalment = _round2(disbursed / months)
+    else:
+        factor = (1 + f) ** months
+        base_instalment = _round2(disbursed * f * factor / (factor - 1))
 
     rows = []
-    balance = round2(disbursed)
-    for m in range(months):
-        outstanding_start = round2(balance)
-        if m == months - 1:
-            last_principal = outstanding_start
-            last_instalment = round2(last_interest + last_principal)
-            rows.append({
-                "emi": last_instalment,
-                "interest": last_interest,
-                "principal": last_principal,
-                "outstanding_start": outstanding_start,
-            })
-            balance = round2(balance - last_principal)
+    balance = _round2(disbursed)
+
+    for period in range(months):
+        is_final = period == months - 1
+
+        outstanding_start = _round2(balance)
+        pure_interest = _round2(balance * f)
+
+        if is_final:
+            principal = _round2(balance)
+            period_base = _round2(pure_interest + principal)
         else:
-            rows.append({
-                "emi": emi,
-                "interest": per_int,
-                "principal": principal,
-                "outstanding_start": outstanding_start,
-            })
-            balance = round2(balance - principal)
+            principal = _round2(base_instalment - pure_interest)
+            period_base = base_instalment
+
+        interest_line = _round2(pure_interest + fee)
+        emi = _round2(period_base + fee)
+
+        rows.append({
+            "emi": emi,
+            "interest": interest_line,
+            "principal": principal,
+            "outstanding_start": outstanding_start,
+        })
+
+        balance = _round2(balance - principal)
+
     return rows
