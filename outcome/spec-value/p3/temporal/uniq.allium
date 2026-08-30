@@ -1,0 +1,6 @@
+-- allium: 4
+component S
+  entity E
+  observable state is_open(E) : bool
+  invariant at_most_one_open means every a :: every b :: (is_open(a) and is_open(b)) implies (a = b)
+end

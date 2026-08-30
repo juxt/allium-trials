@@ -72,3 +72,15 @@ Beyond skipping invariants that reference absent givens (original D3), monitor-s
 non-numeric invariant (pure boolean, temporal/ordering) entirely and still reports `ok:true`. A spec of
 only such invariants monitors 0 and looks like it passed. Fix: report monitored/total and FAIL loudly
 (or refuse) when load-bearing invariants are unmonitorable, rather than silently returning ok.
+
+## D8 — Uniqueness / at-most-one invariants FALSE-PASS  [CORRECTNESS BUG, HIGH SEVERITY]
+Finding (black-box, two forms): `every a :: every b :: (is_open(a) and is_open(b)) implies (a=b)` and
+`no a :: no b :: (a != b and is_open(a) and is_open(b))` both report monitored=1, ok=true on a trace
+with TWO distinct open entities — a clear violation. The monitor returns a FALSE PASS (not a skip). The
+relational evaluator claims to support entity identity `a=b` (monitor.rs:184) but the double-quantifier
+uniqueness form is mis-evaluated. This is worse than the temporal skip: a violated invariant reads as
+passing. Uniqueness/no-duplicate/at-most-one is a core banking class (replay/idempotency, single active
+mandate, one-open-position). Fix: correct nested-quantifier + entity-identity evaluation in eval_quant/
+eval_rel, and add a test that a two-entity uniqueness violation is caught. Until fixed, DO NOT rely on
+uniqueness invariants — they can silently pass. (Caveat: observed black-box; may be mis-report-as-
+monitored rather than mis-evaluation, but the user-facing false pass is the same.)

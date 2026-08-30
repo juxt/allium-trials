@@ -1,0 +1,6 @@
+-- allium: 4
+component Ledger
+  entity Posting
+  observable state txn_id(Posting) : Rate
+  invariant no_replay means every a :: every b :: (txn_id(a) = txn_id(b)) implies (a = b)
+end

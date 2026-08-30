@@ -1,0 +1,6 @@
+-- allium: 4
+component S
+  entity E
+  observable state is_open(E) : bool
+  invariant no_two_open means no a :: no b :: (a != b and is_open(a) and is_open(b))
+end
