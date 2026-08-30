@@ -1,0 +1,27 @@
+## The core defect
+
+The spec computes interest on `outstanding_start`, but nothing ties `outstanding_start` to anything. It never says the first period's balance equals what was borrowed, and it never says the balance rolls forward from one period to the next. Those two facts are the whole of amortisation. Without them, `outstanding_start` is a free variable that interest happens to be multiplied by.
+
+Concretely, the following non-loan satisfies every invariant as written: hold `outstanding_start(p)` constant at some value `b` for all periods, with `principal(p) = b`, `interest(p) = rate*b`, `emi(p) = b*(1+rate)`, `disbursed = N*b`. Composition holds, level payment holds, interest-on-balance holds, the principal sum equals `disbursed`, the last period has `principal = outstanding_start`, and both nonneg guards hold. Yet the balance never declines, and the opening balance (`b`) isn't the disbursed amount (`N*b`). The spec accepts a schedule that isn't an amortising loan at all.
+
+## Errors
+
+None of the stated invariants is false of the intended behaviour. Every constraint the spec asserts is true of a standard amortising loan. `ends_at_zero` correctly encodes a zero closing balance as `principal(last) = outstanding_start(last)`; `interest_on_balance`, `composition`, `level_payment` and `full_repayment` are all sound. The spec fails by what it leaves out, not by what it states, with one caveat below about a misleadingly named invariant.
+
+## Omissions
+
+**No initial-balance anchor.** Nothing states that the opening balance of the first period equals `disbursed`. The disbursed amount enters only through the `full_repayment` sum, which constrains the total of `principal` but says nothing about where the balance starts. This is the primary hole.
+
+**No balance recurrence.** Nothing states `outstanding_start(next) = outstanding_start(p) - principal(p)`. This is the defining relation of a declining-balance loan and the reason "interest is charged on what they still owe" is even meaningful. Note that `principal_reduces_balance` is *named* as if it were this recurrence but its body, `principal = emi - interest`, is algebraically identical to `composition` (`emi = interest + principal`). It is a tautology restating composition, not a statement that principal reduces the balance. The behaviour its name promises is absent.
+
+**No ordering on `Period`.** There is no first period, no successor relation, no sequence. "Reduces over the life of the loan", `is_last`, and any recurrence all presuppose an ordered, finite set of periods. The entity is declared bare. `sum p :: principal(p)` also silently assumes finiteness that nothing establishes.
+
+**`is_last` is unconstrained.** Nothing forces exactly one period to satisfy `is_last`, nor that it is the terminal period in the ordering. If no period is last, `ends_at_zero` is vacuous and the loan need never reach zero. If several are, the constraints can conflict.
+
+**No term.** There is no notion of a fixed number of instalments. In a real amortising loan the EMI is pinned down by `disbursed`, `rate` and the term via the annuity formula. Here the term is free and unlinked, so nothing forces the instalments to actually retire the loan on schedule (the recurrence and anchor would do this if present).
+
+**Missing sign and domain guards.** Only `principal` and `outstanding_start` have nonneg constraints. There is nothing requiring `disbursed > 0`, `rate >= 0`, `emi >= 0` or `interest >= 0`. A negative rate, for instance, would make interest negative while still satisfying every invariant.
+
+## What to add
+
+Anchor the first period to `disbursed`, add the roll-forward recurrence `outstanding_start(next) = outstanding_start(p) - principal(p)`, give `Period` an explicit order with a unique last period, and add the missing domain guards. With the recurrence and anchor in place, `ends_at_zero` and much of `full_repayment` become derivable rather than load-bearing, and the redundant `principal_reduces_balance` can be dropped or rewritten to carry the recurrence its name implies.

@@ -1,0 +1,42 @@
+## Review: AmortisingLoan spec
+
+The single deepest defect: `Period` has no ordering. There is no first period, no successor, no "next". Every invariant constrains periods in isolation and nothing chains one period to the next. Almost all the errors and omissions below fall out of that one gap, including all three findings in the mechanical report.
+
+### Errors (asserts something false of the intended behaviour)
+
+**`level_payment` is too strong.** It requires *every* instalment to be exactly equal. Under rounded `Money` this contradicts `full_repayment` and `ends_at_zero`: you cannot in general pay identical amounts every period and also land the balance on exactly zero. Real amortisation resolves this by adjusting the final instalment, which is precisely what the monitor observed (last instalment differs, residual 0.04). The informal "equal periodic instalments" is an idealisation; the faithful invariant exempts the last period:
+
+```
+invariant level_payment means every p, q ::
+  (not is_last(p) and not is_last(q)) => emi(p) = emi(q)
+```
+
+This is an error, not a code bug. The reasoning holds without the monitor: exact-equal payments + exact-zero termination + discrete money is overdetermined.
+
+### Omissions (intended behaviour left unconstrained)
+
+**1. The balance recurrence is missing entirely.** Nothing links `outstanding_start` in one period to the next. "Interest charged on what they still owe" and "principal reduces the balance" require:
+
+```
+outstanding_start(next p) = outstanding_start(p) - principal(p)
+```
+
+This is the core of amortisation and it is simply absent. It is why the mutation battery detects neither a corrupted roll-forward nor a non-monotonic balance (both 0%): with no invariant tying consecutive balances together, a balance that jumps or rises violates nothing. Fixing this single omission closes both blind spots, and it makes `nonneg_balance` non-trivial (monotonic non-increase then follows from `nonneg_principal`).
+
+**2. No opening-balance anchor.** Nothing states `outstanding_start(first) = disbursed`. Without it the entire schedule floats free of the amount borrowed. The recurrence in (1) is only meaningful once it is pinned at the start.
+
+**3. `Period` has no order structure.** No first, no successor, no last-as-maximal. `next`/`first` in the fixes above presuppose an ordering the spec never declares. Add it; `level_payment`, `is_last` and the recurrence all depend on it.
+
+**4. `is_last` is unconstrained.** Nothing says exactly one period is the last, or that it is the terminal period. If `is_last` holds for *no* period, `ends_at_zero` is vacuously true and the "balance ends at zero" guarantee evaporates. Constrain existence and uniqueness, and tie it to the ordering (the last period is the maximal one).
+
+**5. Minor:** no constraint that `rate >= 0`, and no `emi > 0`. Lower priority than the above.
+
+### Two things to flag but not fix by trusting the labels
+
+**`principal_reduces_balance` is redundant and misnamed.** `principal(p) = emi(p) - interest(p)` is just `composition` rearranged; it says nothing about any balance being reduced. It is a trap: a reader scanning invariant names sees "reduces balance" and assumes balance dynamics are covered, when in fact (1) is missing. The real balance-reduction content lives in the recurrence that isn't there.
+
+**`interest_on_balance` is currently unverified.** The monitor couldn't evaluate it because `rate` isn't in the execution traces. The invariant is correct against intent, but the core interest guarantee is untested in this harness. Confirm `rate` is actually an observable the system exports; if it isn't, this invariant is decorative.
+
+### Verdict
+
+Do not trust it yet. It correctly captures composition, interest-on-balance, total repayment and the terminal condition, but it overconstrains payments (the `level_payment` error) and omits the amortisation recurrence and its opening anchor, which is the spine of the whole behaviour. Add period ordering, the opening balance, the roll-forward recurrence and `is_last` existence/uniqueness; weaken `level_payment` to exempt the final period; and confirm `rate` is observable so `interest_on_balance` can actually be checked.

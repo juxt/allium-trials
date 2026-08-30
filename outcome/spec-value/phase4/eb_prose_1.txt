@@ -1,0 +1,39 @@
+## Review of AmortisingLoan spec
+
+**The headline: the spec models a set of disconnected period snapshots, never a running schedule.** Every invariant is a per-period or aggregate constraint. Nothing chains one period to the next, and nothing anchors the schedule to the amount borrowed. As a result the spec accepts schedules that are locally consistent but globally nonsensical.
+
+### Errors (false assertions)
+
+On a strict reading there are no outright errors. Every invariant listed is true of the intended behaviour. Two things are worth flagging, though:
+
+`composition` (`emi = interest + principal`) and `principal_reduces_balance` (`principal = emi - interest`) are the same equation rearranged. Not wrong, but redundant. Only one is doing work.
+
+`level_payment` forbids the final instalment differing from the rest. Real amortising loans usually adjust the last payment for rounding. The product owner described "equal periodic instalments", so this matches the *idealised* intent, but be aware it rules out the common real-world tail adjustment. If the implementation rounds, this invariant will fail on the last period.
+
+### Omissions (intended behaviour left unconstrained)
+
+**1. No balance recurrence between periods.** This is the critical gap. Nothing states `outstanding_start(next) = outstanding_start(this) - principal(this)`. Interest is charged on `outstanding_start`, but the spec never forces `outstanding_start` to actually be the running balance. Each period's opening balance floats free of the previous period's principal payment.
+
+**2. No initial anchor.** Nothing says `outstanding_start(first) = disbursed`. The loan's opening balance is never tied to the amount borrowed.
+
+**3. No ordering on `Period`.** The entity has no successor or index. There is no "first", no "next", no "last-by-position". This is *why* omissions 1 and 2 cannot even be stated in the current model. Fix the ordering first, then the recurrence and the initial condition become expressible.
+
+Here is what omissions 1 to 3 cost you concretely. Take rate 0.1, disbursed 100, two periods. The following satisfies **every** invariant in the spec:
+
+- `outstanding_start(1) = 50`, `interest(1) = 5`, `principal(1) = 50`
+- `outstanding_start(2) = 50`, `interest(2) = 5`, `principal(2) = 50`
+- `emi = 55` for both; sum of principal = 100 = disbursed; last period `outstanding_start = principal`; all non-negative.
+
+The customer borrowed 100 but their opening balance is shown as 50. It passes. `full_repayment` and `ends_at_zero` together do **not** rescue you, because without the recurrence and the initial anchor the intermediate balances are free variables.
+
+**4. `is_last` is unconstrained.** Nothing guarantees a last period exists, that exactly one is flagged, or that the flag lands on the actual final period. If `is_last` is false everywhere, `ends_at_zero` is vacuous and the loan need never reach zero. The one invariant enforcing "ends at zero" can be switched off silently.
+
+**5. No term / period count.** The number of periods is undefined. Combined with 4, there is no notion of the loan actually terminating.
+
+**6. Minor sign gaps.** `rate >= 0`, `interest(p) >= 0` and `emi(p) >= 0` are not stated. `nonneg_principal` and `nonneg_balance` are given, but with `rate` unconstrained, interest could go negative.
+
+### What would close the gaps
+
+Give `Period` an ordering (index or successor). Then add: `outstanding_start(first) = disbursed`; the recurrence `outstanding_start(succ p) = outstanding_start(p) - principal(p)`; existence and uniqueness of the `is_last` period; and `rate >= 0`. With the recurrence and both anchors in place, `full_repayment` becomes a derivable consequence rather than an independent load-bearing constraint, and the counterexample above is excluded.
+
+**Bottom line:** no false assertions, but the spec is not trustworthy as a complete statement of intent. The missing recurrence plus the missing initial anchor are not incidental. Together they let the balance column be fiction while every stated invariant holds green.

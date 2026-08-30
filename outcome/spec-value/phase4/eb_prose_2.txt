@@ -1,0 +1,40 @@
+This spec captures the *pointwise* algebra of an instalment correctly, but it never connects one period to the next. That single gap is the dominant flaw, and several smaller omissions follow from it.
+
+## The central omission: no balance recurrence
+
+The spec defines `outstanding_start(p)` for each period but never says how the balance evolves. The defining relation of amortisation,
+
+```
+outstanding_start(next p) = outstanding_start(p) - principal(p)
+```
+
+is absent. Nothing ties one period's opening balance to the previous period's balance minus the principal paid. As a result `outstanding_start` is a free function: you can pick any values you like for each period, and as long as they individually satisfy `interest = rate * outstanding_start` and the sum-of-principal constraint, every invariant passes even though the schedule is not a real amortisation. The intended sentence "interest is charged on what they still owe" is enforced *within* a period but not *across* periods, which is where it actually bites.
+
+Everything below is downstream of this.
+
+## Other omissions
+
+- **No anchor at the start.** `outstanding_start(first) = disbursed` is missing. The opening balance of the first period is never tied to the amount borrowed, so the spec cannot derive that first-period interest is `rate * disbursed`. `disbursed` reaches the schedule only through `full_repayment` (the sum), not through the balance.
+- **Period has no ordering or term.** `Period` is an unordered entity with no successor, no first, and no defined count N. "Equal instalments over the term" has no term. There is no `is_first`, and the recurrence above has nothing to range over.
+- **`is_last` is not pinned down.** Nothing requires that a last period exists, nor that exactly one does. If `is_last` is never true, `ends_at_zero` is vacuously satisfied and the loan never has to reach zero. If it is true for several periods, the constraint is applied in the wrong places.
+- **Sign and range constraints are partial.** `outstanding_start` and `principal` are constrained non-negative, but `rate >= 0`, `disbursed > 0`, `emi > 0` and `interest >= 0` are not. With `rate` unconstrained, interest could be negative.
+- **No monotone decline.** The balance is never required to fall period over period. It would follow from the recurrence, but as written there is nothing forcing it.
+
+## Error / defect in what is asserted
+
+- **`principal_reduces_balance` is redundant and misnamed.** Its body, `principal(p) = emi(p) - interest(p)`, is algebraically identical to `composition` (`emi = interest + principal`) — the same equation rearranged. It reduces no balance across periods. The name promises exactly the missing recurrence, so it is worse than harmless: it reads as though the balance-reduction logic is present when it is not, and is likely to mask the central omission from a reader skimming the invariant list.
+
+## Caveat, not an error
+
+`level_payment` (all EMIs equal) matches the stated intent of "equal periodic instalments", so it is not wrong. Worth noting only that strict equality of every EMI *and* an exact zero ending is generally unsatisfiable if `Money` is discrete (real loans use a final adjusting payment). Given the intent states equal instalments explicitly, I'd leave it, but flag it if `Money` turns out to be integer-valued.
+
+## Bottom line
+
+The algebra of a single instalment is right. What's missing is the thing that makes it a *loan*: the period-to-period balance recurrence, its anchor at `disbursed`, and the ordered/finite term the recurrence runs over. Add
+
+```
+invariant opens_at_disbursed  means is_first(p) => outstanding_start(p) = disbursed
+invariant balance_rolls_forward means outstanding_start(next p) = outstanding_start(p) - principal(p)
+```
+
+(plus an ordering on `Period`, an `is_first`/`is_last` that are guaranteed to hold exactly once, and `rate >= 0`), and `full_repayment` becomes a derivable consequence rather than the only thread holding `disbursed` to the schedule. As it stands, the spec would accept schedules that are not amortising loans.

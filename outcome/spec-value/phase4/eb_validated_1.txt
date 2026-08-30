@@ -1,0 +1,52 @@
+This is a review task; my judgement is the spec against the intended behaviour, with the mechanical report as corroborating signal. Here is what I find.
+
+## The one structural omission that drives everything
+
+**The spec never links a period's balance to the next.** `outstanding_start(p)` is used by four invariants but nothing ever says how it evolves. There is no roll-forward:
+
+```
+outstanding_start(next p) = outstanding_start(p) − principal(p)
+```
+
+and no opening anchor:
+
+```
+outstanding_start(first p) = disbursed
+```
+
+Without these, `outstanding_start` is a free variable per period. Every invariant that references it (`interest_on_balance`, `principal_reduces_balance`, `ends_at_zero`) is satisfiable by picking any balances you like, as long as the per-period algebra closes. This is exactly why the mutation battery scores 0% on *corrupted roll-forward* and *non-monotonic increasing balance*: the spec makes no claim about the relationship between consecutive periods, so no corruption of that relationship can violate it. This is the central defect. Fixing it is a precondition for the spec meaning anything about a *schedule* rather than a bag of independent periods.
+
+Note the knock-on: once roll-forward plus `nonneg_principal` are present, monotone-decreasing balance falls out for free (balance drops by `principal(p) ≥ 0` each step), so the second blind spot closes with the same fix. And `full_repayment` becomes a *theorem* (opening = disbursed, roll down by principal, end at zero ⟹ principals sum to disbursed) rather than an independent axiom.
+
+**This also exposes a missing entity structure.** `Period` has no ordering, successor, or index, and no `is_first`. You cannot even *write* roll-forward as the language stands. The spec needs a sequence over `Period` before the recurrence is expressible.
+
+## Errors (asserts something false of the intended behaviour)
+
+**`level_payment` is over-strong.** It requires `emi(p) = emi(q)` for *all* pairs including the last. The monitor confirms the real final instalment differs (residual 0.04 — cents, i.e. rounding). This isn't a code bug to wave away: `level_payment` (all equal) together with `ends_at_zero`, roll-forward, and an exact opening balance **over-determine** the schedule once money is discrete. The idealised real-number EMI solves all constraints at once; the moment instalments round to the cent, accumulated error must be absorbed somewhere, and by convention it lands in the final payment. So the correct invariant is level payment for every **non-final** period, with the last instalment pinned by `ends_at_zero`:
+
+```
+every p, q :: (not is_last(p) and not is_last(q)) => emi(p) = emi(q)
+```
+
+As written, any faithful implementation will violate it. Flagging as an error rather than a code divergence.
+
+## Omissions (intended behaviour left unconstrained)
+
+- **Opening balance** = `disbursed` (see above). Nothing anchors period one.
+- **Sign/domain constraints.** No `rate ≥ 0`, no `disbursed > 0`. A negative rate or non-positive principal passes the spec silently.
+- **`is_last` is undefined and unconstrained.** It's an observable with no tie to the ordering and no guarantee that exactly one period is last. Both `level_payment`'s exemption and `ends_at_zero` depend on it being well-defined; right now it's whatever the system reports.
+- **Ending balance is only stated indirectly.** `ends_at_zero` says `outstanding_start(last) = principal(last)`, which gives a zero *closing* balance only via roll-forward — which is absent. Until roll-forward exists, this invariant doesn't actually force the loan to close at zero.
+
+## Notes (not errors, worth recording)
+
+- **`principal_reduces_balance` is redundant.** `principal = emi − interest` is the same equation as `composition` (`emi = interest + principal`), rearranged. Harmless, but it isn't a second constraint.
+- **`interest_on_balance` is unverifiable as bound.** The report can't evaluate it because `given rate` is absent from the traces. That's a spec-to-code binding gap, not a statement error: either `rate` needs surfacing in the execution traces, or the spec is referencing a quantity the system doesn't expose. Left unresolved, this invariant is decorative.
+
+## Priority
+
+1. Add period ordering + roll-forward + opening anchor. This is the load-bearing fix; it closes both mutation blind spots and makes `outstanding_start` mean something.
+2. Relax `level_payment` to exclude the final period.
+3. Pin down `is_last` and add sign constraints.
+4. Resolve the `rate` binding so `interest_on_balance` is actually checked.
+
+Everything else the spec gets right: composition, interest-on-balance (as intent), full repayment, and the non-negativity floors are all faithful.

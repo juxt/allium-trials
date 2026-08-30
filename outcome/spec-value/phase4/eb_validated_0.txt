@@ -1,0 +1,37 @@
+## Review of the `AmortisingLoan` spec
+
+The spec captures the arithmetic of a single instalment well, but it is missing the one law that makes a loan a loan (the balance recurrence), and it over-constrains the payment stream in a way no real rounded schedule can satisfy.
+
+### Errors (asserts something false of the intended behaviour)
+
+**1. `level_payment` is too strong — a genuine spec error, not a code bug.**
+It asserts *every* pair of instalments is equal. The monitor's failure (worst residual 0.04, last instalment differs) is the spec being wrong, not the code. Here is why it's an error rather than a faithful-but-violated ideal: `Money` is discrete, and the prose also demands *exact* repayment (`full_repayment`) and a *zero* ending balance (`ends_at_zero`). Under rounding you cannot have all three at once — strictly-equal payments, exact repayment, and exact zero. The universal convention, and what the real code does, is to keep every instalment level *except the last*, which absorbs the rounding residue. So `level_payment` conflicts with `full_repayment` + `interest_on_balance` + `composition`: taken together the spec is unsatisfiable for any real schedule.
+Fix: quantify over non-final periods only, e.g. `every p, q :: (!is_last(p) && !is_last(q)) => emi(p) = emi(q)`.
+
+**2. `principal_reduces_balance` is redundant and misnamed.**
+`principal(p) = emi(p) - interest(p)` is just `composition` rearranged; it adds no constraint. Worse, its name promises the balance-reduction law (this period's principal shrinks next period's balance) that the spec never actually states. It reads as if the roll-forward is covered when it isn't. Remove it, or replace it with the real recurrence below.
+
+### Omissions (intended behaviour left unconstrained)
+
+**3. No inter-period balance recurrence. This is the core defect.**
+Nothing links one period's balance to the next. The amortisation law `outstanding_start(next) = outstanding_start(p) - principal(p)` is entirely absent. This is exactly why the mutation battery scored 0% on the two blind spots: a corrupted roll-forward and a *rising* balance both satisfy every current invariant. Without this law the per-period arithmetic floats free and the "schedule" needn't descend at all.
+Adding it requires **ordering on `Period`** (a successor / `next` relation), which the spec also lacks — `entity Period` is an unordered set today.
+
+**4. No initial condition.**
+The first period's balance is never anchored: `outstanding_start(first) = disbursed`. `full_repayment` constrains the *sum* of principal, but nothing pins where the schedule starts. Combined with the missing recurrence, the balance sequence is completely unmoored from `disbursed`.
+
+**5. `is_last` is unconstrained.**
+It's an observable with no rules: nothing says exactly one period is last, or that it is the maximal period under the ordering. `ends_at_zero` and the `level_payment` fix both lean on `is_last`, so an arbitrary or multiple `is_last` breaks them. Needs `is_last(p) <=> p is the final period`.
+
+**6. Monotonic non-increasing balance is unstated.**
+The rising-balance mutation slipped through. Once the recurrence (3) and `nonneg_principal` are present this largely follows, but neither is there today, so it's worth stating (or deriving) explicitly: `!is_last(p) => outstanding_start(next) <= outstanding_start(p)`.
+
+**7. `interest_on_balance` is structurally unverifiable.**
+The monitor left it UNCHECKED because `rate` is a `given` that never appears in traces. This is the central economic invariant and it can never be confirmed against reality as modelled. Either make `rate` observable, or express interest against two observable balances. As written, the most important claim in the spec is untestable.
+
+**8. Input well-formedness.**
+No `disbursed > 0`, no `rate >= 0`. Minor, but `interest_on_balance` and the sign of everything downstream depend on `rate >= 0`.
+
+### Summary
+
+Trust the single-period arithmetic (`composition`, `interest_on_balance`, the sign floors). Do **not** trust the spec as complete or correct: `level_payment` makes it unsatisfiable under rounding, and the absence of a balance recurrence plus initial condition means it does not actually describe an amortising schedule — it describes a bag of unordered periods whose balances happen to satisfy some local equations. The two mutation blind spots and the one monitor failure are all symptoms of these three gaps (recurrence, anchor, ordering) plus the over-strong equal-payment claim.

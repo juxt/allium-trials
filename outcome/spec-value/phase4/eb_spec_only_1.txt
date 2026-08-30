@@ -1,0 +1,44 @@
+## Verdict
+
+The spec contains no outright false assertions. Every invariant it states is true of a standard amortising loan. The problem is entirely one of omission, and the omissions are severe enough that the spec does not actually describe an amortising loan. It describes a loosely related set of per-period algebraic identities that a nonsense balance sequence can satisfy.
+
+## The central gap: the balance never recurses
+
+The defining dynamic of amortisation is that the balance carried into each period is the previous balance minus the principal just repaid:
+
+```
+outstanding_start(next p) = outstanding_start(p) - principal(p)
+```
+
+This is **absent**. Nothing links `outstanding_start` across periods, and nothing links it to `disbursed`. So `outstanding_start` is a free function. `interest_on_balance` then charges interest on a quantity that need not correspond to anything the customer actually owes.
+
+Note that `principal_reduces_balance` is misnamed: it reads `principal(p) = emi(p) - interest(p)`, which is just `composition` rearranged. It is fully redundant and, worse, it occupies the slot where the real balance-reduction constraint should live, making the spec look like it covers ground it doesn't.
+
+A concrete model satisfying **every** invariant but violating the intent (rate 0.1, disbursed 100, two periods):
+
+- `outstanding_start(1) = 500`, `outstanding_start(2) = 71.43`
+- `interest(1) = 50`, `interest(2) = 7.14`
+- `principal(1) = 28.57`, `principal(2) = 71.43`
+- `emi = 78.57` for both, `is_last(2)`
+
+Check: composition holds, level_payment holds, interest_on_balance holds, principal_reduces_balance holds, full_repayment (28.57 + 71.43 = 100) holds, ends_at_zero (71.43 = 71.43) holds, both nonneg invariants hold. Yet the opening balance is 500 against a borrowed 100, and the balance drops from 500 to 71 with only 28.57 of principal repaid. The customer is charged interest on money they never borrowed. This is admitted precisely because the recursion and the anchor are missing.
+
+## Omissions, in priority order
+
+1. **Balance recursion** (above). Without it, none of the per-period identities compose into a loan.
+
+2. **Initial balance anchor.** `outstanding_start(first) = disbursed` is not stated. Nothing ties the running balance to the amount borrowed. The counterexample exploits this directly.
+
+3. **Period structure.** `Period` is an abstract entity with no ordering, no first period, no successor, and no finiteness. Yet `outstanding_start` ("start of period"), `is_last`, the recursion, and the `sum` in `full_repayment` all presuppose an ordered, finite sequence 1..N. As written, none of those notions is grounded. The term of the loan is never defined.
+
+4. **`is_last` is unconstrained.** It is a free boolean predicate. Nothing forces exactly one period to be last, nor that the last period is the maximal one. It could hold for no period (then `ends_at_zero` is vacuous and the balance is never driven to zero), for several periods, or for a period in the middle (zeroing the balance mid-term while later periods still carry a positive balance). It should be pinned to the maximal period, holding for exactly one.
+
+5. **Sign constraints on the givens.** `disbursed > 0` and `rate >= 0` are not stated. A zero or negative disbursed, or a negative rate, satisfies the spec.
+
+6. **Loan actually progresses.** `nonneg_principal` permits `principal(p) = 0`, so with the recursion in place a period could repay nothing and the balance stall. A real amortising schedule reduces the balance every period. Lower priority, and partly implied once the recursion and a positive rate are present, but worth stating.
+
+## What is correctly captured
+
+`composition`, `level_payment`, `interest_on_balance`, `full_repayment`, `ends_at_zero`, and the two non-negativity invariants are each faithful to the intended behaviour. `full_repayment` and `ends_at_zero` would become derivable once the recursion and initial anchor are added, but keeping them stated is harmless and aids readability.
+
+The one-line summary for the product owner: the pieces are right, but the spec never says the balance rolls forward from one period to the next or that it starts at the amount borrowed, so it fails to constrain the very thing that makes a loan amortise.

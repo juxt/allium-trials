@@ -94,3 +94,21 @@ Budget 4h (END 1788103851 / 16:30). Phased plan + gates in PROGRAMME2.md.
   the flaws the code-check CATCHES. Re-running Phase 4 with informal intent to isolate this: prediction —
   spec_only/prose MISS F1; the `validated` arm (handed the monitor result "level_payment FAILS resid
   0.04") CATCHES it. If so, the confidence-builder is validation-against-code, not review/explanation.
+
+## Iteration 10 — Phase 4 INFORMAL intent — DECISIVE: validation catches what review-against-intent cannot
+- With only informal intent (the vague guidance the spec was distilled from):
+  spec_only F1 0/3, prose F1 0/3, **validated F1 3/3** (all F2 3/3).
+- Verified genuine (read eb_validated_0.txt, 4516 chars, real review): it reasoned FROM the monitor
+  report — "The monitor's failure (worst residual 0.04, last instalment differs) is the spec being
+  wrong" — and added that level_payment + full_repayment + ends_at_zero are jointly unsatisfiable under
+  rounding. No judge inflation.
+- **=> The over-claim (F1) is caught ONLY when the reviewer has the mechanical validation report.
+  Review-against-informal-intent MISSES it, because the vague human intent ITSELF endorses "equal
+  instalments" — the spec faithfully mirrors the human's wrong mental model, so nothing in review or
+  explanation reveals the divergence. The monitor catches it because it checks the spec against what the
+  CODE DOES, not what the human THINKS.** This is the confidence mechanism, cleanly isolated.
+- Honest nuance: the OMISSION (F2 roll-forward) was caught by ALL arms — a competent reviewer infers
+  amortising loans need it even from vague intent. So validation's UNIQUE review-value is strongest for
+  FAITHFULNESS over-claims (spec matches wrong intent but not code); for omissions a knowledgeable
+  reviewer anticipates, mutation-testing still adds value on domain-specific blind spots the reviewer
+  would not foresee. Complete-intent run (saturated 9/9) preserved in _complete_intent_run/.

@@ -1,0 +1,34 @@
+This spec is internally consistent and every invariant it states is *true* of an amortising loan. The problem is almost entirely omission: it states a set of true facts that, taken together, do not pin down an amortising loan. One structural piece is missing, and everything else follows from its absence.
+
+## The core defect: no link between periods
+
+An amortising loan is fundamentally a recurrence. The balance at the start of one period is the balance at the start of the previous period minus the principal just paid. This spec never says that. Nothing connects `outstanding_start(p)` to `outstanding_start` of the period before it.
+
+Worse, `Period` is an unordered entity. There is no first period, no successor, no notion of "consecutive". `is_last` is a lone predicate with no ordering behind it. So the recurrence cannot even be *expressed* in the current vocabulary. This is the root omission; the rest are consequences.
+
+Note the invariant named `principal_reduces_balance`. Its name promises exactly the recurrence, but its body (`principal(p) = emi(p) - interest(p)`) is just `composition` rearranged. It reduces nothing. The name papers over the gap.
+
+## What the missing recurrence lets through
+
+**No initial condition.** Nothing says `outstanding_start(first) = disbursed`. The opening balance is free. Concretely, with two periods, `disbursed = 100`, `rate = 0`: `level_payment` and `full_repayment` force `emi = 50` and `principal = 50` each; `ends_at_zero` forces `outstanding_start(last) = 50`; but `outstanding_start` of the *first* period is constrained only by `>= 0`. Set it to 7. Every invariant holds. It is not a loan of 100. With a positive rate the damage is larger, because `interest` is computed from these free-floating balances.
+
+**No monotone decline.** With a real recurrence and `nonneg_principal`, the balance would be non-increasing. As written, the balances need not track any declining trajectory. `full_repayment` only fixes the *total* of the principal column, not the period-by-period path.
+
+## `is_last` is not well-formed
+
+Nothing guarantees at least one period satisfies `is_last`, nor that at most one does. If no period is last, `ends_at_zero` is vacuous and "at the end the balance is zero" is never enforced. The zero end-balance rides entirely on `is_last` existing and being unique, which the spec does not establish. There is also no `is_first`.
+
+## Errors
+
+I find no outright false assertion. `composition`, `level_payment`, `interest_on_balance`, `full_repayment`, `ends_at_zero` and the two non-negativity invariants are all true of the intended behaviour. `ends_at_zero` in particular is correct: `outstanding_start(last) = principal(last)` does make the closing balance zero. The spec's failing is that these truths are jointly too weak, not that any of them is wrong.
+
+## Lesser omissions
+
+- `rate >= 0` is unconstrained. A negative rate yields negative interest and is admitted.
+- Non-negativity of `interest` and `emi` is not stated (derivable only once `rate >= 0` and `outstanding_start >= 0` hold).
+- The number of periods / term is never given or bounded.
+- Redundancy, not an error but worth flagging: `composition` and `principal_reduces_balance` are the same equation. One of them should instead carry the recurrence.
+
+## What it needs to be trustworthy
+
+Add ordering to `Period` (a successor relation, `is_first`, uniqueness of `is_last`), then state the two things that make it a loan: the opening balance equals the debt (`outstanding_start(first) = disbursed`), and the balance carries forward (`outstanding_start(next(p)) = outstanding_start(p) - principal(p)`). With those in place, the initial condition, the monotone decline, and even `full_repayment` become consequences rather than free-standing hopes. As it stands, trust it only as a description of one column of an amortisation table, not the table itself.

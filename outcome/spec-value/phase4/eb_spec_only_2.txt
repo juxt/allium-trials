@@ -1,0 +1,49 @@
+This is a review task — analysis only, no tools needed. Here is my assessment.
+
+## Summary
+
+The invariants that are *present* are individually faithful to an amortising loan. The spec fails almost entirely by **omission**, but the omissions are fatal: the single rule that makes a loan *amortise* — the balance rolling forward from one period to the next — is missing, and the balance is never anchored to `disbursed`. As a result a model can satisfy every stated invariant while behaving nothing like the intended loan.
+
+## The root problem: `Period` has no order
+
+`entity Period` is an *unordered* set. Amortisation is inherently sequential: each period follows the previous one and inherits its balance. With no successor relation, no first period and no notion of "the next period", none of the temporal behaviour can be stated. Every omission below descends from this.
+
+## Omissions
+
+**1. Initial balance is never anchored (critical).** Nothing says `outstanding_start(first) = disbursed`. `interest_on_balance` charges interest on `outstanding_start(p)`, but for the opening period that value floats free, so the interest charged can be anything.
+
+**2. The balance recurrence is absent (critical).** The defining equation of amortisation is missing entirely:
+
+```
+outstanding_start(next p) = outstanding_start(p) - principal(p)
+```
+
+`interest_on_balance` and `principal_reduces_balance` are locally correct but never *chained* across periods, so each period's balance is unconstrained by the previous one. "Interest is charged on what they still owe" is only half-specified: it names the balance but never says how the balance evolves as they pay it down.
+
+**3. `is_last` is not pinned down.** Nothing requires exactly one period to be last, nor that it is the maximal period under the ordering. If no period is last, `ends_at_zero` is vacuous and the loan never terminates. If several are, `ends_at_zero` forces multiple periods to share `outstanding_start = principal`, which contradicts a decreasing balance.
+
+**4. Domain constraints are missing.** No `disbursed > 0`, no bound on `rate` (`rate >= 0`), no `emi > 0`, no `interest(p) >= 0`, and no statement of the term / number of periods. `nonneg_balance` and `nonneg_principal` exist but the analogous floors on `emi` and `interest` do not.
+
+## Concrete proof it is underdetermined
+
+Take `disbursed = 100`, `rate = 0.1`, two periods, `is_last(2) = true`. Set the opening balance to **zero**: `outstanding_start(1) = 0`. Solving the remaining invariants gives `emi = 52.38`, `outstanding_start(2) = 47.62`, `principal(1) = 52.38`, `principal(2) = 47.62`.
+
+Every invariant holds — composition, level payment, interest-on-balance, full repayment, ends-at-zero, both non-negativity floors. Yet the customer "owes" 0 in period 1 despite having borrowed 100, and is charged 0 interest that period. This is not the intended loan. The gap is exactly omissions 1 and 2.
+
+## Errors
+
+None outright. No present invariant asserts something false of the intended behaviour. The spec's failure mode is missing constraints, not wrong ones.
+
+## Redundancy (not an error, worth noting)
+
+`principal_reduces_balance` (`principal(p) = emi(p) - interest(p)`) is `composition` (`emi(p) = interest(p) + principal(p)`) rearranged. It adds no constraint. Harmless, but it can create the false impression that principal is tied to something beyond the identity it already satisfies.
+
+## What to add
+
+- An ordering on `Period` (first, successor, last).
+- `outstanding_start(first) = disbursed`.
+- The recurrence `outstanding_start(succ p) = outstanding_start(p) - principal(p)`.
+- Exactly one period with `is_last`, being the maximal period.
+- Domain floors: `disbursed > 0`, `rate >= 0`, `emi > 0`, `interest(p) >= 0`.
+
+With those, `full_repayment` becomes a derivable consequence (telescoping the recurrence from `disbursed` down to zero) rather than an independent axiom papering over the missing dynamics.
