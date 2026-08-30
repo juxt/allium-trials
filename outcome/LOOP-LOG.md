@@ -110,6 +110,15 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 8 — v4: operationalize the automatic gate (analyse exit code)
+- `allium analyse` now exits non-zero when a v4 spec is CONTRADICTORY / VACUOUSLY / INFEASIBLE
+  (kept as warnings so the conformance score isn't lowered, but hard failures for CI and the elicit
+  done-gate). Verified: contradictory spec -> exit 1, clean spec -> exit 0; 45 tests green.
+- GOOD: makes v4's genuine value (an automatic, deterministic standing gate) concrete — a script or
+  CI step can now gate on the exit code, which is exactly the non-accuracy differentiator the
+  saturation finding pointed to. Commit: allium-tools.
+- (Scale probe still finishing at collection time; collect next wake.)
+
 ### Iteration 7 — harness: SCALE probe (the one place catch-rate clear air could remain)
 - Built a 14-constraint loan-product config with a conflict BURIED among distant constraints: base
   1.75%/mo (=21%/yr, rule 4) + penalty 0.5%/mo (=6%/yr, rule 8), both counting toward APR (rule 11),
