@@ -110,6 +110,34 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 9 — collected the SCALE probe — DECISIVE (refutes catch-rate clear air; surfaces a v4 limit)
+- Scale probe (14 constraints, 4 reps): v4 2/4 caught (1 FA); nospec 4/4 caught, 4/4 "FA" on clean.
+- **Verified by reading outputs — two big honest findings:**
+  1. **My fixture was arithmetically NAIVE; the model corrected it.** nospec's "false alarm" on the
+     clean (30% cap) config is NOT a false alarm — the model is right. It used the effective/COMPOUND
+     APR: base 1.75%/mo = (1.0175^12-1) = 23.14%; base+penalty 2.25%/mo = (1.0225^12-1) = 30.60% >
+     30% cap. My fixture assumed SIMPLE annualisation (12x -> 27% < 30% = "clean"), but regulatory APR
+     is compound. So my "clean" twin is actually a conflict. The model's domain math exceeded my
+     fixture design. HARNESS LESSON: you cannot easily out-design a frontier model's domain knowledge
+     when building conflict fixtures — it knows the arithmetic better than the fixture author.
+  2. **v4 is WEAKER here, not tied — it cannot express the math.** v4's decidable linear-arithmetic
+     tier has NO exponentiation, so it cannot represent compound/effective APR at all. It caught only
+     the naive simple-annualisation version, 2/4 (encoding variance: one rep didn't encode APR; one
+     used a form analyse couldn't compose). So at scale on real financial constraints, the model
+     catches (compound, in-head) while v4 can neither express nor check the constraint.
+- **=> CATCH-RATE CLEAR AIR FOR v4 IS REFUTED at every scale I can construct.** The model doesn't miss
+  buried conflicts, AND v4's linear (decidable, N6) spine can't express the nonlinear math (compound
+  interest) the banking domain actually uses. Fundamental tension: real constraints are nonlinear;
+  v4's checkable fragment is linear by design. Flag for the human — this bounds the analyse value.
+- **This settles the conflict-catching thread:** v4's value is definitively the elicit SURFACING
+  disposition + non-accuracy properties (determinism, audit core, automatic gate, v3-parity), NOT
+  conflict-detection accuracy. The scale frontier that might still hold value is context-BEYOND
+  (hundreds of constraints, a spec too big to hold) — not constructible cheaply, and my 14-constraint
+  attempt both saturated and exposed my own fixture's naivety.
+- No re-run: v4 can't check compound APR regardless of fixture, so a corrected fixture wouldn't change
+  the conclusion. Note V-new backlog: v4 has no way to express/flag nonlinear constraints (should at
+  least NOTE "nonlinear, not checkable" instead of silently linearising/skipping — honesty gap).
+
 ### Iteration 8 — v4: operationalize the automatic gate (analyse exit code)
 - `allium analyse` now exits non-zero when a v4 spec is CONTRADICTORY / VACUOUSLY / INFEASIBLE
   (kept as warnings so the conformance score isn't lowered, but hard failures for CI and the elicit
