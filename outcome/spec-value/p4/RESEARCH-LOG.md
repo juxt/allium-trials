@@ -34,3 +34,19 @@
 - prose == v4 (both 150/150): notation doesn't matter for TRANSMISSION when both fully specify. To earn
   clear air over prose, v4 must win where prose is weak: (a) checkability (validate an imperfect spec
   before build), (b) distillation drift, (c) complexity/ambiguity. Next: distill direction + validate.
+
+## Iteration 3 — LANGUAGE FIX: division operator added (real gap found via the reference oracle)
+- Building the flat reference-oracle spec (interest = disbursed*rate/1200) exposed that v4 had NO
+  division operator at all: BinOp lacked Div, the lexer skipped `/` as an unknown byte, so `x / 1200`
+  silently became `x`. Financial specs are full of division (rate/1200, /12). Also the reference-oracle
+  feature only inlined PARAMETERISED givens; 0-ary `given k means <arith>` didn't inline.
+- Fixed end to end (RED->GREEN, 52 allium-v4 tests): lexer Slash, BinOp::Div, parse at mul precedence,
+  eval in monitor (zero-guarded), LRA (constant divisor = linear, variable = nonlinear), type-checker
+  (X/scalar keeps dim; same-dim/same -> scalar). 0-ary reference constants now inline. Now
+  `interest = disbursed*rate/1200` monitors: correct spec residual ~0.005, /1000 typo residual 1.66 —
+  cleanly distinguished. This is the executable substrate for the checkability experiment.
+- Harness note: the model burns turns and hits --max-turns on big distill prompts, returning empty;
+  fixed with --max-turns 6 + "respond in a SINGLE message, do not use tools". Also: the model is
+  markedly LESS FLUENT in v4 than prose (uses # not --, omits header/end) -> naive v4 distillation is
+  unreliable; the `allium check` gate is needed just to reach parity. A real adoption cost of a formal
+  language, and part of why checkability matters (you can't ship an unparseable prose spec's analogue).

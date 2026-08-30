@@ -24,7 +24,7 @@ const SAMPLE = ["d1000_r9.99_m12", "d5000_r18_m24", "d100_r5_m6", "d12345.67_r24
   .map((id) => ({ id, text: readFileSync(join(HERE, ORACLE, id + ".trace"), "utf8") }));
 
 function claude(prompt) {
-  const r = spawnSync("claude", ["-p", prompt, "--output-format", "json", "--model", MODEL, "--max-turns", "3",
+  const r = spawnSync("claude", ["-p", prompt, "--output-format", "json", "--model", MODEL, "--max-turns", "6",
     "--disallowedTools", "Task,Agent,Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch"],
     { encoding: "utf8", maxBuffer: 1 << 27, timeout: 300000 });
   let j = {}; try { j = JSON.parse(r.stdout || "{}"); } catch { j = { result: r.stdout || "" }; }
@@ -60,8 +60,8 @@ async function runForm(form, i) {
   let cost = 0;
   // 1. distill
   const distillPrompt = form === "v4"
-    ? `Distil an Allium v4 behavioural spec from this implementation. v4: component/entity/given/observable state/invariant; \`given f(x) means e\` and \`given k means <expr>\` define pure reference functions/constants; \`/\` is division; invariants use \`every p ::\`, \`sum p ::\`, \`follows(next,p)\`. Capture the numeric conventions precisely. Output ONLY the spec in one \`\`\`allium block.\n\n=== REFERENCE ===\n${REFCODE}`
-    : `Distil a precise prose behavioural specification from this implementation, complete enough to rebuild it without the code (esp. numeric conventions). Output ONLY the prose spec.\n\n=== REFERENCE ===\n${REFCODE}`;
+    ? `Distil an Allium v4 behavioural spec from this implementation. v4: component/entity/given/observable state/invariant; \`given f(x) means e\` and \`given k means <expr>\` define pure reference functions/constants; \`/\` is division; invariants use \`every p ::\`, \`sum p ::\`, \`follows(next,p)\`. Capture the numeric conventions precisely. Respond in a SINGLE message; do not use tools. Output ONLY the spec in one \`\`\`allium block, starting with \`-- allium: 4\` and ending with \`end\`.\n\n=== REFERENCE ===\n${REFCODE}`
+    : `Distil a precise prose behavioural specification from this implementation, complete enough to rebuild it without the code (esp. numeric conventions). Respond in a SINGLE message; do not use tools. Output ONLY the prose spec.\n\n=== REFERENCE ===\n${REFCODE}`;
   let d = claude(distillPrompt); cost += d.cost;
   let spec = form === "v4" ? block(d.text, "allium") : d.text.trim();
   let validated_rounds = 0, caught = [];
@@ -75,7 +75,7 @@ async function runForm(form, i) {
       if (problems.length === 0) break;
       caught.push(...problems);
       validated_rounds++;
-      const fix = claude(`Your Allium v4 spec below FAILS mechanical validation against the reference implementation's own execution traces. Fix the spec so every invariant holds on the real traces and it checks cleanly. Output ONLY the corrected spec in one \`\`\`allium block.\n\n=== SPEC ===\n${spec}\n\n=== VALIDATION FAILURES ===\n${problems.join("\n")}\n\n=== SOME REAL TRACES (ground truth the spec must match) ===\n${SAMPLE.slice(0,2).map((s)=>s.id+":\n"+s.text).join("\n")}`);
+      const fix = claude(`Your Allium v4 spec below FAILS mechanical validation against the reference implementation's own execution traces. Fix the spec so every invariant holds on the real traces and it checks cleanly. Respond in a SINGLE message; do not use tools. Output ONLY the corrected spec in one \`\`\`allium block, starting with \`-- allium: 4\` and ending with \`end\`.\n\n=== SPEC ===\n${spec}\n\n=== VALIDATION FAILURES ===\n${problems.join("\n")}\n\n=== SOME REAL TRACES (ground truth the spec must match) ===\n${SAMPLE.slice(0,2).map((s)=>s.id+":\n"+s.text).join("\n")}`);
       cost += fix.cost; spec = block(fix.text, "allium");
     }
   } else {

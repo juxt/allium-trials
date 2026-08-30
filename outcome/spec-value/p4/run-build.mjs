@@ -39,7 +39,7 @@ const PROMPTS = {
 };
 
 function claude(prompt) {
-  const r = spawnSync("claude", ["-p", prompt, "--output-format", "json", "--model", MODEL, "--max-turns", "3",
+  const r = spawnSync("claude", ["-p", prompt, "--output-format", "json", "--model", MODEL, "--max-turns", "6",
     "--disallowedTools", "Task,Agent,Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch"],
     { encoding: "utf8", maxBuffer: 1 << 27, timeout: 300000 });
   let j = {}; try { j = JSON.parse(r.stdout || "{}"); } catch { j = { result: r.stdout || "" }; }
