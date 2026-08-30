@@ -110,6 +110,26 @@ elegant, functionally-inspired behavioural spec language. Guard against harness 
   conclusion is that conflict-detection also saturates and v4's value is determinism/automaticity/
   v3-parity, not catch-rate. Iteration 5 = harness: design & run harder multi-constraint fixtures.
 
+### Iteration 18 — v4: root-cause of v4's higher ABSENT (why v4 trails v3 on surfacing)
+- Followed iter 17's nuance (v4 ABSENT 2.1 > v3 1.5). Diffed the two elicit skills:
+  - V3 SKILL.md = 368 lines, PHASED, with an explicit COVERAGE SWEEP: a "Verify and complete the
+    specification" phase and questions like "Looking at [entity], are these states complete? Can it be
+    in any other state?" plus "Open questions documented". V3 systematically walks the decision space
+    and forces "what else?".
+  - V4 SKILL.md = 114 lines, lean; its ONLY "complete" mention is a NEGATIVE ("don't produce a
+    complete-looking spec without running analyse"). It nails the DISCIPLINE (refuse-to-guess, encode
+    so the spec bites, dimensioned thresholds) but has NO enumeration/coverage step.
+- **=> Root cause (confident): v4 surfaces well what it CONSIDERS but considers less BREADTH, so more
+  decisions fall through as ABSENT instead of SURFACED.** The lean rewrite dropped V3's completeness
+  sweep along with V3's bloat. This is a skill gap, not a syntax gap.
+- **Ready-to-run fix (NOT shipped — would be an unverified change in the last minutes; the loop
+  forbids shipping unverified):** port V3's coverage question into V4's frame as one short step —
+  after drafting, for each entity/observable ask "are these cases exhaustive? what state/branch is
+  unlisted?" and record each as an OPEN item rather than dropping it. Keep it to ~3 lines to preserve
+  v4's leanness. Then re-run eval-elicit2 + eval-rejudge; success = v4 ABSENT drops to <=v3 without
+  raising GUESSED. Logged as the top v4 backlog item for the human sync.
+- Nothing shipped this iteration (root-cause + queued fix). No commit to allium-tools; log only.
+
 ### Iteration 17 — harness: judge-robustness check — SURFACING FINDING IS NOT A JUDGE ARTEFACT
 - Risk: the load-bearing surfacing finding rested on ONE judge (elicit2's SURFACED/GUESSED/ABSENT
   scorer). Judge inflation could manufacture the whole result. Test: re-score the 40 ALREADY-SAVED
