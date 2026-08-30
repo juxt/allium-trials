@@ -1,0 +1,32 @@
+[
+  {
+    "id": "rename",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "rename",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "rename",
+    "arm": "ceiling",
+    "d": "MERGE"
+  },
+  {
+    "id": "rename",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "rename",
+    "arm": "floor",
+    "d": "MERGE"
+  },
+  {
+    "id": "rename",
+    "arm": "floor",
+    "d": "MERGE"
+  }
+]

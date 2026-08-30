@@ -1,0 +1,6 @@
+[rename ceiling 0] MERGE
+[rename ceiling 1] MERGE
+[rename ceiling 2] MERGE
+[rename floor 0] MERGE
+[rename floor 1] MERGE
+[rename floor 2] MERGE
