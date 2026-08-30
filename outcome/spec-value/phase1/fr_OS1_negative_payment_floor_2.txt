@@ -1,0 +1,17 @@
+## Review
+
+**Spec check.** The allocation order (principal → interest → fees → penalties) is untouched. The maintained spec is not violated.
+
+**But the spec is a floor, and the guard hides a real problem in the negative branch.** `isZeroOrNegative()` collapses two very different cases into one silent `return`:
+
+- **Zero payment** — genuinely a no-op. Under the current code a zero payment already allocates nothing, so returning early is behaviour-equivalent. Fine.
+- **Negative payment** — not equivalent, and the handling is wrong for a loan ledger. A negative amount reaching this function means one of two things, and a bare `return` mishandles both:
+  1. It's a legitimate **reversal / adjustment** (chargebacks, corrections, and reversals are routine in loan servicing and are frequently modelled as signed amounts). Silently returning **swallows the reversal** — the caller believes it was processed, the ledger never moves. That is a data-integrity failure, and no test would catch it because "existing tests pass" only tells us the positive paths are covered.
+  2. It's an **upstream bug** producing a negative payment. A silent `return` masks it — no throw, no log, no audit trail. The defect stays invisible.
+
+The status quo isn't safe either (a negative `left` flowing into `pay()` could corrupt balances), so a guard is warranted. But the correct guard distinguishes the two: skip on exactly zero, and **reject loudly** (throw / route to the reversal handler) on negative rather than silently discarding it. As written, the change trades a loud corruption risk for a silent data-loss risk, which is harder to detect and arguably worse in a system of record.
+
+Split the condition before merging.
+
+DECISION: BLOCK
+REASON: The zero case is safe, but folding negative payments into the same silent `return` can swallow a legitimate reversal or mask an upstream bug with no error or audit trail — a data-integrity risk the spec doesn't cover and tests don't catch.

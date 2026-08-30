@@ -1,0 +1,16 @@
+# Review
+
+The change compiles and tests pass, but that only tells us the covered paths are unaffected. The question is what `return` skips, and it skips more than allocation.
+
+Two concerns, in order of severity.
+
+**Negative payments are silently dropped.** In a loan-servicing system a negative amount is rarely noise. It's usually a reversal, chargeback, or adjustment. The current code would attempt to allocate it (and `pay()` presumably guards or the caller does), but the new guard `isZeroOrNegative()` folds negatives into the same "do nothing, return" bucket as zero. If any caller relies on a negative payment being processed, this makes money disappear with no error. That is exactly the class of bug that passes every existing test and shows up in production reconciliation.
+
+**The early `return` exits the whole method, not just the allocation block.** The comment says "before allocating", but we only see the allocation lines, not what follows them. Payment handlers typically record a transaction, update last-payment date, recompute the outstanding balance, fire events, or persist a receipt. For a genuine zero payment those side effects may still be required, and the original code reaches them because zero flows harmlessly through `pay()` (each bucket gets zero, `left` stays zero). The guard removes that path entirely.
+
+The proposed change is framed as a harmless optimisation, but the zero case was already handled correctly by the existing allocation logic. The guard adds no correctness and introduces a behavioural change for negatives and for any post-allocation work.
+
+To merge this safely I'd want to see: the rest of the method body after the allocation lines, confirmation of how negative payments are meant to be handled, and a test that asserts a zero payment still produces whatever downstream record/side effect the system expects. None of that is present.
+
+DECISION: BLOCK
+REASON: The early `return` silently drops negative payments (reversals/adjustments) and skips any post-allocation side effects for zero payments, and passing tests don't cover those paths.

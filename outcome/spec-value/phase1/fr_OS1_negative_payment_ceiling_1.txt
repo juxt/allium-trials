@@ -1,0 +1,11 @@
+This change doesn't touch the thing the spec governs. The maintained spec constrains one thing: the order principal → interest → fees → penalties. The guard runs before allocation and returns without allocating anything, so for every payment that reaches the allocation block, the order is byte-for-byte unchanged.
+
+The only behavioural difference is at the boundary:
+
+- **Zero payment**: early return is equivalent to the old path. `pay(...)` with zero `left` allocates nothing anyway. No observable change.
+- **Negative payment**: genuine change. Previously `left = payment` went negative and flowed into `pay()`, with whatever result that produced (possibly nonsensical, possibly a balance increase). Now it's silently skipped.
+
+Out-of-scope note, not a spec matter: the negative case now *silently* returns rather than rejecting. If negative amounts are supposed to be impossible, a guard is right, though a throw would surface a bad caller better than a swallow; if negatives are meant as reversals/adjustments handled here, this would suppress them. Neither is knowable from the maintained spec, and neither is an allocation-order violation. Worth a one-line comment or a caller check, but it doesn't gate the merge.
+
+DECISION: MERGE
+REASON: The guard executes strictly before the allocation block and leaves the principal → interest → fees → penalties order untouched, so the maintained spec is not violated and the only real behavioural change is defensively skipping non-positive payments.

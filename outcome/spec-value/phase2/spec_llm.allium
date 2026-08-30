@@ -1,0 +1,19 @@
+-- allium: 4
+component AmortisingLoan
+  entity Period
+  given disbursed : Money
+  given rate : Rate
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state is_last(Period) : bool
+  invariant composition means every p :: emi(p) = interest(p) + principal(p)
+  invariant level_payment means every p, q :: emi(p) = emi(q)
+  invariant interest_on_balance means every p :: interest(p) = rate * outstanding_start(p)
+  invariant principal_reduces_balance means every p :: principal(p) = emi(p) - interest(p)
+  invariant full_repayment means sum p :: principal(p) = disbursed
+  invariant ends_at_zero means every p :: is_last(p) => outstanding_start(p) = principal(p)
+  invariant nonneg_balance means every p :: outstanding_start(p) >= 0
+  invariant nonneg_principal means every p :: principal(p) >= 0
+end

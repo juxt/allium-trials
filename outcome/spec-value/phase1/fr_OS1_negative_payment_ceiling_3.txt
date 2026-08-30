@@ -1,0 +1,16 @@
+This change doesn't touch the maintained spec. Allocation order is still principal → interest → fees → penalties, unchanged. If the only question were "does it violate the allocation-order spec," the answer is plainly no.
+
+But "safe to merge" is a wider question than "spec-compliant," and the spec's silence here is exactly where the risk hides.
+
+Two concrete problems, neither covered by the spec:
+
+**The `return` exits the whole method, not just allocation.** The comment says "before allocating," but a bare `return` skips everything after the allocation block too: transaction posting, balance updates, audit/event emission, delinquency-counter resets. We can't see that code. Previously a zero payment flowed through, allocated nothing, and still hit whatever follows. Now it doesn't. That's a behaviour change for zero payments that the passing tests won't catch unless they assert on those side effects, and they evidently don't.
+
+**`isZeroOrNegative()` bundles two different cases.** Zero is benign. Negative is not. In loan servicing, a negative amount is often a legitimate reversal or adjustment. The old code passed it into `pay(...)`, which did *something* (correct, wrong, or a throw, we don't know). The new code silently swallows it and returns. If negative payments are a real reversal path, this drops them on the floor with no error, which is the sort of ledger-integrity bug that surfaces months later in reconciliation.
+
+The spec doesn't mention zero or negative payments, so a review scoped to the spec waves this through. That scoping is the trap. The maintained spec covers allocation order and only that; it certifies nothing about the guard being added, and a green test suite over code we can't fully see isn't the same as safety.
+
+I'm not asserting the change is wrong. I'm asserting it can't be cleared from the snippet and the spec alone. Two things resolve it: confirm there's no post-allocation code that a zero payment must still reach, and confirm negative payments aren't a meaningful input on this path (or split the guard so only true zero returns early).
+
+DECISION: BLOCK
+REASON: The change is spec-neutral, but the bare `return` skips any post-allocation side effects and silently swallows negative payments that may be legitimate reversals, and neither risk can be cleared from the snippet, the spec, or the passing tests.

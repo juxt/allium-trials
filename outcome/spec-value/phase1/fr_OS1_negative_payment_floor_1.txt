@@ -1,0 +1,17 @@
+## Review
+
+**Does it violate the maintained spec?** No. The spec constrains only the allocation order (principal → interest → fees → penalties), and the guard clause sits before allocation and leaves that order untouched. On the spec's own terms this is clean.
+
+**Independent risk assessment** — this is where the change earns a block.
+
+The guard collapses two very different inputs into one behaviour:
+
+- **Zero payment** — allocating nothing is a harmless no-op, so returning early is behaviourally equivalent for the allocation step. Fine in isolation.
+- **Negative payment** — this is not harmless. In a loan-servicing system a negative amount is almost never "nothing to do". It's either a reversal/chargeback/adjustment that *must* be processed, or it's corrupt/erroneous input that should be rejected loudly. `return;` does neither — it silently swallows the value and reports success to the caller. The caller now believes a payment was handled when nothing happened. That is a data-integrity hazard, not a safety improvement.
+
+There's a second problem the diff hides behind `...`. `return;` exits the whole function, not just the allocation block. Whatever follows allocation — recording the transaction, updating last-payment date, emitting a receipt/audit row, returning leftover as overpayment — is skipped too. For a zero payment some of that side-effecting bookkeeping may still be expected (e.g. an audited "payment received: 0" event, or an explicit rejection). We can't confirm it's safe to skip because that code isn't shown, and "existing tests pass" only tells us no existing test exercised it.
+
+The fix the author wanted is reasonable; the implementation conflates `== 0` with `< 0` and short-circuits more than allocation. Split them: no-op or record-only on exact zero, and an explicit reject/route for negatives, rather than one silent early return.
+
+DECISION: BLOCK
+REASON: The spec is not violated, but treating a negative payment identically to zero silently discards reversals/erroneous input and skips all post-allocation bookkeeping, a real data-integrity risk that needs explicit handling before merge.

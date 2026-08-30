@@ -1,0 +1,14 @@
+This one looks like a harmless input guard, but two things stop me from trusting it.
+
+**Negative payments probably aren't garbage.** In a loan-servicing system a negative amount is usually a meaningful event, not an error: a reversal, refund, chargeback, or manual adjustment. `isZeroOrNegative()` lumps `< 0` in with `== 0` and silently drops both. If any upstream flow posts a negative transaction to represent a reversal, this `return` makes it a no-op, and the loan's balances quietly stay wrong. That's a money-critical decision being made implicitly by a one-line guard, and nothing in the diff tells me the domain treats negatives as invalid.
+
+**The `return` exits the whole method, not just the allocation.** We only see the allocation block. Whatever runs after it, transaction recording, balance recomputation, event/audit emission, persistence, is now skipped for zero and negative payments too. A legitimate zero-value posting (a waiver, a $0 fee event, an idempotent reconciliation entry) would previously have flowed through and recorded something; now it vanishes before any of that. Skipping the arithmetic might be fine; skipping the bookkeeping usually isn't.
+
+**"Tests pass" doesn't cover this.** The existing suite clearly doesn't exercise the negative/reversal path or assert on post-allocation side effects for zero payments, or one of those two behaviours would have changed and a test would have moved. Passing tests here mean "no one wrote a test for the case this change alters," not "this change is safe."
+
+None of this makes the guard wrong in principle. Early-returning on a genuinely invalid payment can be correct. But whether zero and negative are invalid *in this domain*, and whether the post-allocation logic must still run, are open questions the diff doesn't answer. Merging resolves them by accident.
+
+Send it back with two questions: does the system ever post negative or zero-value transactions on purpose, and does anything after the allocation block need to run regardless? If both answers are "no", it's fine. Until then it's an unreviewed behavioural change to money handling.
+
+DECISION: BLOCK
+REASON: The early `return` silently drops negative payments (likely reversals/adjustments) and skips all post-allocation side effects for zero/negative amounts, and neither the diff nor the passing tests establish those behaviours are intended.

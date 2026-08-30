@@ -1,0 +1,70 @@
+{
+  "llm": {
+    "emi_perturb": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "principal_corrupt": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "rollforward_break": {
+      "detected": 0,
+      "applicable": 12
+    },
+    "monotonic_break": {
+      "detected": 0,
+      "applicable": 12
+    },
+    "conservation_break": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "no_close": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "interest_sign": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "subtle_rounding": {
+      "detected": 0,
+      "applicable": 12
+    }
+  },
+  "gold": {
+    "emi_perturb": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "principal_corrupt": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "rollforward_break": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "monotonic_break": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "conservation_break": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "no_close": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "interest_sign": {
+      "detected": 12,
+      "applicable": 12
+    },
+    "subtle_rounding": {
+      "detected": 0,
+      "applicable": 12
+    }
+  }
+}

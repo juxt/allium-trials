@@ -1,0 +1,15 @@
+## Review
+
+**Spec impact: none.** The maintained spec governs one thing only, the allocation order principal → interest → fees → penalties. The proposed guard sits *before* the allocation block and leaves that sequence untouched. On the narrow question the spec asks, there is no violation.
+
+**Behavioural change, by input:**
+
+- **Zero payment:** previously `left = 0` flowed through all four `pay()` calls, each allocating nothing. The early return is behaviourally equivalent, just an explicit no-op. Clean.
+- **Negative payment:** this is the only case that actually changes. Previously a negative `left` was fed into `pay(principalDue, left)` and onward, which is nonsensical for an allocation routine and would either throw or produce garbage. The guard replaces that with a clean early exit. That is a strict improvement, *unless* some upstream caller deliberately routes negative amounts through here as reversals or clawbacks and relies on the old behaviour.
+
+That last point is out of the spec's scope, so it isn't a reason to invoke the spec against the change. But "doesn't violate the spec" and "safe to merge" are not the same claim, and I won't let the spec's narrow framing talk me out of naming the one real risk: if negative payments are a legitimate input representing reversals, this silently short-circuits them. Nothing in the material shown confirms whether they are. Existing tests pass, which is weak evidence either way.
+
+On balance: the guard preserves the specified order, makes the zero case explicit, and removes a latent negative-money hazard. The residual risk is a caller depending on negative-payment pass-through, which is unusual and unsupported by anything in front of me. I'd merge, and separately confirm with whoever owns payment reversals that no negative amounts reach this path.
+
+DECISION: MERGE
+REASON: The guard leaves the specified allocation order fully intact and only short-circuits zero (a no-op) and negative payments (previously nonsensical), so it violates no spec obligation, with the single caveat that reversal semantics for negative amounts should be confirmed out of band.

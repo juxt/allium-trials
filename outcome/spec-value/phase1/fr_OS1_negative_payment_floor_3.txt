@@ -1,0 +1,26 @@
+I'll evaluate the change on two axes: does it violate the maintained spec, and does it introduce any risk the spec doesn't mention.
+
+## Against the spec
+
+The spec constrains one thing: partial-payment allocation order (principal → interest → fees → penalties). The change adds a guard *before* the allocation block and leaves the order untouched. **No spec violation.** If "doesn't violate the spec" were the bar, this merges.
+
+But the spec is a floor, not a checklist, so the guard itself needs review on its own merits.
+
+## The independent hazard: `isZeroOrNegative` + `return`
+
+Two problems, both outside the spec's scope.
+
+**1. It silently swallows negative payments.** The author wrote `isZeroOrNegative`, not `isZero`. That means negative payments are treated as a *reachable input* worth guarding. In a loan-servicing system a negative amount is rarely noise, it's usually a reversal, chargeback, or manual adjustment. There are only two cases and the guard mishandles both:
+- If a negative is a **legitimate reversal**, this drops it on the floor. No allocation, no error, no trace. A financial correction silently vanishes and the caller believes it was processed.
+- If a negative is **invalid input**, the correct response is to *throw*, not to no-op. Silently returning on bad financial input is a classic data-integrity smell: nobody upstream learns the payment was rejected.
+
+Zero deserves an early return; negative deserves a rejection. Collapsing them into one silent `return` is the bug.
+
+**2. `return` exits the whole function, not just the allocation.** We can only see the allocation block. Any downstream work in this function, persisting the payment record, audit logging, updating last-payment date, emitting receipts or events, is now skipped for every zero-or-negative amount. For a true zero that's probably harmless; combined with problem 1, a negative reversal now also skips whatever bookkeeping follows. We can't see that code, which is precisely why this shouldn't merge unreviewed.
+
+"Existing tests pass" doesn't clear it: it tells us there's no test asserting that a negative payment errors or that a reversal is recorded, which is the gap, not reassurance.
+
+The fix is small: keep the early return for exact zero, and make negatives throw (or route to the reversal path) rather than silently return.
+
+DECISION: BLOCK
+REASON: The `isZeroOrNegative` guard silently swallows negative payments (likely reversals/adjustments) and returns from the entire function, dropping any downstream bookkeeping with no error, a data-integrity risk the spec doesn't cover; negatives should throw, not no-op.

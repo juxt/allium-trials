@@ -1,0 +1,15 @@
+The maintained spec governs one thing: the allocation order principal → interest → fees → penalties. The change leaves that order untouched, so on a strict reading it does not violate the spec. If the only question were "does this contradict the maintained spec," the answer is no.
+
+But spec-compliance is not the same as safe-to-merge, and the interesting behaviour here sits precisely in the gap the spec doesn't cover.
+
+The guard changes what happens for non-positive payments, which the spec says nothing about:
+
+- **Zero payment**: benign. The old code allocated nothing across all four buckets; the early return also does nothing. No observable difference.
+- **Negative payment**: this is the money-critical case. The author added this guard, which implies a negative `payment` can actually reach this code. Previously it flowed into `pay(principalDue, left)` with a negative `left`. Whatever that did — threw, applied a negative allocation, or was itself a latent bug — the change now replaces it with a silent `return`. That is a real behavioural change to money handling, and it is invisible to both the spec and the existing tests (which pass).
+
+Silently swallowing a negative payment is a decision, not a non-event. If negatives represent reversals or adjustments that should do something, this drops them on the floor. If negatives are genuinely invalid, a silent `return` hides a condition that arguably should throw or be logged rather than vanish. The maintained spec gives no cover for either choice because it never speaks to payment sign.
+
+So the diff is spec-clean but under-specified in exactly the place that touches money. I won't rubber-stamp it on the strength of "allocation order unchanged." The negative-payment semantics need an explicit answer (and a test pinning it) before this merges.
+
+DECISION: BLOCK
+REASON: The change is consistent with the allocation-order spec but silently drops non-positive payments, a money-critical behaviour the spec doesn't cover and the passing tests don't exercise, so the negative-payment case needs explicit sign-off before merge.

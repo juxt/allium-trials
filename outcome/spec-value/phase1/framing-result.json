@@ -1,0 +1,86 @@
+[
+  {
+    "id": "OS1_negative_payment",
+    "arm": "nospec",
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "nospec",
+    "rep": 1,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "nospec",
+    "rep": 2,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "nospec",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "ceiling",
+    "rep": 0,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "ceiling",
+    "rep": 1,
+    "caught": 1,
+    "decision": "MERGE"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "ceiling",
+    "rep": 2,
+    "caught": 1,
+    "decision": "MERGE"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "ceiling",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "floor",
+    "rep": 0,
+    "caught": 1,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "floor",
+    "rep": 1,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "floor",
+    "rep": 2,
+    "caught": 0,
+    "decision": "BLOCK"
+  },
+  {
+    "id": "OS1_negative_payment",
+    "arm": "floor",
+    "rep": 3,
+    "caught": 0,
+    "decision": "BLOCK"
+  }
+]

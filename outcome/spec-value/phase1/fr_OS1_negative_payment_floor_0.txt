@@ -1,0 +1,22 @@
+## Spec check
+
+The change leaves the allocation order untouched. For any positive payment the code path is byte-for-byte identical, so the one thing we've committed to (principal, interest, fees, penalties) is not violated. On the spec alone, this passes.
+
+But "does not violate the spec" is the floor, not the verdict.
+
+## The out-of-spec risk
+
+The guard is a *silent* early return, and it sits on a financially meaningful, unspecified path. Two things it changes that nobody has signed off on:
+
+**Negative amounts.** Before the change, a negative `payment` flowed straight into `pay(...)` and did *something*. In loan servicing, negative amounts are frequently legitimate: reversals, refunds, NSF/chargeback backouts, manual adjustments. We cannot see whether this `pay()` path was the mechanism for applying those. If it was, `return` silently turns a working adjustment into a no-op. Existing tests passing proves nothing here, there is very likely no test exercising a negative amount, which is exactly why the regression would be invisible.
+
+**Silent discard.** Even setting aside the policy question of whether negatives are a bug or a feature, the *mechanism* is wrong in both worlds. If a zero/negative payment is a genuine defect upstream, it should be rejected loudly (throw or log) so the caller is alerted and reconciliation catches it. If it is legitimate, it must be handled. A bare `return` does neither: it swallows the transaction with no ledger entry, no audit record, and no error. In a system where an upstream caller may already have marked the payment "received", a silent drop is a reconciliation break, money acknowledged but never applied.
+
+The `return` also exits the whole function, so any recording, audit, or schedule side-effects that legitimately fire on a zero payment (waivers, $0 servicing records) are skipped too. We can't see that code, which is itself a reason not to wave it through.
+
+## Verdict
+
+The intent (don't allocate a negative payment) is reasonable. The implementation (silently drop it) is not safe to merge without knowing whether negative amounts are a supported operation, and without replacing the silent `return` with an explicit reject-and-log or a handled path.
+
+DECISION: BLOCK
+REASON: The guard silently no-ops all zero/negative payments on an untested, unspecified path, which either drops legitimate reversal/adjustment amounts or masks an upstream bug that should be raised loudly, a data-integrity risk the allocation-order spec never covers.

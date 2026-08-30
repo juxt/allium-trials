@@ -1,0 +1,20 @@
+## Review
+
+The change is not a pure guard. It silently changes behaviour in two distinct cases, and the "tests pass" signal doesn't cover either.
+
+**Negative payments — the real hazard.** In a loan-servicing ledger a negative amount usually *means something*: a reversal, chargeback, refund, or adjustment. Today those flow through the `pay()` allocation. After this change they hit `return` and vanish, with no throw and no log. Either:
+- negative payments are legitimate reversals, and this drops them, corrupting the balance; or
+- negative payments are errors, in which case they should be *rejected loudly*, not swallowed silently.
+
+`return` is wrong for both. A single guard collapsing "zero" and "negative" into the same silent no-op is the core defect.
+
+**Zero payments — hidden side effects.** With a zero payment the allocation is already a no-op on balances (each `pay(due, 0)` does nothing), so the author likely reasons "equivalent, just faster." But that only holds if allocation is the function's *only* effect. If the surrounding path also records a transaction, marks a scheduled instalment as received, updates last-payment-date, or emits an event, the early return now skips all of it. A zero-value payment record can still be a real event that must be persisted.
+
+**Why the green tests don't help.** Compiling and passing existing tests tells you the positive-payment path is unchanged. It says nothing about zero/negative semantics unless there are tests asserting what those cases *should* do, and the absence of such tests is exactly why this looks safe when it isn't.
+
+The change cannot be certified safe without a specification of what zero and negative payments mean here and what side effects the function is obligated to perform. That's unknown from the diff, so the correct move is to block and ask for that, not to merge on a green build.
+
+If negatives are impossible by construction, the guard is dead code (drop it or make it an assertion). If they're possible, this is a money bug.
+
+DECISION: BLOCK
+REASON: The early `return` silently discards zero and negative payments, changing reversal/adjustment behaviour and skipping any non-allocation side effects, with no spec or test defining what those cases should do.

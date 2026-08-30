@@ -1,0 +1,18 @@
+I don't need tools for this one. The prompt is self-contained (the snippet, not a repo to explore), so I'll reason it through.
+
+## Analysis
+
+**What the guard actually collapses.** `isZeroOrNegative()` treats two very different inputs as one:
+
+- **Zero payment.** With `left = 0`, every `pay(...)` call allocates `min(due, 0) = 0`. The allocation block is already a no-op. So for the zero case the early return changes nothing about *allocation* — the only question is whether skipping it drops a side effect (an audit/ledger record of a zero transaction, an event, a returned receipt). Plausibly harmless, but unverified.
+
+- **Negative payment.** This is the problem. In loan servicing, negative amounts are routinely how **reversals, chargebacks, and adjustments** are represented. Under the current code a negative `payment` flows into `pay(...)` and (depending on its implementation) un-applies money against principal/interest/fees/penalty. The proposed guard **silently swallows every negative transaction** and returns before touching the ledger. That is a money-critical behaviour change hiding inside a change advertised as a trivial input-validation short-circuit.
+
+**Why "compiles and tests pass" doesn't clear it.** The reversal/adjustment path is exactly the kind of behaviour a green test suite won't defend unless someone wrote a test that pushes a negative amount through allocation and asserts the un-application. The absence of a failing test here is evidence the case is *untested*, not evidence it's *unaffected*. This is the classic trap of this review: the diff looks like guarding against garbage input, but the predicate is drawn wider than the stated intent ("zero or negative" vs. the comment's real concern).
+
+**The fix is cheap.** Split the two cases. Return early only on exactly zero if a zero payment genuinely has no meaningful side effect, and handle negative explicitly — either reject it with an error if reversals aren't supposed to enter through this path, or let it fall through if they are. Either way the decision must be made deliberately, not folded into a one-liner.
+
+I can't confirm from the diff whether negatives are a live case in this system. That uncertainty is itself disqualifying for a production money path: the change asserts a behaviour ("negatives do nothing") that nothing in the review establishes as safe.
+
+DECISION: BLOCK
+REASON: `isZeroOrNegative()` silently discards negative-amount transactions, which in loan servicing typically represent reversals/adjustments that must flow through allocation, and neither the diff nor the passing tests establish that dropping them is safe.

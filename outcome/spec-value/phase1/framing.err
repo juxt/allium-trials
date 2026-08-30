@@ -1,0 +1,12 @@
+[OS1_negative_payment nospec 0] caught_oos=no decision=BLOCK
+[OS1_negative_payment nospec 1] caught_oos=no decision=BLOCK
+[OS1_negative_payment nospec 2] caught_oos=no decision=BLOCK
+[OS1_negative_payment nospec 3] caught_oos=no decision=BLOCK
+[OS1_negative_payment ceiling 0] caught_oos=no decision=BLOCK
+[OS1_negative_payment ceiling 1] caught_oos=YES decision=MERGE
+[OS1_negative_payment ceiling 2] caught_oos=YES decision=MERGE
+[OS1_negative_payment ceiling 3] caught_oos=no decision=BLOCK
+[OS1_negative_payment floor 0] caught_oos=YES decision=BLOCK
+[OS1_negative_payment floor 1] caught_oos=no decision=BLOCK
+[OS1_negative_payment floor 2] caught_oos=no decision=BLOCK
+[OS1_negative_payment floor 3] caught_oos=no decision=BLOCK
