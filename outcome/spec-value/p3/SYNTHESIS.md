@@ -23,6 +23,14 @@ entry / ledger / allocation / reconciliation code, where bugs are omitted or mis
 -> high value; solver / derivation code, where bugs are wrong arithmetic the code makes self-consistent
 (consistent-VALUE) -> ~zero value (only golden/fixed-value tests catch those).
 
+QUALIFIER (see E7): "consistent-VALUE blind" holds for a spec written with RELATIONS BETWEEN OUTPUTS
+only. The general statement is: **a spec catches a bug iff the bug breaks a relation the spec STATES.**
+Enrich the stated relations — add ABSOLUTE invariants that tie an output to a reference INPUT
+(interest = rate x balance), and emit that input into the trace — and the monitor catches the
+"consistent-VALUE" bugs too (E7 catches the wrong-rate mutant, resid 10). So the solver-side zero is
+not a fundamental ceiling; it is what a relations-only spec + rate-less traces achieve. The fix is a
+design choice (input-anchored absolutes) plus a fixable data deficiency (D3: emit reference inputs).
+
 ## The same law, seen as bug morphology on each code type
 
 ### Solver / derivation code (the loan calculator) — spec-gate value ~= ZERO  [E2, strong]
@@ -104,3 +112,27 @@ catchable. This upgrades the earlier "complementary only" conclusion: the gate C
 where the absolute law is computable and the reference inputs are known (e.g. contracted rate).
 Residual fundamental limit: bugs where the checked output re-derives consistently from a WRONG value
 that is ALSO not pinned by any reference (need a fuller golden oracle).
+
+## BOTTOM LINE (Programme 3)
+1. CONFIDENT LAW (big-n, mechanical, real code, both code types): a spec catches a bug iff the bug
+   breaks a relation the spec STATES. Relation-breaking (DESYNC) bugs: ~100% caught (E3 600/600, E5
+   60/60, E4 real code 4/7 exact). Consistent-VALUE bugs against a relations-only spec: ~0% (E2 0/20,
+   E5 0/30).
+2. SCOPE the benefit honestly: the spec-gate is a real, added regression layer for STRUCTURE-ASSEMBLING
+   / cross-cutting-invariant code (double-entry, ledger, allocation, reconciliation). It is a bystander
+   for SOLVER code unless you enrich the spec.
+3. The value-blindness is largely FIXABLE, demonstrated (E7): add input-anchored ABSOLUTE invariants
+   and emit the reference inputs into traces; the monitor then catches value bugs (wrong-rate, resid
+   10) that structural invariants miss. Runtime monitoring handles the arithmetic; only STATIC analyse
+   hits the nonlinear limit.
+4. Retired over-claim: "spec as a general bug-catching regression gate" is FALSE as stated (E2 0/20 on
+   solver value bugs). Sell the scoped version + pair with golden/fixed-value tests.
+5. Solver deficiencies -> improvements (SOLVER-DEFICIENCIES.md): D1 reference/absolute-oracle
+   capability (highest value; closes value-blindness; prior art TLA+ refinement / model-based testing),
+   D2 per-invariant tolerance (default 0.005 unsafe for exact double-entry; E6), D3 emit reference
+   inputs + never silently skip (E7 shows this converts value-blind to value-catching), D4 vacuity/
+   coverage, D5 coverage-guided traces, D6 standard mutation operators. All fixable; several have prior art.
+6. Uncertain / next: real-code E7 (needs the model's rate-factor accessor); big-n real-code accounting
+   mutation suite; a 2nd solver to confirm solver-blindness; genuine >context-window full-subsystem
+   mutation. The desync-gate is scale-FREE by construction (it checks output traces, not code), so it
+   is the one confident benefit that extends to beyond-context codebases unchanged.
