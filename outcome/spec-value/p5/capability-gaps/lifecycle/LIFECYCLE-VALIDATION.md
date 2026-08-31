@@ -50,11 +50,29 @@ do and what Allium's `analyse` now does — soundly, in the boolean fragment, wi
 no-external-solver implementation. On a realistic four-action machine it proves the correct spec safe and
 pinpoints each design bug with an actionable fix.
 
+## Two answers per bug: the induction proof AND the reachable trace
+
+`analyse` now runs both an inductive check and bounded model checking, which answer complementary
+questions. Induction proves safety (the correct spec: all four invariants INDUCTIVE, holding in every
+reachable state, unboundedly). BMC, on a buggy spec, produces the concrete minimal execution that reaches
+the violation:
+
+| bug | BMC counterexample trace (minimal) |
+|-----|-----|
+| capture without `not voided` | `init -> authorize -> void -> capture` (3 steps) |
+| void without `not captured`  | `init -> authorize -> capture -> void` (3 steps) |
+| capture without `authorized` | `init -> capture` (1 step) |
+
+On the correct spec BMC finds no counterexample (silent), matching the inductive proof. So a developer gets
+both the design-level "this action can break this invariant, add `requires X`" and the operational "here is
+the exact sequence of calls that reaches the bad state" — the same pairing TLA+ (proof) and Alloy/BMC
+(bounded counterexample) provide, in a single-binary tool with no external solver.
+
 ## Reproduce
 
 ```
-allium analyse payment_correct.allium              # 4 invariants INDUCTIVE
-allium analyse payment_bug_capture_voided.allium   # breaks no_capture_after_void
-allium analyse payment_bug_void_captured.allium    # breaks no_capture_after_void
-allium analyse payment_bug_capture_noauth.allium   # breaks capture_needs_auth
+allium analyse payment_correct.allium              # 4 invariants INDUCTIVE; BMC finds no counterexample
+allium analyse payment_bug_capture_voided.allium   # breaks no_capture_after_void; BMC: authorize->void->capture
+allium analyse payment_bug_void_captured.allium    # breaks no_capture_after_void; BMC: authorize->capture->void
+allium analyse payment_bug_capture_noauth.allium   # breaks capture_needs_auth; BMC: capture
 ```
