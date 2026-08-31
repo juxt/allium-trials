@@ -187,3 +187,36 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   ERGONOMICS (the check-fix loop handles it eventually), not value-prop-critical — so STOPPING fluency
   work here per anti-rabbit-hole discipline. Remaining model quirks (`^` power, invented `tol`/`abs`
   without import) are prompt/skill guidance, not language gaps.
+
+## Iteration 14 — [fluency→DESIGN SIGNAL] the model has a COHERENT COMPETING GRAMMAR, not typos
+- Re-ran the distill pipeline with the each/dot fixes. The distilled spec STILL had 56 check errors.
+  Root cause is not a handful of typos: the model writes a consistent alternative surface grammar.
+  Full idiom inventory, measured from the distilled `sme_term_loan` spec:
+    | model writes                    | v4 canonical                  | status                         |
+    |---------------------------------|-------------------------------|--------------------------------|
+    | `let f = e`                     | `given f means e`             | ACCEPTED as sugar (committed)  |
+    | `x == y`                        | `x = y`                       | ACCEPTED as sugar (committed)  |
+    | `each p ::` / `every p ::`      | `every p ::`                  | done iter 13                   |
+    | `p.field`                       | `field(p)`                    | done iter 8                    |
+    | `invariant name:` <NL> body     | `invariant name means body`   | HUMAN — surface grammar call   |
+    | `each p in schedule:` body      | `every p :: body`             | HUMAN — the `in <domain>:` form |
+    | `each p where COND: body`       | (no filtered-quantifier)      | HUMAN — filtered quantifier     |
+    | `a ^ b`                         | (no power operator)           | HUMAN/corpus — is `^` motivated?|
+    | `index(p)`                      | position primitive            | check: do we have one?          |
+- ACCEPTED (this iteration): `let` and `==`. `let` is exactly the OCaml-style binding the human named as
+  an inspiration, and the data confirms the model reaches for it; `==` is trivial, safe, zero-ambiguity.
+  Both are pure sugar over existing constructs (let→given/means, ==→=), NOT new semantics. +test
+  let_and_double_equals (59 tests pass).
+- NOT ACCEPTED unilaterally: the block-colon family (`invariant name:` / `each p in xs:` / `where`-
+  filter) is a genuine SURFACE-GRAMMAR fork, not sugar — it changes how bodies are delimited (colon +
+  layout vs `means` keyword) and adds a filtered-quantifier form. Per CLAUDE.md syntax is human-owned;
+  this is a real decision for the human, logged here with evidence, not bolted on.
+- HONEST value-prop implication: one-shot v4 AUTHORING is not fluency-limited by 2-3 tics; the model has
+  a whole competing spec dialect. A few synonyms won't make one-shot authoring reliable. BUT the value
+  prop never rested on one-shot authoring — it rests on the executable GATE over a VALID spec (capstone,
+  hand/loop-authored). The distill WORKFLOW is designed as distill→check→fix precisely because authoring
+  is hard; the fix loop, plus canonical skill examples, is the right lever — not chasing every idiom into
+  the core. Recorded and STOPPING surface-syntax expansion here (anti-rabbit-hole); the block-colon fork
+  goes to the human with data.
+- Lever I own (skill, not language): make the distill skill's language reference show CANONICAL v4 for
+  every idiom the model mis-reaches, so the check-fix loop converges faster. Doing that next.
