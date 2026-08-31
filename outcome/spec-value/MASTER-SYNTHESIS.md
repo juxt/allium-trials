@@ -58,6 +58,15 @@ p5/SESSION-SUMMARY.md (language). Artifact: the value-proposition page.
   spots). DEFER (your call, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar;
   `^` power (corpus question — sidesteppable by gating observed values, not the closed-form).
 
+## AUDITABILITY (the case checks itself)
+`outcome/spec-value/reproduce.py` re-runs 17 headline executable claims (ordering, idempotency,
+uniqueness, workflow generality, liveness-via-measure, caps/tiers, capstone, the vacuity guard, the
+spec-vs-test anchor) and ASSERTS each against its expected HOLD/FIRE/WARN — exit 0 = all reproduce.
+Building it caught a real defect: 11 P3 event-traces lacked `entity=` identity, collapsing to one entity
+so the ordering/idempotency/uniqueness claims had been validated vacuously. Language + monitor verified
+correct with proper traces; traces fixed; vacuity guard added; all 17 now pass. The evidence base is
+sound, re-runnable, and self-guarding — the executable-verification thesis applied to our own claims.
+
 ## HOW TO PITCH IT
 The spec you NEED for correctness (over no-spec) and that STAYS TRUE because it is executable (over
 prose/v3) — a small, extensible, sound-checkable core whose standing gate catches value/structure/
