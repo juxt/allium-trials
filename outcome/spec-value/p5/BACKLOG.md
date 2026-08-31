@@ -31,3 +31,15 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   the core (arithmetic incl /, comparison, if/then/else, given-means, quantifiers, temporal, and ONE
   rounding/truncation primitive — round/floor can't be user-defined without a fractional-part primitive,
   no recursion). Next: test the IMPORT mechanism (stdlib sharing across components) + type extensibility.
+
+## Iteration 2 — EXTENSIBILITY MODEL PROVEN: stdlib import works [A enabler done]
+- Implemented `use "<path>"` LOADING in the monitor: it reads the imported file's `given` definitions
+  and makes them available (own defs shadow imports; one import level). Demonstrated end-to-end: a spec
+  `use "stdlib.allium"` uses `umin(computed, cap)` from a SEPARATE file — resolves, inlines, monitors;
+  correct holds, cap violation caught. +test stdlib_import_use (56 tests pass).
+- Shipped an official prelude: skills-v4/allium/stdlib/std.allium (min/max/clamp/abs/sign as user-space
+  defs). => the SMALL-CORE + CONTRIBUTABLE-STDLIB model is real and works. Data-driven recommendation:
+  the core need NOT carry min/max; they are stdlib. (I keep the min/max built-ins for now as convenience;
+  the human can demote them — the evidence says they add nothing as core.)
+- [x] A done. Enabler (cross-module use loading) done. NEXT: B ratification dossier; then type
+  extensibility (rational) + third subsystem.
