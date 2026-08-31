@@ -1,0 +1,9 @@
+-- allium: 4
+component Account
+  entity A
+  observable state frozen(A) : bool
+  observable state debited(A) : bool
+  action debit
+    ensures debited(A)
+  invariant no_debit_when_frozen means debited(A) implies not frozen(A)
+end

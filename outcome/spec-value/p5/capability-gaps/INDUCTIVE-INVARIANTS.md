@@ -1,8 +1,13 @@
 # A capability we lack, from the model-checking field: inductive invariant preservation
 
+> **Status: SHIPPED.** This began as a capability gap and is now implemented in `analyse`. `allium analyse`
+> reports "action X can break invariant Y" with a witness pre-state, and certifies guarded actions safe.
+> The boolean-`=` defect below is also fixed. See "Implementation" at the end.
+
 Prompted by the observation that our corpus (loan schedules, double-entry) is a biased sample, this looks
-at a capability the field (TLA+, Ivy, Alloy, P) has and Allium does not, asks whether a real specimen class
-justifies it, and tests whether it is feasible in the existing engine. The answer to all three is yes.
+at a capability the field (TLA+, Ivy, Alloy, P) has and Allium did not, asks whether a real specimen class
+justifies it, and tests whether it is feasible in the existing engine. The answer to all three is yes, and
+it is now built.
 
 ## The specimen class our corpus ignores: state-machine safety
 
@@ -103,3 +108,28 @@ concerns, and the check catches the missing-guard bug in each and certifies the 
 comfortably clears the project's bar that a construct must earn more than one specimen. The feature to add
 is the automation (generate the query per action-invariant pair); the reasoning it needs is already sound
 in the engine, modulo the boolean-`=` desugaring noted above.
+
+## Implementation (shipped)
+
+`analyse` now runs a `preservation` pass. For each action and each boolean-fragment invariant in a
+component, it builds the one-step verification condition and solves it with the existing SAT engine:
+
+- **Frame by priming.** A state observable the action WRITES (appears bare, outside `old`, in `ensures`)
+  becomes a distinct post variable `X'`; everything untouched keeps its pre variable, so the frame is
+  implicit and needs no annotation. `old(X)` reads the pre value.
+- **The VC** is `inv(pre) ∧ guard(pre) ∧ effect ∧ ¬inv(post)`. If satisfiable, the action steps from a
+  good state to a bad one; the diagnostic names the action, the invariant, and the witness pre-state.
+- **Soundness by restriction.** Only the pure boolean fragment is checked (no arithmetic, ordering, or
+  quantifiers): those rest on opaque atoms whose post version is unconstrained and would false-alarm, so
+  they are skipped. Verified: 0 preservation findings across 284 real v4 specs (no false positives), the
+  three specimens discriminate (unguarded = bug, guarded = safe), and an arithmetic `bal >= 0` invariant
+  is correctly left alone. Tests: `preservation_flags_missing_guard_and_clears_guarded_action`,
+  `preservation_is_silent_on_arithmetic_invariants`, `preservation_ignores_actions_that_write_unrelated_state`.
+- **The boolean-`=` fix.** `sat.rs` now encodes a boolean-typed `A = B` as a biconditional (and `<>` as
+  xor), using the declared types to keep arithmetic `=` opaque for the LRA path. Test
+  `boolean_equality_is_a_biconditional`.
+
+Limitations, honestly: the check is one-step inductive, so it can flag an action that only breaks the
+invariant from an unreachable pre-state (the invariant is true but not inductive — strengthen it, as in
+TLA+/Ivy). Explicit quantified invariants (`every p :: ...`) and arithmetic invariants are deferred, not
+covered. These are the natural next increments.

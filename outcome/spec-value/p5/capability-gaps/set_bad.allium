@@ -1,0 +1,9 @@
+-- allium: 4
+component Ledger
+  entity T
+  observable state valid(T) : bool
+  observable state settled(T) : bool
+  action settle
+    ensures settled(T)
+  invariant settle_needs_valid means settled(T) implies valid(T)
+end
