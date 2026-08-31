@@ -117,4 +117,7 @@ STDLIB (user-space): min, max, clamp, abs, sign (std.allium).
 NO NEW CONSTRUCT NEEDED: liveness (measures), completeness (a tool).
 DECIDED (data): block-colon grammar fork (§8c) — steer-via-skill, NOT adopted (1-round convergence proof).
 DEFER (human decision, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar; `^` power (corpus?).
-59 allium-v4 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
+MONITOR HARDENING (shipped): vacuity guard warns when a relational invariant ranges over collapsed/empty-
+identity events — closes a silent false-pass trap that had made P3 idempotency/ordering evidence vacuous.
+AUDIT: `outcome/spec-value/reproduce.py` asserts 17 headline executable claims (exit 0 = all reproduce).
+60 allium-v4 tests + 414 v3 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
