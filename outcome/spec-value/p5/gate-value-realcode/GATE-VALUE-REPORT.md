@@ -57,13 +57,15 @@ the principal split still holds, and interest is still tied to the rate. Every i
 overcharged on every instalment would not be caught. Pinning the instalment needs the annuity formula,
 which has a power term, and v4 has no power operator, so the emi value is taken as observed rather than
 derived. This is a real hole, not a modelling slip, and it is the concrete motivation for the `^` question
-that had been open on corpus grounds alone.
+that had been open on corpus grounds alone. **(Resolved in the follow-up below: `^` was added and closes it.)**
 
 **The absolute invariant false-alarms at large balances.** Six of the 150 baseline schedules trip the full
 spec, all of them the roughly one-million balance. An absolute tolerance of a penny cannot hold interest
 equals rate times balance when the balance is that large and the rate factor is carried to six places. This
 is a genuine cost of the arithmetic tier: the tolerance needs to scale with the operands, and until it
-does, the value invariant trades a value blind spot for a false-alarm rate at scale.
+does, the value invariant trades a value blind spot for a false-alarm rate at scale. **(Reclassified in
+the follow-up below: this is a trace-precision artifact, not a tolerance defect; proportional tolerance
+was tried and rejected, and emitting the rate factor at full precision clears all six.)**
 
 **The arithmetic gate is a runtime gate, not a static proof.** The two multiplicative invariants are
 nonlinear, variable times variable, so they sit outside the decidable fragment that `analyse` checks
@@ -161,3 +163,14 @@ So the Allium gate reproduces the hand-written oracle's behaviour on this invari
 spec-versus-test result (the gate ties a correct oracle) now on real Fineract's own double-entry law.
 Honest bound: this uses Fineract-shaped legs and the documented negative control, not a fresh Gradle dump;
 the real-balance-on-real-legs half was established separately by the JUnit oracle in ORACLE-REPORT.
+
+## Distillation closes too: with `^`, the distiller pins the instalment
+
+Re-running the distillation of the real calculator with `^` available, a fresh agent captured 8 of 8
+invariants including the emi VALUE, `emi = round(disbursed*f*(1+f)^months/((1+f)^months-1), 2)`, pinned to
+inputs, clean in one round (`distilled_v4_with_power.allium`). So the operator pays off from both
+directions: the distiller can now state the instalment law it previously had to park, and the monitor
+catches a wrong instalment. Honest residual gaps the agent flagged, consistent with the gate side: the
+annuity is nonlinear so `analyse` checks it only at runtime not statically; the final-period instalment is
+a distinct rounding-absorption value the closed form does not cover; and day-count / mid-term events stay
+out of frame.

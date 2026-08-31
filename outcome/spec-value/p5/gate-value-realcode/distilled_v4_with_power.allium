@@ -1,0 +1,74 @@
+-- allium: 4
+
+-- Distilled from Apache Fineract ProgressiveEMICalculator.java
+-- (declining-balance, progressive loan). Captures the repayment-schedule
+-- invariants plus the EMI (instalment) VALUE derived from inputs via the
+-- annuity formula, now expressible because v4 has `^` (power).
+
+component ProgressiveLoanSchedule
+
+  entity Period
+
+  -- Inputs (loan-level context parameters)
+  given disbursed : Money            -- principal disbursed
+  given annual_rate_pct : Number     -- annual nominal interest rate, percent
+  given months : Number              -- number of repayment periods
+
+  -- Per-period observable schedule facts
+  observable state outstanding_start(Period) : Money   -- balance at period start
+  observable state outstanding_end(Period)   : Money   -- balance at period end
+  observable state interest(Period)           : Money   -- interest charged this period
+  observable state principal(Period)          : Money   -- principal repaid this period
+  observable state emi(Period)                : Money   -- equal monthly instalment
+  observable state is_final(Period)           : bool    -- last repayment period
+
+  -- Ordering: `follows(q, p)` means q is the period immediately after p.
+
+  -- Input-anchored derived constants.
+  -- f = per-period rate factor; the source computes rateFactorPlus1 = 1 + f.
+  given f means annual_rate_pct / 1200
+
+  -- The annuity EMI value. rateFactorPlus1N = (1+f)^months, and for a
+  -- constant rate the fn-denominator resolves to ((1+f)^months - 1)/f, so
+  --   emi = (1+f)^months * disbursed / (((1+f)^months - 1)/f)
+  --       = disbursed * f * (1+f)^months / ((1+f)^months - 1).
+  -- Zero-rate degenerates to straight-line principal = disbursed/months.
+  given emi_value means (if annual_rate_pct = 0
+    then round(disbursed / months, 2)
+    else round(disbursed * f * (1 + f) ^ months / ((1 + f) ^ months - 1), 2))
+
+  -- (1) EMI value pinned to inputs, for every non-final period.
+  invariant emi_from_annuity means
+    every p :: not is_final(p) implies emi(p) = emi_value
+
+  -- (2) EMI is constant across all non-final periods.
+  invariant emi_constant means
+    every p :: every q ::
+      (not is_final(p) and not is_final(q)) implies emi(p) = emi(q)
+
+  -- (3) Interest is charged on the outstanding balance at the period rate.
+  invariant interest_on_outstanding means
+    every p :: interest(p) = round(outstanding_start(p) * f, 2)
+
+  -- (4) The instalment splits into interest plus principal.
+  invariant principal_split means
+    every p :: emi(p) = interest(p) + principal(p)
+
+  -- (5) The balance rolls forward: next start = this start minus principal.
+  invariant balance_rolls means
+    every p :: every q ::
+      follows(q, p) implies outstanding_start(q) = outstanding_start(p) - principal(p)
+
+  -- (6) The balance never increases across a period.
+  invariant balance_monotonic means
+    every p :: outstanding_end(p) <= outstanding_start(p)
+
+  -- (7) End balance = start balance minus principal (per-period conservation).
+  invariant conservation means
+    every p :: outstanding_end(p) = outstanding_start(p) - principal(p)
+
+  -- (8) The schedule closes: the final period pays the balance to zero.
+  invariant closes_to_zero means
+    every p :: is_final(p) implies outstanding_end(p) = 0
+
+end
