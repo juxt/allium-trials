@@ -74,3 +74,16 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   model worked in the monitor but not at check-time. Fixed: name-resolution now loads `use`d files'
   item names into scope. Verified: a spec `use "std.allium"` + `clamp(...)` checks CLEAN. 56 tests pass.
   => the small-core + stdlib model is now consistent across check AND monitor.
+
+## Iteration 6 — [D] exact-decimal ATTEMPTED then REVERTED (anti-rabbit-hole) + a real finding
+- Implemented exact-decimal eval (Rat-valued eval_dec + round_rat, raw-string storage) but hit two things:
+  (1) round_rat still used f64 internally (to_f64/floor) so wasn't truly exact — a bug; (2) more
+  importantly, the REALISATION that exact-decimal does NOT fix the F6 rounding caveat. That caveat is
+  about matching FINERACT'S EXACT INTERNAL ARITHMETIC (its 8.325 -> 8.33), which a spec's abstract
+  formula (round(bal*rate,2)) cannot replicate without re-implementing the code. So TOLERANCE is the
+  correct mechanism for code-vs-spec rounding, not exact arithmetic.
+- => exact-decimal's real value is NARROW: only laws that are DEFINITIONALLY exact-decimal (double-entry
+  sums = 0, conservation) benefit from tol=0; value laws that mirror rounded code need tolerance anyway.
+  REVERTED the exact-decimal work (kept clean f64 path, 56 tests green). Not a rabbit hole worth more time.
+- LESSON banked: don't chase penny-exactness in the monitor; the spec asserts the LAW, the tolerance
+  absorbs the implementation's rounding. This is the honest, correct design.
