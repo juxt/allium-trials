@@ -220,3 +220,23 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   goes to the human with data.
 - Lever I own (skill, not language): make the distill skill's language reference show CANONICAL v4 for
   every idiom the model mis-reaches, so the check-fix loop converges faster. Doing that next.
+
+## Iteration 15 — [EXPLORE, high value] "why not just tests?" answered executably
+- spec-vs-test/harness.py: 3 mechanisms (property tests / re-implemented oracle test / v4 spec-gate) vs a
+  mutation battery, 137 real rows. Findings (honest):
+  - v4 gate == oracle test ROW-FOR-ROW on every mutation (107=107, 89=89). A declarative spec is exactly
+    as strong a DETECTOR as a correct re-implemented oracle — no more. Don't oversell detection power.
+  - both beat structural/property tests on VALUE bugs (0 vs 89-107) — the desync lesson vs hand tests.
+  - ANCHOR (the real edge): shared-misconception flat-interest build — oracle test written to the same
+    wrong belief PASSES (0/137, false confidence); the spec, faithful-by-construction to real traces,
+    FIRES (89/137). Plus declarativeness (one statement, all rows, no 2nd impl to drift) + auditability.
+  - honest narrowing: a golden-master test replayed vs real output could anchor too; the spec's edge is
+    it anchors BY CONSTRUCTION + is declarative + auditable. Stated that way in FINDINGS.md.
+- => strongest single addition to the value prop this session: the skeptic's first objection, answered
+  with mechanical data, honestly. Not "specs catch more"; "specs anchor to reality by construction,
+  need no second implementation, and are auditable — a correct test ties on raw detection."
+
+## Iteration 16 — [DECISION via data] grammar fork: measure distill convergence, don't assert
+- Testing (b) [steer-via-skill] against data: with the canonical-form table now in the skill, can a
+  spec-authoring agent converge to a VALID v4 gate in few check-fix rounds using `means` syntax? If yes,
+  (b) is validated and the block-colon grammar fork is unnecessary. Measuring now.
