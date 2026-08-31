@@ -1,2 +1,2 @@
-event a is_open=1
-event b is_open=1
+entity=a is_open=1
+entity=b is_open=1

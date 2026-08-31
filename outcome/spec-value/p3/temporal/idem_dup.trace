@@ -1,2 +1,2 @@
-event Posting txn_id=1
-event Posting txn_id=1
+entity=p1 txn_id=1
+entity=p2 txn_id=1

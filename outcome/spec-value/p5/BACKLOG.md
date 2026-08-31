@@ -269,3 +269,21 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - Implication: a green gate is only as trustworthy as the trace's entity identity. The guard is what makes
   the faithfulness anchor SOUND — without it, a passing monitor can be vacuous. High-value for the value
   prop's credibility (the gate must actually exercise what it claims to check).
+
+## Iteration 18 — [AUDIT] reproducer built; it caught unsound P3 evidence; evidence base now sound + locked
+- Built outcome/spec-value/reproduce.py: re-runs 17 headline executable claims (ordering, idempotency,
+  uniqueness, workflow generality, liveness-via-measure, caps/tiers, capstone, vacuity guard, spec-vs-
+  test anchor) and ASSERTS each vs its expected HOLD/FIRE/WARN. Exit 0 = all reproduce. Auditable, not
+  "trust the numbers".
+- BUILDING IT CAUGHT A REAL PROBLEM: 11 P3 event-traces used `event <name> field=val` (no `entity=`), so
+  all events collapsed to one anonymous entity. The temporal-ordering + idempotency + uniqueness evidence
+  had been validated against traces that DIDN'T EXERCISE the invariants (pay_ok even FIRED falsely; idem
+  passed vacuously). The headline P3 claims rested on unsound traces.
+- RESOLUTION: (i) verified the LANGUAGE+monitor are correct with proper `entity=<id>` traces (pay_ok HOLD,
+  pay_bad FIRE, idem_dup FIRE, uniq_bad FIRE — all clean, no warnings); (ii) fixed all 11 traces to carry
+  per-event identity; (iii) the vacuity guard (iter 17) now prevents recurrence; (iv) reproduce.py locks
+  it in. All 17 claims PASS.
+- => the value prop's evidence base is now SOUND and RE-RUNNABLE. This matters for ratification: the human
+  can verify every executable claim with one command, and the guard + reproducer stop silent bit-rot. The
+  irony is exactly on-thesis: the faithfulness anchor only means something if the monitor exercises the
+  invariant — we found our own harness failing that, and closed it.
