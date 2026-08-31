@@ -6,7 +6,7 @@
         150
       ],
       "full": [
-        6,
+        0,
         150
       ]
     },
@@ -34,9 +34,7 @@
   "firing": {
     "baseline": {
       "structural": {},
-      "full": {
-        "interest_on_outstanding": 6
-      }
+      "full": {}
     },
     "value_mut": {
       "structural": {},
@@ -55,36 +53,10 @@
         "principal_split": 150,
         "conservation": 150,
         "closes_to_zero": 25,
-        "balance_rolls": 125,
-        "interest_on_outstanding": 6
+        "balance_rolls": 125
       }
     }
   },
   "n": 150,
-  "scale_false_alarms": [
-    [
-      "d999999.99_r5_m1.trace",
-      999999.99
-    ],
-    [
-      "d999999.99_r5_m12.trace",
-      999999.99
-    ],
-    [
-      "d999999.99_r5_m2.trace",
-      999999.99
-    ],
-    [
-      "d999999.99_r5_m24.trace",
-      999999.99
-    ],
-    [
-      "d999999.99_r5_m3.trace",
-      999999.99
-    ],
-    [
-      "d999999.99_r5_m6.trace",
-      999999.99
-    ]
-  ]
+  "scale_false_alarms": []
 }

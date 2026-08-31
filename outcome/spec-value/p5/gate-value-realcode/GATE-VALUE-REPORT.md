@@ -99,6 +99,44 @@ catching value drift against input-anchored invariants, on real code, at runtime
 behaviour that a model would otherwise get wrong, and it is bounded by trace availability, a scale-tolerance
 gap, and one missing operator that leaves the instalment value itself outside the gate.
 
+## Follow-up: closing the two honest limits, and stress-testing the finding
+
+After the first pass, three further experiments (all on the same 150 real schedules).
+
+**The power operator closes the emi-value hole.** The gap above, a wrong instalment slips through, is a
+missing-operator gap: pinning the emi needs the annuity formula with a power term. Added `^` to v4
+(right-associative, tighter than `*`; runtime-only, since it is nonlinear). The closed-form annuity
+`disbursed * f * (1+f)^months / ((1+f)^months - 1)` matches Fineract's instalment on all 100 nonzero-rate
+multi-period schedules within the rounding unit, so the law is faithful. As a gate, the wrong-instalment
+bug goes from 6/120 caught (all scale artifacts) to **101/120**, the 19 misses being single-period loans
+where the mutation is a no-op and the annuity law correctly does not constrain the sole final period. So
+on every applicable schedule the power operator catches the bug that previously escaped. Found the gap,
+added the operator, verified it closes on real code. (`annuity_gate.py`, test `power_operator_annuity`.)
+
+**The scale false-alarm was a trace-precision artifact, not a tolerance defect.** The six false alarms
+were driven by emitting `rate_factor` at six decimals: the rounding error times a ~1e6 balance exceeds a
+penny. Two results. First, a proportional tolerance does NOT fix it, and made things worse (it did not
+clear the false alarms, because the error scales with the balance not with the interest being compared,
+and it loosened the structural checks from 150 to 145). Honest negative result, reverted. Second, emitting
+`rate_factor` at ten decimals clears all six with every catch preserved: baseline 0/150 on both specs,
+value bug still 0/120 structural and 120/120 full. The fix is trace-adapter guidance, emit derived
+reference inputs at full precision, now in the language reference.
+
+**The core finding is robust across bug morphologies.** A five-mutation battery (`consistency.py`)
+confirms the pattern is not an artifact of the one wrong-rate mutation:
+
+```
+mutation          kind                  structural    full
+wrong_rate        value/preserving         0/120     120/120
+wrong_daycount    value/preserving         0/120     112/120
+interest_only     value/breaking         116/120     120/120
+shift_principal   structural/breaking    150/150     150/150
+drop_middle_leg   structural/breaking    100/150     102/150
+```
+
+Every structure-preserving value bug is invisible to the structural spec and caught by the arithmetic
+tier; every structure-breaking bug is caught by both. The desync law holds across the battery.
+
 ## Reproduce
 
 ```
