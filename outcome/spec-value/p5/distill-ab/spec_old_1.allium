@@ -1,0 +1,82 @@
+-- allium: 4
+
+component sme_term_loan
+
+  -- A declining-balance SME term loan carrying a flat monthly service fee.
+  -- Convention: every monetary amount is rounded to 2 decimal places using
+  -- banker's rounding (HALF_EVEN). round(x, 2) denotes exactly that.
+
+  given disbursed        -- original principal advanced to the borrower
+  given annual_rate_pct  -- nominal annual interest rate, in percent
+  given months           -- number of instalment periods
+
+  -- Monthly rate factor: the annual rate spread across twelve periods.
+  given rate_factor means annual_rate_pct / 1200
+
+  -- Flat monthly service fee: 0.25% of the ORIGINAL disbursed principal,
+  -- charged on every period regardless of the outstanding balance.
+  given service_fee means round(disbursed * 0.0025, 2)
+
+  -- Level base instalment (annuity). With no interest it is straight-line;
+  -- otherwise the standard amortising payment. Rounded once, up front.
+  given base_emi means
+    round(
+      if rate_factor == 0
+        then disbursed / months
+        else disbursed * rate_factor * (1 + rate_factor) ^ months
+             / ((1 + rate_factor) ^ months - 1),
+      2)
+
+  entity period
+
+    observable outstanding_start  -- balance owed at the start of the period
+    observable rate_factor        -- monthly rate factor applied this period
+    observable interest           -- reported interest line
+    observable principal          -- principal repaid this period
+    observable emi                -- what the customer actually pays
+    observable is_last            -- true for the final period only
+
+    -- Pure declining-balance interest, before any fee is added.
+    given pure_interest means round(outstanding_start * rate_factor, 2)
+
+    -- Base instalment for this period. On the final period the base
+    -- instalment is whatever closes the loan; otherwise it is level.
+    given base_instalment means
+      if is_last
+        then round(pure_interest + principal, 2)
+        else base_emi
+
+    -- The monthly factor is constant across the schedule.
+    invariant rate_factor == annual_rate_pct / 1200
+
+    -- Principal split: the instalment less PURE interest. The fee sits on
+    -- top and never enters the principal calculation. The final period
+    -- repays the entire residual balance so the loan closes exactly.
+    invariant principal ==
+      if is_last
+        then outstanding_start
+        else round(base_emi - pure_interest, 2)
+
+    -- Reported interest line folds the service fee into the pure interest.
+    invariant interest == round(pure_interest + service_fee, 2)
+
+    -- Reported emi folds the service fee onto the base instalment.
+    invariant emi == round(base_instalment + service_fee, 2)
+
+  end
+
+  -- The balance rolls forward: each period opens where the previous closed,
+  -- reduced by the principal repaid, rounded to 2dp.
+  invariant follows(next, p) ::
+    next.outstanding_start == round(p.outstanding_start - p.principal, 2)
+
+  -- Only the final period is flagged as last: any period with a successor
+  -- is not the last.
+  invariant follows(next, p) :: p.is_last == false
+
+  -- Closure: principal repayments sum to the original advance. Together with
+  -- the roll-forward and the final period's residual absorption, this also
+  -- anchors the opening balance at the full disbursed amount.
+  invariant sum period p :: p.principal == disbursed
+
+end

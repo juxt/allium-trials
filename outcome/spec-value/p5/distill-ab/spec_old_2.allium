@@ -1,0 +1,86 @@
+-- allium: 4
+--
+-- SME term loan: declining-balance amortisation with a flat monthly service
+-- fee. Distilled behavioural spec.
+--
+-- Money convention: round(x) rounds x to 2 decimal places, banker's rounding
+-- (half to even). Every monetary observable is already rounded; invariants
+-- reproduce the exact rounding order of the schedule.
+
+component sme_term_loan
+
+  -- inputs -----------------------------------------------------------------
+  given disbursed        -- original principal advanced
+  given annual_rate_pct  -- nominal annual rate, percent
+  given months           -- number of instalments
+
+  -- loan-level derived values ----------------------------------------------
+  given monthly_factor means annual_rate_pct / 1200
+    -- declining-balance monthly rate factor
+
+  given service_fee means round(disbursed * 0.0025)
+    -- flat fee: 0.25% of the ORIGINAL principal, added to every period
+
+  given base_emi means
+    if monthly_factor = 0
+      then round(disbursed / months)
+      else round( disbursed * monthly_factor * (1 + monthly_factor) ^ months
+                  / ((1 + monthly_factor) ^ months - 1) )
+    -- level instalment on the pure loan, before the service fee
+
+  -- the schedule -----------------------------------------------------------
+  entity period
+    observable emi               -- customer payment: base instalment + fee
+    observable interest          -- reported line: pure interest + fee
+    observable principal         -- principal repaid this period
+    observable outstanding_start -- balance at start of period
+    observable rate_factor       -- monthly factor in force
+    observable is_last           -- final instalment
+
+  -- there are exactly `months` periods
+  invariant term_length:
+    (sum period :: 1) = months
+
+  -- the monthly factor is constant across the schedule
+  invariant factor_constant:
+    every period :: rate_factor = monthly_factor
+
+  -- the first period opens on the full disbursed principal
+  invariant opening_balance:
+    the opening period has outstanding_start = disbursed
+
+  -- reported interest = pure interest on the opening balance, plus the fee;
+  -- same shape on every period (fee rides on top of pure interest)
+  invariant interest_line:
+    every period ::
+      interest = round( round(outstanding_start * rate_factor) + service_fee )
+
+  -- principal split works off PURE interest only; the last period absorbs the
+  -- whole residual balance so the loan repays exactly
+  invariant principal_split:
+    every period ::
+      principal = if is_last
+                    then outstanding_start
+                    else round( base_emi - round(outstanding_start * rate_factor) )
+
+  -- customer instalment = base instalment + fee; on the last period the base
+  -- instalment closes the loan (pure interest + residual principal)
+  invariant customer_instalment:
+    every period ::
+      emi = if is_last
+              then round( round( round(outstanding_start * rate_factor)
+                                 + outstanding_start ) + service_fee )
+              else round( base_emi + service_fee )
+
+  -- balance rolls forward by the principal repaid
+  invariant balance_rollforward:
+    every period p ::
+      follows(next, p) implies
+        next.outstanding_start = round( p.outstanding_start - p.principal )
+
+  -- the final period clears the balance to zero
+  invariant closes_to_zero:
+    every period ::
+      is_last implies round(outstanding_start - principal) = 0
+
+end

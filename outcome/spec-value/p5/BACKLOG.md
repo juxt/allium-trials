@@ -105,3 +105,16 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - [P4] given-body name-resolution gap (floor slips through) — quick correctness.
 - [P5] corpus breadth: does the gate handle more invariant SHAPES (aggregate/quantified value laws)?
 - explore: new constructs ONLY if a corpus specimen demands (corpus-before-grammar).
+
+## Iteration 8 — [P1 pivoted] distill A/B exposed v4 FLUENCY as the real blocker; fixed dot-notation
+- The distill A/B (old vs new skill) was CONFOUNDED: ALL one-shot distilled specs were INVALID (v4
+  fluency). Diagnosing the systematic errors was more valuable than the A/B: the model naturally writes
+  `p.field` (object.attribute) not `field(p)`, and `^` for power (not in v4). These are fluency taxes.
+- FIXED (data-driven, high-value): `p.field` now evaluates as `field(p)` in the monitor (it parsed but
+  didn't evaluate). The model's most natural notation now works. +test (57 tests).
+- NOTED (not fixed, watch rabbit-hole): `^` power (model wants it for compound EMI — but that's the
+  SOLVER formula, which arguably shouldn't be in a gate invariant; spec-authoring guidance, not a gap).
+  bare `given x` (no type) parses. Multiline `means` bodies parse.
+- LESSON: one-shot v4 authoring is fluency-limited; the workflow is distill->check->FIX (the check gate
+  is load-bearing). Reducing the fluency tax (dot notation) directly helps every spec-authoring path.
+  Anti-rabbit-hole: fixed the ONE highest-value fluency issue (dot), stopping there.

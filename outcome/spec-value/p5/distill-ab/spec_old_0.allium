@@ -1,0 +1,83 @@
+-- allium: 4
+
+-- SME term loan schedule.
+-- Monetary convention: round2(x) rounds x to 2 decimal places,
+-- half-to-even (banker's rounding). Every reported figure is round2'd.
+
+component sme_term_loan
+
+  given disbursed          -- original principal advanced
+  given annual_rate_pct    -- nominal annual rate, percent
+  given months             -- number of periods
+
+  -- Monthly declining-balance factor (also reported per period as rate_factor).
+  given rate_factor means annual_rate_pct / 1200
+
+  -- Flat monthly service fee: 0.25% of the ORIGINAL disbursed principal.
+  given fee means round2(disbursed * 0.0025)
+
+  -- Base instalment (pure amortisation, before the fee).
+  -- Zero-rate loans amortise linearly.
+  given base_emi means
+    if rate_factor = 0
+    then round2(disbursed / months)
+    else round2(
+      disbursed * rate_factor * (1 + rate_factor) ^ months
+      / ((1 + rate_factor) ^ months - 1)
+    )
+
+  entity period
+    observable state outstanding_start   -- balance at the start of the period
+    observable state rate_factor         -- monthly factor carried onto the trace
+    observable state interest            -- reported interest line (pure + fee)
+    observable state principal           -- principal repaid this period
+    observable state emi                 -- customer payment (base instalment + fee)
+    observable state is_last             -- final period marker
+
+  -- Pure declining-balance interest on the opening balance.
+  given pure_interest of period means round2(outstanding_start * rate_factor)
+
+  invariant period_count
+    there are exactly months periods
+
+  invariant last_flag
+    every period :: is_last = (this is the final period)
+
+  invariant rate_carried
+    every period :: rate_factor = annual_rate_pct / 1200
+
+  invariant opening_balance
+    the first period :: outstanding_start = disbursed
+
+  -- Reported interest = pure interest + service fee, on every period.
+  invariant interest_line
+    every period :: interest = round2(pure_interest + fee)
+
+  -- Principal split uses PURE interest only; the fee sits on top.
+  -- The final period absorbs the residual so the loan closes exactly.
+  invariant principal_split
+    every period ::
+      principal = if is_last
+                  then outstanding_start
+                  else round2(base_emi - pure_interest)
+
+  -- Customer payment = base instalment + fee.
+  -- The final base instalment closes the loan (pure interest + full residual).
+  invariant instalment
+    every period ::
+      emi = if is_last
+            then round2(round2(pure_interest + outstanding_start) + fee)
+            else round2(base_emi + fee)
+
+  -- The balance rolls forward, less the principal repaid.
+  invariant balance_rolls
+    follows(next, period) :: next.outstanding_start = round2(outstanding_start - principal)
+
+  -- The schedule fully repays the principal.
+  invariant closes_exactly
+    the last period :: round2(outstanding_start - principal) = 0
+
+  invariant principal_totals
+    sum period :: principal = disbursed
+
+end
