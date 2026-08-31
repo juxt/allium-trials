@@ -240,3 +240,17 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - Testing (b) [steer-via-skill] against data: with the canonical-form table now in the skill, can a
   spec-authoring agent converge to a VALID v4 gate in few check-fix rounds using `means` syntax? If yes,
   (b) is validated and the block-colon grammar fork is unnecessary. Measuring now.
+
+## Iteration 16 CONCLUSION — grammar fork DECIDED (b) by data; two skill riders closed
+- Convergence test (fresh authoring agent + canonical-form table): VALID v4 spec in 1 ROUND, 0 errors,
+  0 fixes. It read the "write instead" column and never emitted the block-colon dialect. => DECISION (b):
+  steer via skill, DO NOT adopt the block-colon grammar fork. The grammar needs no new weight; the skill
+  front-loads the translation. Recorded in RATIFICATION-DOSSIER §8c with the evidence.
+- Two honest riders from the same run (both skill/tooling, not grammar), now closed/logged:
+  (i) `check` = well-formedness, NOT faithfulness — reinforces that the workflow's VALUE step is
+      monitor-schedule vs real traces (the anchor), not the parse. No change needed; the pipeline does it.
+  (ii) agent over-constrained with `every p :: every q :: <roll>` (no ordering guard). FIXED the reference:
+      roll-forward needs `follows(q,p) implies …`. A data-surfaced skill gap, closed.
+- Artifact updated (+§04 "why not just tests?", ratification line reflects sugar + declined fork, 59 tests).
+- STATE: the two things that were "awaiting the human" are now decided by data — (1) block-colon fork:
+  declined; (2) all construct ratification recs stand in the dossier. Nothing blocking remains.

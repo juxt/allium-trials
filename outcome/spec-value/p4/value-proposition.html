@@ -92,7 +92,28 @@
   <p>3/3 convention-breaking edits caught deterministically with the named invariant, 0 false positives.
   In a regulated setting — audit, no silent drift — this <em>is</em> the value.</p>
 
-  <h2><span class="n">04</span>The language is getting better — each construct closes a real bug class</h2>
+  <h2><span class="n">04</span>"Why not just write tests?" — the honest answer</h2>
+  <p>A test suite is executable too. So we ran the gate against two hand-written test suites over 137 real
+  input rows and a mutation battery of developer edits. The result is honest, and it is not "specs catch
+  more".</p>
+  <div class="scroll"><table>
+    <tr><th>developer edit to a correct build</th><th class="n">property tests</th><th class="n">oracle test (re-impl)</th><th class="n">v4 spec-gate</th></tr>
+    <tr><td>rate inflated 1.2× (value)</td><td class="n b">0/137</td><td class="n">107/137</td><td class="n">107/137</td></tr>
+    <tr><td>flat not declining (value)</td><td class="n b">0/137</td><td class="n">89/137</td><td class="n">89/137</td></tr>
+    <tr><td>final doesn't close (structural)</td><td class="n">114/137</td><td class="n">114/137</td><td class="n">114/137</td></tr>
+    <tr><td>benign refactor (control)</td><td class="n f">0/137</td><td class="n f">0/137</td><td class="n f">0/137</td></tr>
+  </table></div>
+  <p>The gate equals a <em>correctly</em> re-implemented oracle test row for row — as a pure detector it is
+  no stronger. It beats structural tests on value bugs (0 vs 89–107), the same desync lesson. The real
+  separation is the <b>anchor</b>: when a developer who believes flat interest is correct ships that build
+  <em>and</em> writes the oracle test to match, the test passes — false confidence, <span class="b">0/137</span> —
+  while the spec, whose faithfulness is checked against the real system's recorded traces by construction,
+  fires <span class="g">89/137</span>.</p>
+  <p class="f" style="font-size:14px">Stated honestly: a spec ties a correct test on raw detection. Its edge
+  is that it anchors to reality by construction (can't silently encode a wrong belief), is one declarative
+  statement over all rows with no second implementation to drift, and is auditable by a non-programmer.</p>
+
+  <h2><span class="n">05</span>The language is getting better — each construct closes a real bug class</h2>
   <p>A behavioural gate can only catch what the language can express. This programme shipped the operators
   real financial specs need, and each measurably widened what the gate catches on real code.</p>
   <div class="cards">
@@ -102,7 +123,7 @@
     <div class="card"><h3>reference definitions</h3><p><code>given k means &lt;expr&gt;</code> — absolute, input-anchored invariants. The difference between catching structural bugs only and catching wrong values too.</p></div>
   </div>
 
-  <h2><span class="n">05</span>Small core, contributable library — extensible, not fat</h2>
+  <h2><span class="n">06</span>Small core, contributable library — extensible, not fat</h2>
   <p>The design question: keep adding to the core, or let users contribute? The data says <b>shrink the
   core.</b> Given <code>if/then/else</code> + comparison + <code>given f means e</code>, the "built-ins"
   are USER-DEFINABLE and compose:</p>
@@ -115,13 +136,14 @@ given clamp(x,lo,hi) means max(lo, min(x, hi))   -- composes; monitors; caught a
     <div class="card"><h3>fluency</h3><p>Data from distilled specs drove <code>p.field</code> = <code>field(p)</code> — the object.attribute form models write naturally. The core stays small; the ergonomics meet the author.</p></div>
   </div>
 
-  <h2><span class="n">06</span>What to build on it</h2>
+  <h2><span class="n">07</span>What to build on it</h2>
   <ul>
     <li><b>Pitch:</b> the spec you <em>need</em> for correctness (over no-spec), that <em>stays true</em> because it's executable (over prose/v3). Not "more correct or cheaper than prose" — that saturates.</li>
     <li><b>Lean into:</b> distillation + a standing gate over real production traces; each new operator opens a bug class to gate against; a small extensible core beats a fat one.</li>
-    <li><b>Honest limits:</b> one-shot correctness is model- and notation-independent (v3 ≈ v4 ≈ prose, opus ≈ haiku); the gate needs the spec's reference inputs emitted in traces; the tolerance, not exact arithmetic, absorbs the code's rounding; one-shot v4 authoring is fluency-limited, so the workflow is distil → check → fix.</li>
-    <li><b>For ratification (data-backed):</b> core — <code>/</code>, <code>if/then/else</code>, <code>round</code>, temporal <code>before</code>, <code>given/use</code>, <code>p.field</code>; demote <code>min/max</code> to the stdlib. 57 tests pass.</li>
+    <li><b>Honest limits:</b> one-shot correctness is model- and notation-independent (v3 ≈ v4 ≈ prose, opus ≈ haiku); the gate needs the spec's reference inputs emitted in traces; the tolerance, not exact arithmetic, absorbs the code's rounding. Authoring is a distil → check → <em>faithfulness</em> → fix loop, and it is the canonical-form skill guidance — not a bigger grammar — that makes it converge (a fresh agent reached a valid spec in one round with the reference's translation table).</li>
+    <li><b>Against "just write tests":</b> the gate ties a <em>correct</em> oracle test on detection and beats structural tests on value bugs; its edge is anchoring to real traces by construction, one declarative statement over all cases, and auditability — not raw detection power.</li>
+    <li><b>For ratification (data-backed):</b> core — <code>/</code>, <code>if/then/else</code>, <code>round</code>, temporal, <code>given/use</code>; sugar — <code>p.field</code>, <code>each</code>=<code>every</code>, <code>let</code>, <code>==</code>; demote <code>min/max</code> to the stdlib. Block-colon grammar fork: <em>declined</em>, steer via skill. 59 tests pass.</li>
   </ul>
 
-  <div class="foot">Programmes 4–5 · value proposition + language design · all reproducible from outcome/spec-value · division, min/max, if/then/else, round, temporal, use-import, dot-notation shipped with tests (57 passing)</div>
+  <div class="foot">Programmes 4–5 · value proposition + language design · all reproducible from outcome/spec-value · division, if/then/else, round, temporal, use-import, dot-notation, let/== shipped with tests (59 passing)</div>
 </div>

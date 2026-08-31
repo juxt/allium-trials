@@ -72,20 +72,26 @@ ONE core substrate task remaining: exact-decimal evaluation (penny-exact roundin
   class from the distill→check→fix loop. +test let_and_double_equals, each_quantifier_synonym.
 - Recommend: RATIFY (pure ergonomics; elaborate to existing constructs, no new semantics).
 
-### 8c. OPEN DECISION for the human — the block-colon grammar fork  [NOT auto-accepted]
+### 8c. DECIDED (data-driven) — the block-colon grammar fork: (b), steer via skill, do NOT adopt
 - Measured: a model distilling a spec writes a COHERENT competing surface grammar, not typos —
   `invariant name:` (colon + layout, no `means`), `each p in schedule: body`, `each p where COND: body`
   (filtered quantifier), `a ^ b` (power). A surface-grammar fork plus a new filtered-quantifier form.
-- Per CLAUDE.md syntax is human-owned. These were NOT bolted on. Two options:
-  (a) bend v4's surface toward the model's prior (colon-delimited bodies, `in <domain>`, `where` filter,
-      `^`) — markedly more fluent one-shot/distill authoring, at the cost of two ways to write every body
-      and a bigger grammar; or
-  (b) keep the keyword-`means` surface and steer the model via skill examples (done: canonical-form table
-      in the language reference) + the check-fix loop.
-- Recommendation: (b) for now. The value prop does not rest on one-shot authoring; the fix loop + canonical
-  examples are the cheaper lever. Revisit (a) only if the distill-loop round-count stays high after the
-  skill update. `^` (power) is a separate, corpus question: if a real spec needs `x^n` it is a core
-  arithmetic gap; if only compound-interest closed forms need it, a `let` binding expands the product.
+- Options: (a) bend v4's surface toward the model's prior (bigger grammar, two ways to write every body);
+  (b) keep the `means` surface, steer via the canonical-form table in the skill reference + the fix loop.
+- DECISION: (b). EVIDENCE (iter 16 convergence test): a fresh authoring agent, given the reference with
+  the canonical-form table, reached a VALID v4 spec in ONE round, zero errors, zero fixes — it read the
+  "write instead" column and never emitted the block-colon dialect. The surface never fought back. So the
+  grammar fork is unnecessary: skill guidance front-loads the translation for zero added grammar weight.
+  Adopting (a) would add a parallel colon-grammar for a problem the skill already dissolves.
+- Two honest riders from the same test (both skill/tooling, not grammar):
+  (i) `check` validates WELL-FORMEDNESS, not FAITHFULNESS — a zero-error spec is not necessarily a
+      faithful one. The distill WORKFLOW must run `monitor-schedule` against real traces (it does). This
+      reinforces the spec-vs-test finding: the value is the faithfulness anchor, not the parse.
+  (ii) the agent wrote an over-constraining `every p :: every q :: <roll>` because it did not know the
+      adjacent-period idiom. FIXED in the reference: the roll-forward law needs an ordering guard
+      (`follows(q,p) implies …`). Skill gap, surfaced and closed by data.
+- `^` (power): still a separate corpus question. If a real spec needs `x^n` it is a core arithmetic gap;
+  the convergence agent sidestepped it by anchoring on observed per-period values, not the closed-form EMI.
 
 ### 9. DEMOTE min/max to stdlib (reiterate, now with the mechanism shipped)
 - std.allium (skills-v4/allium/stdlib/) defines min/max/clamp/abs/sign in user space; use-import resolves
@@ -109,6 +115,6 @@ CORE: `/`, if/then/else, round, temporal before/precedes, given-means, use-impor
 CORE SUGAR (elaborate to the above): `p.field`=`field(p)`, `each`/`all`=`every`, `let`=given-means, `==`=`=`.
 STDLIB (user-space): min, max, clamp, abs, sign (std.allium).
 NO NEW CONSTRUCT NEEDED: liveness (measures), completeness (a tool).
-OPEN (human, syntax-owned): the block-colon grammar fork (§8c) — recommend steer-via-skill, not adopt.
+DECIDED (data): block-colon grammar fork (§8c) — steer-via-skill, NOT adopted (1-round convergence proof).
 DEFER (human decision, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar; `^` power (corpus?).
 59 allium-v4 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
