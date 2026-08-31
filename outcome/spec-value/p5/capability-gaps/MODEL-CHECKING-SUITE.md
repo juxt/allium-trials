@@ -37,6 +37,12 @@ For each `invariant` over a machine of `action`s (with `requires` guards and `en
 Plus two machine-level checks: **`init` does not establish Y** (the base case fails), and **action X is
 never enabled** (dead spec code — its guard holds in no reachable state).
 
+For **relational** (two-entity) invariants — uniqueness, mutual exclusion, segregation, written
+`every a :: every b :: (active(a) and active(b)) implies a = b` — there is a further verdict: **action X
+can break relational invariant Y** (acting on one entity violates the relation against another). This is
+the design-time counterpart of the runtime uniqueness/no-double-spend checks, and it covers the
+segregation concern the corpus raises (N75 margin pools).
+
 ## How it is built (all in `analyse.rs` / `arith.rs`, no external solver)
 
 - **Preservation (1-induction).** For each action × invariant, the verification condition
@@ -58,6 +64,10 @@ never enabled** (dead spec code — its guard holds in no reachable state).
   invariant is proved. A proof supersedes the weaker 1-step break note.
 - **Dead-action** asks, per action, whether its guard is satisfiable in any state reachable within the
   bound.
+- **Relational preservation** instantiates a two-entity universal invariant at the pairs `(_e, _f)` and
+  `(_f, _e)` for the modified entity `_e` and a symbolic other `_f` (framed), resolves entity equality to
+  a constant, and checks whether the effect on `_e` can break either instance — a sound bounded two-entity
+  instantiation, since the action touches only `_e`.
 
 ## Validation
 

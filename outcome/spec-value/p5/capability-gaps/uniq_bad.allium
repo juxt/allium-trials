@@ -1,0 +1,8 @@
+-- allium: 4
+component Lease
+  entity Holder
+  observable state active(Holder) : bool
+  action acquire
+    ensures active(h)
+  invariant at_most_one means every a :: every b :: (active(a) and active(b)) implies a = b
+end

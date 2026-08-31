@@ -29,6 +29,20 @@ p5/SESSION-SUMMARY.md (language). Artifact: the value-proposition page.
    invariant: a vacuity guard now warns when relational checks collapse over empty-identity traces
    (a real trap found + fixed this programme — an idempotency spec had been "passing" vacuously).
 
+6. DESIGN-TIME MODEL CHECKING — the SECOND half of the V&V value prop, complementing the runtime gate.
+   `analyse` now proves/refutes behavioural SAFETY over a state machine of guarded actions, catching the
+   missing-guard bug class that has NO execution trace (so `monitor` structurally cannot reach it), the
+   way TLA+/Ivy/Alloy do — on the single static binary, no external solver. Per invariant it returns a
+   definitive verdict: INDUCTIVE (1-induction proof) / SAFE by k-INDUCTION (unbounded proof for
+   not-1-inductive invariants) / REACHABLY VIOLATED with a minimal counterexample TRACE (BMC) / can-break
+   with a witness + suggested weakest guard; plus init-establishment, dead-action, and RELATIONAL
+   (two-entity) safety for uniqueness/mutual-exclusion/segregation. Both boolean (SAT) and linear-
+   arithmetic (simplex) fragments; the whole invariant conjunction strengthens the pre-state. Validated on
+   two domains (payment lifecycle, DvP settlement atomicity): correct specs proved fully safe, seeded
+   missing-guard bugs each caught with a fix and a trace. Detail: p5/capability-gaps/MODEL-CHECKING-SUITE.md.
+   Sound (skips what it can't decide), ~737 tests, 0 false positives on 284 real specs. This is the V&V
+   sophistication the mission called for, justified by a real specimen class (N76) the value corpus missed.
+
 ## THE LANGUAGE (what changed, and the design philosophy)
 - SHIPPED (60 tests, corpus-motivated, each closing a real bug class): `/` division (value bugs:
   0/144 -> 144/144 on real traces), `if/then/else` (tiers), `round` (money precision), temporal
