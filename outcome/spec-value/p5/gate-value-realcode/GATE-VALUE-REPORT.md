@@ -174,3 +174,17 @@ catches a wrong instalment. Honest residual gaps the agent flagged, consistent w
 annuity is nonlinear so `analyse` checks it only at runtime not statically; the final-period instalment is
 a distinct rounding-absorption value the closed form does not cover; and day-count / mid-term events stay
 out of frame.
+
+## Bottom line (updated after the follow-ups)
+
+Where the language adds value as a gate, stated with the follow-ups folded in: the arithmetic tier
+(including `^`) catches value drift against input-anchored invariants that a structural spec, a structural
+property test, or the model's own edits all miss. On real Fineract this is 0/120 to 120/120 on a
+consistent-value bug, and with `^` it now extends to the instalment value itself (the one class that had
+escaped), pinned by a faithful annuity law and caught when wrong. The pattern is robust across five bug
+morphologies and reproduces on a second invariant class (double-entry). Two of the earlier limits are
+resolved: the emi hole by `^`, the scale false-alarm as a trace-precision artifact (not a tolerance
+defect; proportional tolerance was rejected). The standing bounds are real and unchanged: it is a runtime
+gate so it needs traces; the nonlinear laws are checked against reality, not proved statically; and the
+value concentrates on the non-textbook, institution-specific behaviour a competent model would otherwise
+get wrong, because that is the drift that actually occurs.
