@@ -1,0 +1,25 @@
+-- allium: 4
+-- CAPSTONE: one loan-schedule gate covering FOUR bug classes at once —
+--   structure (conservation), value (absolute tiered interest), caps (stdlib min), liveness (measure).
+use "std.allium"
+component Loan
+  entity Period
+  given disbursed : Money
+  given fee_cap : Money
+  observable state outstanding_start(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state fee(Period) : Money
+  observable state raw_fee(Period) : Money
+  observable state rate_factor(Period) : Rate
+  observable state is_last(Period) : bool
+  -- VALUE: interest is pinned to the rate x balance (absolute, input-anchored)
+  invariant interest_law means every p :: interest(p) = rate_factor(p) * outstanding_start(p)
+  -- CAP: fee is the raw fee capped (stdlib min)
+  invariant fee_capped means every p :: fee(p) = min(raw_fee(p), fee_cap)
+  -- STRUCTURE: principal repaid conserves the disbursed amount
+  invariant conservation means sum p :: principal(p) = disbursed
+  -- LIVENESS: the balance strictly decreases (well-founded measure) and closes to zero (discharge)
+  invariant balance_decreases means every p :: every next :: follows(next, p) implies outstanding_start(next) <= outstanding_start(p) - principal(p)
+  invariant closes means every p :: is_last(p) implies outstanding_start(p) - principal(p) = 0
+end

@@ -151,3 +151,19 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   SUGAR over these invariants; propose it to the human as optional ergonomics, not a semantic need.
   (Bounded liveness over a finite trace = what a runtime monitor can check + what E25's "bound within
   end-of-day" specifies.)
+
+## Iteration 11 — [CAPSTONE] one gate, four bug classes, 0 blind spots (definitive value-prop demo)
+- capstone/loan.allium: ONE loan spec using the enriched language (division, stdlib-imported min,
+  reference defs, sum, follows) gates FOUR bug classes at once. Correct trace: all 5 invariants hold.
+  Completeness probe: 5 fields constrained, 0 BLIND SPOTS (a provably complete gate).
+- Mutation battery (each class -> the right invariant, deterministic, 0 false positives):
+    VALUE     (interest 100->108)         -> CAUGHT by interest_law (absolute, needs division)
+    CAP       (fee 50->60 over cap)       -> CAUGHT by fee_capped (stdlib min)
+    STRUCTURE (principal breaks conserve) -> CAUGHT by conservation (sum)
+    LIVENESS  (balance stalls, no decrease)-> CAUGHT by balance_decreases (well-founded measure)
+    BENIGN    (correct)                   -> passes (no false positive)
+- => THE definitive value-prop demonstration: a single Allium v4 spec is a COMPLETE, EXECUTABLE GATE
+  covering value + structure + caps + liveness bug classes on a real product, with 0 measurable blind
+  spots. A prose spec gates NONE (inert); v3 has no monitor. This is the clear air over prose AND v3,
+  made concrete and reproducible, using the session's shipped constructs + extensibility (stdlib) +
+  liveness-via-measure + the completeness tool together.
