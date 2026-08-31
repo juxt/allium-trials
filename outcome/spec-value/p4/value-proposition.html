@@ -102,13 +102,26 @@
     <div class="card"><h3>reference definitions</h3><p><code>given k means &lt;expr&gt;</code> — absolute, input-anchored invariants. The difference between catching structural bugs only and catching wrong values too.</p></div>
   </div>
 
-  <h2><span class="n">05</span>What to build on it</h2>
+  <h2><span class="n">05</span>Small core, contributable library — extensible, not fat</h2>
+  <p>The design question: keep adding to the core, or let users contribute? The data says <b>shrink the
+  core.</b> Given <code>if/then/else</code> + comparison + <code>given f means e</code>, the "built-ins"
+  are USER-DEFINABLE and compose:</p>
+  <pre style="font-family:var(--mono);font-size:13px;background:#e7e3d4;padding:12px 14px;border-radius:3px;overflow-x:auto">given min(a,b)  means if a &lt; b then a else b
+given clamp(x,lo,hi) means max(lo, min(x, hi))   -- composes; monitors; caught a cap breach</pre>
+  <div class="cards">
+    <div class="card"><h3>functions</h3><p>User-extensible. A shared <code>std.allium</code> imported with <code>use "path"</code> resolves at check <em>and</em> monitor time. min/max/clamp/abs belong here, not the core.</p></div>
+    <div class="card"><h3>types</h3><p>Currency/unit tags already open: <code>Money(gbp)≠Money(usd)</code> caught, no core change per currency. New numeric families: a known mechanism, deferred until the corpus demands one.</p></div>
+    <div class="card"><h3>substrate</h3><p>Exact-decimal is the one place to grow the <em>core</em> (it's below user-space) — but tolerance already absorbs the code's rounding, so it's narrow. Reserve core growth for genuine primitives.</p></div>
+    <div class="card"><h3>fluency</h3><p>Data from distilled specs drove <code>p.field</code> = <code>field(p)</code> — the object.attribute form models write naturally. The core stays small; the ergonomics meet the author.</p></div>
+  </div>
+
+  <h2><span class="n">06</span>What to build on it</h2>
   <ul>
     <li><b>Pitch:</b> the spec you <em>need</em> for correctness (over no-spec), that <em>stays true</em> because it's executable (over prose/v3). Not "more correct or cheaper than prose" — that saturates.</li>
-    <li><b>Lean into:</b> distillation + a standing gate over real production traces; each new operator opens a bug class to gate against.</li>
-    <li><b>Honest limits:</b> one-shot build/elicit/distill correctness is model-and-notation-independent; the gate needs the spec's reference inputs emitted in traces; absolute invariants are exact only modulo the code's rounding.</li>
-    <li><b>Shipped this programme (54 tests):</b> <code>/</code> division, <code>min/max</code> caps/floors, <code>if/then/else</code> tiers, <code>round</code> precision — the arithmetic real loan/fee products need. <b>Next:</b> day-count-exact rate factor for penny-perfect interest laws.</li>
+    <li><b>Lean into:</b> distillation + a standing gate over real production traces; each new operator opens a bug class to gate against; a small extensible core beats a fat one.</li>
+    <li><b>Honest limits:</b> one-shot correctness is model- and notation-independent (v3 ≈ v4 ≈ prose, opus ≈ haiku); the gate needs the spec's reference inputs emitted in traces; the tolerance, not exact arithmetic, absorbs the code's rounding; one-shot v4 authoring is fluency-limited, so the workflow is distil → check → fix.</li>
+    <li><b>For ratification (data-backed):</b> core — <code>/</code>, <code>if/then/else</code>, <code>round</code>, temporal <code>before</code>, <code>given/use</code>, <code>p.field</code>; demote <code>min/max</code> to the stdlib. 57 tests pass.</li>
   </ul>
 
-  <div class="foot">Programme 4 · findings F1–F8 · all reproducible from outcome/spec-value/p4 · division + min/max + temporal shipped with tests (53 passing)</div>
+  <div class="foot">Programmes 4–5 · value proposition + language design · all reproducible from outcome/spec-value · division, min/max, if/then/else, round, temporal, use-import, dot-notation shipped with tests (57 passing)</div>
 </div>
