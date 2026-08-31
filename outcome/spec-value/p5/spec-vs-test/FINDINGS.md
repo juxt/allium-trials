@@ -75,6 +75,26 @@ against the real system by construction, so it can't silently encode a wrong bel
 already golden-masters against real traces and is read only by engineers, the gap narrows to
 declarativeness and audit — real, but smaller. State it that way; don't oversell detection power.
 
+## Coda: `check` is not faithfulness — the monitor is the semantic net
+
+A well-formedness pass (`allium check`) is necessary but not sufficient. Two roll-forward invariants,
+both zero-error under `check`:
+
+```
+right: every p :: every q :: follows(q, p) implies outstanding_start(q) = outstanding_start(p) - principal(p)
+wrong: every p :: every q ::                    outstanding_start(q) = outstanding_start(p) - principal(p)
+```
+
+The second drops the ordering guard and asserts the roll between *every pair* of periods — an
+over-constraint. Both parse. Run against a real multi-period trace with `monitor-schedule`: the guarded
+one HOLDS, the free-pair one FIRES. The faithfulness check against real traces catches a modelling error
+the parser passes.
+
+Put beside the anchor result, this is the whole point: the workhorse is not the parse, it is the
+mechanical comparison of the spec against the real system's recorded behaviour. That is what catches a
+wrong convention (a wrong belief) *and* a wrong quantifier structure (a modelling slip). A test suite has
+`check`'s equivalent (it compiles); it has no built-in equivalent of the faithfulness net.
+
 ## Reproduce
 
 ```
