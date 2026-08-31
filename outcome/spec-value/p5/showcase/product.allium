@@ -1,0 +1,21 @@
+-- allium: 4
+-- Showcase: a realistic loan product spec using the ENRICHED v4 (this session's constructs together).
+use "std.allium"
+component TieredLoan
+  entity Period
+  given disbursed : Money
+  given late_fee_cap : Money
+  -- division + reference constant: base monthly factor
+  given base_factor means annual_rate_pct / 1200
+  given annual_rate_pct : Rate
+  -- if/then/else: TIERED rate — high balances get a discount factor (0.9x), else full.
+  given eff_factor(bal) means (if bal > 100000 then base_factor * 9 / 10 else base_factor)
+  observable state outstanding_start(Period) : Money
+  observable state interest(Period) : Money
+  observable state late_fee(Period) : Money
+  observable state raw_fee(Period) : Money
+  -- absolute tiered-interest law (division + if/then/else)
+  invariant interest_tiered means every p :: interest(p) = eff_factor(outstanding_start(p)) * outstanding_start(p)
+  -- capped late fee (stdlib min)
+  invariant fee_capped means every p :: late_fee(p) = min(raw_fee(p), late_fee_cap)
+end

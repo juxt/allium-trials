@@ -1,0 +1,3 @@
+period=0 outstanding_start=200000.00 interest=1800.00 late_fee=50.00 raw_fee=60.00 is_last=F
+period=1 outstanding_start=50000.00 interest=500.00 late_fee=30.00 raw_fee=30.00 is_last=T
+given disbursed=200000.00 late_fee_cap=50.00 annual_rate_pct=12.00

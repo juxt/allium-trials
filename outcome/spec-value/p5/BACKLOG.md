@@ -56,3 +56,15 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - DECISION: DEFER (lower ROI than extensibility + generality this session). Not a blocker; ratify round
   as core now, upgrade the substrate later. [x] D assessed.
 - [ ] C. third real subsystem (generality) — doing next.
+
+## Iteration 4 — [C] SHOWCASE: the enriched language handles a real product end-to-end
+- A realistic tiered-loan spec using ALL the session's work TOGETHER: `use "std.allium"` (imported min),
+  division (base_factor = rate/1200), if/then/else (eff_factor: high balances get a 0.9x discount tier),
+  parameterised + 0-ary reference definitions, capped late fee (stdlib min). Checks clean; monitors.
+- Mutation battery (each construct's invariant catches its bug class, deterministic, 0 false positives):
+    wrong tier (high balance charged full rate) -> interest_tiered CAUGHT
+    uncapped fee (60 > cap 50)                   -> fee_capped     CAUGHT
+    benign (correct)                             -> passes
+- => the enriched v4 (division, if/then/else, stdlib import, reference defs) is expressive enough for a
+  real tiered product AND the executable gate covers each of its bug classes. Extensibility + new
+  constructs compose. [x] C done (via showcase — higher value than a rote third build-to-oracle).

@@ -1,0 +1,13 @@
+-- allium: 4
+-- Allium v4 standard library. USER-SPACE definitions (not core built-ins): a spec brings them in with
+--   use "<path-to>/std.allium"
+-- and then uses min/max/clamp/abs/sign directly. This is the extensibility model in action — the core
+-- stays small (arithmetic, comparison, if/then/else, given-means, quantifiers, temporal, one rounding
+-- primitive); everything else is a contributable library. Each is proven monitorable.
+component Std
+  given min(a, b) means if a < b then a else b
+  given max(a, b) means if a > b then a else b
+  given clamp(x, lo, hi) means max(lo, min(x, hi))
+  given abs(x) means if x < 0 then 0 - x else x
+  given sign(x) means if x < 0 then 0 - 1 else (if x > 0 then 1 else 0)
+end
