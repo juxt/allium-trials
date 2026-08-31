@@ -1,0 +1,9 @@
+-- allium: 4
+component L
+  entity Period
+  given declared_rate : Number
+  given f means declared_rate / 1200
+  observable state interest(Period) : Money
+  observable state outstanding_start(Period) : Money
+  invariant interest_anchored means every p :: interest(p) = round(f * outstanding_start(p), 2)
+end

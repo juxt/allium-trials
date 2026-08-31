@@ -1,0 +1,8 @@
+-- allium: 4
+component L
+  entity Period
+  observable state interest(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state rate_factor(Period) : Number
+  invariant interest_selfref means every p :: interest(p) = round(rate_factor(p) * outstanding_start(p), 2)
+end

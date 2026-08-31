@@ -219,3 +219,28 @@ under tolerance and is invisible. This is an honest floor, and it is not a langu
 money-rounding unit, and any penny-tolerant mechanism, including a hand-written test asserting values to
 2dp, shares it. The gate catches value drift down to about the level at which the drift is financially
 visible, which is the level that matters.
+
+## The anchoring tension: value-catching power is brittleness to legitimate change
+
+The sharpest conceptual result. The gate's value-catching power comes from anchoring an invariant to the
+declared input (interest = declared_rate x balance). That is exactly what makes it brittle to a legitimate
+in-life event. Two invariants for the same interest law, gated against a legitimate mid-loan rate change
+(rate 18 -> 24, rate_factor tracks the actual per-period rate) and against a wrong-rate bug (code uses 20,
+declared is 18):
+
+```
+invariant                        legitimate rate change    wrong-rate bug
+anchored to DECLARED rate               FIRE (false alarm)     FIRE (caught)
+self-referential (OBSERVED factor)      HOLD (survives)        HOLD (blind)
+```
+
+The anchored invariant catches the bug and false-alarms on the legitimate change. The self-referential
+one survives the change and is blind to the bug, because the wrong rate appears on both sides of
+`interest = rate_factor x outstanding` and the trace is internally consistent. You cannot get both
+properties from one invariant: the anchoring that catches a wrong value is the same anchoring that rejects
+a legitimately changed value. To have both, the spec must MODEL the event, tracking the declared-rate
+timeline rather than a single declared rate. This is why a real gate for a live loan book is not one
+invariant but a spec that knows the institution's in-life operations, and it is the same conclusion the
+regeneration and scale-test results reached from other directions: the gate earns its keep on the
+non-textbook, institution-specific behaviour, and paying for that value means modelling that behaviour,
+not just asserting a textbook law. It is a genuine engineering cost, not a free win.
