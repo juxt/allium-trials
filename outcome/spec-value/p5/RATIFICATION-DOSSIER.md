@@ -63,6 +63,30 @@ ONE core substrate task remaining: exact-decimal evaluation (penny-exact roundin
   form. Now evaluates as `field(p)`. Reduces the one-shot v4 fluency tax measurably.
 - Recommend: RATIFY (pure ergonomics; the human may prefer a different surface).
 
+### 8b. quantifier synonyms + `let` + `==`  [CORE sugar — ratify, data-backed]
+- `each`/`all`/`forall` = `every`, `any` = `some`; `:` accepted for `::` in quantifier position.
+- `let name [= | (args) =] e` = `given name means e` — the OCaml-style binding the human named as an
+  inspiration; the model reaches for it (`let f = annual_rate_pct/1200`). Pure sugar (elaborates to given).
+- `==` = `=`. Trivial, zero-ambiguity.
+- Evidence: all three are top-frequency idioms in distilled specs; each removes a systematic parse-error
+  class from the distill→check→fix loop. +test let_and_double_equals, each_quantifier_synonym.
+- Recommend: RATIFY (pure ergonomics; elaborate to existing constructs, no new semantics).
+
+### 8c. OPEN DECISION for the human — the block-colon grammar fork  [NOT auto-accepted]
+- Measured: a model distilling a spec writes a COHERENT competing surface grammar, not typos —
+  `invariant name:` (colon + layout, no `means`), `each p in schedule: body`, `each p where COND: body`
+  (filtered quantifier), `a ^ b` (power). A surface-grammar fork plus a new filtered-quantifier form.
+- Per CLAUDE.md syntax is human-owned. These were NOT bolted on. Two options:
+  (a) bend v4's surface toward the model's prior (colon-delimited bodies, `in <domain>`, `where` filter,
+      `^`) — markedly more fluent one-shot/distill authoring, at the cost of two ways to write every body
+      and a bigger grammar; or
+  (b) keep the keyword-`means` surface and steer the model via skill examples (done: canonical-form table
+      in the language reference) + the check-fix loop.
+- Recommendation: (b) for now. The value prop does not rest on one-shot authoring; the fix loop + canonical
+  examples are the cheaper lever. Revisit (a) only if the distill-loop round-count stays high after the
+  skill update. `^` (power) is a separate, corpus question: if a real spec needs `x^n` it is a core
+  arithmetic gap; if only compound-interest closed forms need it, a `let` binding expands the product.
+
 ### 9. DEMOTE min/max to stdlib (reiterate, now with the mechanism shipped)
 - std.allium (skills-v4/allium/stdlib/) defines min/max/clamp/abs/sign in user space; use-import resolves
   them. Data says the core needn't carry min/max. Human decision: keep as convenience built-ins or demote.
@@ -81,8 +105,10 @@ ONE core substrate task remaining: exact-decimal evaluation (penny-exact roundin
   classes. Not a language change; a workflow tool.
 
 ## Ratification summary (updated)
-CORE: `/`, if/then/else, round, temporal before/precedes, given-means, use-import, `p.field` dot sugar.
+CORE: `/`, if/then/else, round, temporal before/precedes, given-means, use-import.
+CORE SUGAR (elaborate to the above): `p.field`=`field(p)`, `each`/`all`=`every`, `let`=given-means, `==`=`=`.
 STDLIB (user-space): min, max, clamp, abs, sign (std.allium).
 NO NEW CONSTRUCT NEEDED: liveness (measures), completeness (a tool).
-DEFER (human decision, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar.
-57 allium-v4 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
+OPEN (human, syntax-owned): the block-colon grammar fork (§8c) — recommend steer-via-skill, not adopt.
+DEFER (human decision, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar; `^` power (corpus?).
+59 allium-v4 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
