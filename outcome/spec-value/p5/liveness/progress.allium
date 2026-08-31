@@ -1,0 +1,11 @@
+-- allium: 4
+-- Progress (E25) as a decreasing MEASURE + discharge bound — expressed with existing invariants.
+component Settlement
+  entity Step
+  observable state unsettled(Step) : Rate      -- the measure (an observable count)
+  observable state is_last(Step) : bool
+  -- MEASURE DECREASING: the obligation's measure never increases across steps (well-founded progress).
+  invariant measure_decreases means every s :: every next :: follows(next, s) implies unsettled(next) <= unsettled(s) - 1
+  -- DISCHARGE BOUND: by the final step the obligation is discharged (measure reaches 0).
+  invariant discharged means every s :: is_last(s) implies unsettled(s) = 0
+end

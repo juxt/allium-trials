@@ -1,0 +1,3 @@
+period=0 unsettled=3 is_last=F
+period=1 unsettled=2 is_last=F
+period=2 unsettled=1 is_last=T

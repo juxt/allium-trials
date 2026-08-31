@@ -131,3 +131,23 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   law). Catching that needs value-consistent mutation (field-specific). So the probe catches the COMMON
   failure ("forgot to constrain a field"); pair with the distill skill's absolute-invariant mandate for
   the value-blind case. A genuine deliverable for spec authors: know your gate's blind spots.
+
+## Iteration 10 — [EXPLORE] LIVENESS via measures — a paradigm gap CLOSED with NO new construct
+- Corpus (E. Progress, E25-E28) demands liveness as a decreasing well-founded MEASURE + a discharge
+  bound — deliberately NOT temporal operators ("no temporal operators on the surface; the measure must
+  be an observable"). This maps onto EXISTING v4 invariants (a monotone measure + a bound), like
+  balance_monotonic + closes_to_zero.
+- Demonstrated (liveness/): `measure_decreases` (unsettled(next) <= unsettled(s) - 1) + `discharged`
+  (is_last implies unsettled = 0) catches:
+    GOOD (3->2->1->0)            -> holds
+    STUCK (measure stalls 2,2)   -> CAUGHT (measure_decreases) — a "no progress" bug (E28 shape)
+    NEVER-DISCHARGES (ends at 1) -> CAUGHT (discharged)
+  These are progress/termination bug classes NO safety invariant catches. => v4 already gates LIVENESS.
+- DESIGN INSIGHT: well-founded strict decrease must be written `M(next) <= M(s) - step` (an ACTUAL
+  decrease), NOT `M(next) < M(s)` — because the monitor's tolerance makes strict `<` non-strict (2<2
+  passes within tol). The step form is the mathematically-correct well-founded form anyway.
+- SMALL-CORE WIN: the liveness paradigm gap (noted in P3) is covered by existing invariants — no core
+  growth. A `progress { obligation; measure decreasing; bound }` construct (corpus E25 syntax) would be
+  SUGAR over these invariants; propose it to the human as optional ergonomics, not a semantic need.
+  (Bounded liveness over a finite trace = what a runtime monitor can check + what E25's "bound within
+  end-of-day" specifies.)
