@@ -87,3 +87,21 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   REVERTED the exact-decimal work (kept clean f64 path, 56 tests green). Not a rabbit hole worth more time.
 - LESSON banked: don't chase penny-exactness in the monitor; the spec asserts the LAW, the tolerance
   absorbs the implementation's rounding. This is the honest, correct design.
+
+## Iteration 7 — v4-vs-v3 clarified (no rabbit hole) + REPRIORITISATION
+- v4-vs-v3 on the value prop: `monitor`/`monitor-schedule` are V4-ONLY (v3/allium-parser has parse+
+  analysis, NO runtime gate). So the EXECUTABLE GATE is categorically a v4 capability. On build/distill
+  CORRECTNESS, v3 ≈ v4 ≈ prose (saturation, shown P4). => v4's clear air over v3 is the SAME shape as
+  over prose (executable gate + sound-checkable SMALL core + extensibility) PLUS: v4 is a minimal
+  sound-checkable core where v3 is a large fixed construct set with weaker checking and no gate.
+  Architectural advantage, not a correctness-rate one. Not worth an executable head-to-head (saturates).
+
+## REPRIORITISED IDEA LOG (remaining time, ranked; core goal = best language + clear value prop)
+- [P1] DISTILL SKILL A/B: does the UPDATED distill skill (mandating absolute input-anchored invariants)
+  produce specs that GATE value drift where the old skill's relational-only specs did not? Executable,
+  tests a real deliverable, directly value-prop. (Risk: saturation — abandon if so.)  <-- doing next
+- [P2] Consolidate the value-prop deliverable (artifact + summary) with extensibility + v4-vs-v3.
+- [P3] Demote min/max from core to stdlib (implement the evidenced recommendation) — clean, small.
+- [P4] given-body name-resolution gap (floor slips through) — quick correctness.
+- [P5] corpus breadth: does the gate handle more invariant SHAPES (aggregate/quantified value laws)?
+- explore: new constructs ONLY if a corpus specimen demands (corpus-before-grammar).
