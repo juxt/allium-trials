@@ -118,3 +118,16 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - LESSON: one-shot v4 authoring is fluency-limited; the workflow is distill->check->FIX (the check gate
   is load-bearing). Reducing the fluency tax (dot notation) directly helps every spec-authoring path.
   Anti-rabbit-hole: fixed the ONE highest-value fluency issue (dot), stopping there.
+
+## Iteration 9 — [P5] COMPLETENESS PROBE tool (addresses "is my gate complete?")
+- Built completeness_probe.py: given a v4 spec + a reference trace, perturb each numeric output field and
+  report whether any invariant catches it. An unconstrained field is a GATE BLIND SPOT (drift there is
+  uncatchable). Mechanical, no judge.
+- Demonstrated: COMPLETE spec (improved LoanSchedule) -> 0 blind spots; a spec omitting an emi constraint
+  -> flags `emi` as a BLIND SPOT. This operationalises the completeness concern (the top open question
+  about gate value) into a concrete authoring tool.
+- Honest limit: measures REFERENCE coverage (does any invariant constrain the field) via a raw bump. A
+  field constrained only RELATIONALLY (not absolutely) shows constrained even if value-blind (the desync
+  law). Catching that needs value-consistent mutation (field-specific). So the probe catches the COMMON
+  failure ("forgot to constrain a field"); pair with the distill skill's absolute-invariant mandate for
+  the value-blind case. A genuine deliverable for spec authors: know your gate's blind spots.
