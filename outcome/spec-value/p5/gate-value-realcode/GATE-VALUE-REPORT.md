@@ -164,6 +164,18 @@ spec-versus-test result (the gate ties a correct oracle) now on real Fineract's 
 Honest bound: this uses Fineract-shaped legs and the documented negative control, not a fresh Gradle dump;
 the real-balance-on-real-legs half was established separately by the JUnit oracle in ORACLE-REPORT.
 
+**Upgraded to real dumped legs.** The DoubleEntryLegDumper had already been run and its output is in
+`scale-test/je-traces/` (format `period=<row> account=<name> debit=<amt> credit=<amt>`, exactly what the
+spec expects): the baseline processor plus four blind-edited versions (t3, t4, t5, t8), 15 transactions
+each. Gating these genuinely-dumped legs with the Allium double-entry spec: the baseline balances 15/15,
+and every one of the four edited processors balances 15/15 too, 75 real checks in total. That reproduces
+the JUnit oracle's verdict exactly, including the important case: the gate correctly HOLDS on t3, which was
+the oracle's earlier false positive, confirming t3 does not break balance. A negative control on a real
+dumped transaction (one credit leg inflated by 1.00) fires while the original holds. So on a second
+invariant class, on real processor output, the Allium sum-invariant gate reproduces the hand-written
+oracle, and independently confirms the scale-test saturation: the blind edits preserved double-entry, so
+there was nothing real to catch, but the gate demonstrably catches an imbalance when one exists.
+
 ## Distillation closes too: with `^`, the distiller pins the instalment
 
 Re-running the distillation of the real calculator with `^` available, a fresh agent captured 8 of 8
