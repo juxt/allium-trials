@@ -68,3 +68,9 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - => the enriched v4 (division, if/then/else, stdlib import, reference defs) is expressive enough for a
   real tiered product AND the executable gate covers each of its bug classes. Extensibility + new
   constructs compose. [x] C done (via showcase — higher value than a rote third build-to-oracle).
+
+## Iteration 5 — [E1] checker gap fixed: check resolves imported stdlib functions
+- Found: `check` false-flagged imported stdlib functions (`clamp` "not declared") — the extensibility
+  model worked in the monitor but not at check-time. Fixed: name-resolution now loads `use`d files'
+  item names into scope. Verified: a spec `use "std.allium"` + `clamp(...)` checks CLEAN. 56 tests pass.
+  => the small-core + stdlib model is now consistent across check AND monitor.
