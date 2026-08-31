@@ -146,3 +146,18 @@ python3 emi_gap.py     # the wrong-instalment witness that slips through
 
 Artifacts: `structural.allium`, `full.allium`, `distilled_v4_from_code.allium` (the agent's one-round
 distil of the real calculator), `result.json`.
+
+## Cross-invariant-class check: double-entry balance
+
+To test that the gate-value finding is not specific to loan-schedule arithmetic, the same machinery was
+applied to a different invariant class: double-entry balance, a cross-domain accounting law (sum of debit
+legs equals sum of credit legs per transaction), which the earlier ORACLE-REPORT confirmed real Fineract
+satisfies on 12/12 processor fixtures via a hand-written JUnit oracle, and which is NOT enforced on the
+loan posting path. Expressed in Allium as `(sum p :: debit(p)) = (sum p :: credit(p))` over one
+transaction's legs (`doubleentry.allium`). On Fineract-shaped legs (principal + interest + fee credits and
+a single fund-source debit, matching the documented posting structure): the balanced transaction holds;
+the exact negative control from ORACLE-REPORT (one credit leg inflated by 1.00) fires; a dropped leg fires.
+So the Allium gate reproduces the hand-written oracle's behaviour on this invariant, consistent with the
+spec-versus-test result (the gate ties a correct oracle) now on real Fineract's own double-entry law.
+Honest bound: this uses Fineract-shaped legs and the documented negative control, not a fresh Gradle dump;
+the real-balance-on-real-legs half was established separately by the JUnit oracle in ORACLE-REPORT.

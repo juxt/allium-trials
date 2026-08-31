@@ -1,0 +1,10 @@
+-- allium: 4
+-- Double-entry balance: for one loan-accounting transaction, the sum of debit legs equals the sum of
+-- credit legs. A cross-domain conservation law (accounting), external to the code, not enforced on the
+-- loan posting path. Each trace = one transaction's legs (matching Fineract's DoubleEntryLegDumper).
+component DoubleEntry
+  entity Leg
+  observable state debit(Leg) : Money
+  observable state credit(Leg) : Money
+  invariant balances means (sum p :: debit(p)) = (sum p :: credit(p))
+end
