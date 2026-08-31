@@ -178,3 +178,12 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - => the value prop + executable gate GENERALISE beyond banking: state-machine / workflow invariants
   (ordering, illegal-state, transition legality) gate identically. The language is not finance-specific;
   the same before/old/quantified-boolean machinery handles workflows. Supports the general-purpose goal.
+
+## Iteration 13 — [fluency, bounded] fixed the #1 fluency killer: `each` = `every`
+- The distill pipeline stalled on v4 fluency. Root cause of the cascade: the model writes `each p:`
+  (natural English) not v4's `every p ::`. Fixed: each/all/forall = every, any = some (quantifier
+  synonyms); `:` already accepted for `::` in quantifier position. +test (58 tests).
+- With dot-notation (iter 8), the two dominant one-shot fluency blockers are now fixed. NOTE: fluency is
+  ERGONOMICS (the check-fix loop handles it eventually), not value-prop-critical — so STOPPING fluency
+  work here per anti-rabbit-hole discipline. Remaining model quirks (`^` power, invented `tol`/`abs`
+  without import) are prompt/skill guidance, not language gaps.
