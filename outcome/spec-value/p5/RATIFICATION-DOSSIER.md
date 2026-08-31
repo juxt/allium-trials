@@ -49,3 +49,40 @@ executable evidence it adds measurable value, and the recommendation. All shippe
 RATIFY as CORE: `/`, if/then/else, round(/floor), temporal ordering, given-means (+ use-import).
 DEMOTE to STDLIB: min, max (and abs/clamp/sign — already in std.allium).
 ONE core substrate task remaining: exact-decimal evaluation (penny-exact rounding).
+
+## ADDENDUM (Programme 5) — extensibility, fluency, liveness
+
+### 7. `use "<path>"` import + `given f means e` as the FUNCTION-EXTENSIBILITY mechanism  [CORE — ratify]
+- A shared stdlib of user-space functions, imported and resolved at BOTH check and monitor time.
+- Evidence: min/max/clamp/abs/sign are USER-DEFINABLE (if/then/else + comparison), compose, and gate a
+  cap breach identically to built-ins. => the core need not carry library functions.
+- Recommend: RATIFY use-import as core. It is what makes v4 extensible without a fat core.
+
+### 8. `p.field` dot notation (sugar for `field(p)`)  [CORE sugar — ratify, data-backed]
+- Evidence: distilled specs SYSTEMATICALLY use `p.field` (object.attribute) — the model's/human's natural
+  form. Now evaluates as `field(p)`. Reduces the one-shot v4 fluency tax measurably.
+- Recommend: RATIFY (pure ergonomics; the human may prefer a different surface).
+
+### 9. DEMOTE min/max to stdlib (reiterate, now with the mechanism shipped)
+- std.allium (skills-v4/allium/stdlib/) defines min/max/clamp/abs/sign in user space; use-import resolves
+  them. Data says the core needn't carry min/max. Human decision: keep as convenience built-ins or demote.
+
+### LIVENESS — no new construct needed (corpus E25 covered)
+- The corpus's measure-based progress (E25: obligation + decreasing measure + bound; "no temporal
+  operators; the measure must be an observable") is expressible with EXISTING invariants: a well-founded
+  measure `M(next) <= M(s) - step` + a discharge bound `is_last implies M = 0`. Catches STUCK
+  (measure stalls) and NEVER-DISCHARGES bugs. A `progress { ... }` construct would be SUGAR — propose to
+  the human as ergonomics, not a semantic need. (Bounded liveness over a finite trace = what a monitor
+  can check.)
+
+### COMPLETENESS PROBE — a tool, not a construct
+- completeness_probe.py reports a spec-gate's BLIND SPOTS (unconstrained output fields). Pair with the
+  absolute-invariant mandate to author COMPLETE gates. The capstone spec: 0 blind spots, gates 4 bug
+  classes. Not a language change; a workflow tool.
+
+## Ratification summary (updated)
+CORE: `/`, if/then/else, round, temporal before/precedes, given-means, use-import, `p.field` dot sugar.
+STDLIB (user-space): min, max, clamp, abs, sign (std.allium).
+NO NEW CONSTRUCT NEEDED: liveness (measures), completeness (a tool).
+DEFER (human decision, low ROI): exact-decimal substrate; `dimension` type families; `progress` sugar.
+57 allium-v4 tests pass; real demo specs (K55, LoanSchedule, double-entry) unaffected.
