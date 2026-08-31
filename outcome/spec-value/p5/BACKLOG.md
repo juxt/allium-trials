@@ -43,3 +43,16 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   the human can demote them — the evidence says they add nothing as core.)
 - [x] A done. Enabler (cross-module use loading) done. NEXT: B ratification dossier; then type
   extensibility (rational) + third subsystem.
+
+## Iteration 3 — [D] exact-decimal substrate: ASSESSED, specced, DEFERRED (data-driven prioritisation)
+- Confirmed it is a CORE change (layer 2): the monitor stores/evaluates in f64 (SPeriod.num: HashMap
+  <String,f64>, eval_num->f64, cmp uses tol). Making it exact needs converting the number path to `Rat`
+  (parse decimal strings -> Rat, eval_dec in Rat, exact half-even round). ~1h invasive, risks the 56
+  tests, for a rounding-TIE edge (~4% of traces) — BUT the real payoff is a TOLERANCE-FREE gate (tol=0,
+  penny-exact, fully auditable) not just the edge.
+- SPEC (clean, for later): SPeriod/SModel hold Rat; parse_schedule parses "8.33" -> Rat(833,100);
+  eval_dec mirrors eval_num in Rat (+-*/, min/max/if, round-half-even exact on Rat); monitor_schedule
+  compares in Rat with tol=0 for money. Keep f64 path as fallback for non-decimal.
+- DECISION: DEFER (lower ROI than extensibility + generality this session). Not a blocker; ratify round
+  as core now, upgrade the substrate later. [x] D assessed.
+- [ ] C. third real subsystem (generality) — doing next.
