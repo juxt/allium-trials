@@ -1,0 +1,14 @@
+-- allium: 4
+component SettleOnce
+  entity S
+  observable state settled_pre(S) : bool
+  observable state valid_pre(S) : bool
+  observable state settled_post(S) : bool
+  observable state valid_post(S) : bool
+  axiom inv_pre means settled_pre(s) implies valid_pre(s)
+  axiom eff_settled means settled_post(s)
+  axiom frame1 means valid_post(s) implies valid_pre(s)
+  axiom frame2 means valid_pre(s) implies valid_post(s)
+  axiom guard means valid_pre(s)
+  requirement breaks_inv means settled_post(s) and not valid_post(s)
+end

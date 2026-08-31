@@ -85,3 +85,21 @@ on, and here the extra complexity is justified by concrete use cases rather than
 
 The four probe specs and their verdicts are in this directory (`proto.allium`, `induct*.allium`,
 `eq.allium`). `allium analyse <file>` shows each verdict.
+
+## It is a specimen class, not one example
+
+The same one-step preservation encoding discriminates safe from unsafe across three independent
+state-machine safety specimens, so the capability is justified by a class rather than a single case:
+
+```
+specimen                          unguarded action    guarded action
+capture without authorization     BUG FOUND           SAFE
+debit while frozen                BUG FOUND           SAFE
+settle without validity           BUG FOUND           SAFE
+```
+
+Payment sequencing, account-state safety, and idempotency/validity are three distinct real banking
+concerns, and the check catches the missing-guard bug in each and certifies the guarded version safe. That
+comfortably clears the project's bar that a construct must earn more than one specimen. The feature to add
+is the automation (generate the query per action-invariant pair); the reasoning it needs is already sound
+in the engine, modulo the boolean-`=` desugaring noted above.

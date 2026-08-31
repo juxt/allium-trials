@@ -1,0 +1,14 @@
+-- allium: 4
+component DebitPreservation
+  entity S
+  observable state frozen_pre(S) : bool
+  observable state debited_pre(S) : bool
+  observable state frozen_post(S) : bool
+  observable state debited_post(S) : bool
+  axiom inv_pre means debited_pre(s) implies not frozen_pre(s)
+  axiom eff_debited means debited_post(s)
+  axiom frame1 means frozen_post(s) implies frozen_pre(s)
+  axiom frame2 means frozen_pre(s) implies frozen_post(s)
+  axiom guard means not frozen_pre(s)
+  requirement breaks_inv means debited_post(s) and frozen_post(s)
+end
