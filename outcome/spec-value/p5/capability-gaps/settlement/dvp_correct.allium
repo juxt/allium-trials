@@ -1,0 +1,51 @@
+-- allium: 4
+-- Delivery-versus-payment (DvP) settlement as a state machine — a different domain from the payment
+-- lifecycle, to test the inductive checker's generality. A trade is matched, both legs are affirmed, then
+-- settled ATOMICALLY: cash and securities must move together or not at all. The safety invariants encode
+-- DvP atomicity and the settlement preconditions. The correct spec should be certified fully safe; each
+-- seeded missing-guard bug (settle a leg unilaterally, settle before affirmation) should be caught.
+component DvpSettlement
+  entity Trade
+  observable state matched(Trade)      : bool
+  observable state cash_affirmed(Trade) : bool
+  observable state sec_affirmed(Trade)  : bool
+  observable state cash_moved(Trade)     : bool
+  observable state sec_moved(Trade)      : bool
+  observable state failed(Trade)         : bool
+
+  init means not matched(t) and not cash_affirmed(t) and not sec_affirmed(t)
+    and not cash_moved(t) and not sec_moved(t) and not failed(t)
+
+  action match_trade
+    requires not matched(t)
+    ensures matched(t)
+
+  action affirm_cash
+    requires matched(t) and not cash_affirmed(t)
+    ensures cash_affirmed(t)
+
+  action affirm_sec
+    requires matched(t) and not sec_affirmed(t)
+    ensures sec_affirmed(t)
+
+  -- Atomic settlement: fires only when BOTH legs are affirmed, and moves BOTH legs together.
+  action settle
+    requires cash_affirmed(t) and sec_affirmed(t) and not cash_moved(t) and not sec_moved(t) and not failed(t)
+    ensures cash_moved(t) and sec_moved(t)
+
+  action fail_trade
+    requires matched(t) and not cash_moved(t) and not sec_moved(t)
+    ensures failed(t)
+
+  -- Safety invariants (each must hold in every reachable state):
+  -- DvP atomicity: the two legs move together — never one without the other.
+  invariant dvp_atomic_cash means cash_moved(t) implies sec_moved(t)
+  invariant dvp_atomic_sec means sec_moved(t) implies cash_moved(t)
+  -- A leg only moves if its side was affirmed.
+  invariant cash_needs_affirm means cash_moved(t) implies cash_affirmed(t)
+  invariant sec_needs_affirm means sec_moved(t) implies sec_affirmed(t)
+  -- Affirmation only after matching.
+  invariant affirm_needs_match means cash_affirmed(t) implies matched(t)
+  -- A settled trade is never also failed.
+  invariant no_settle_and_fail means cash_moved(t) implies not failed(t)
+end

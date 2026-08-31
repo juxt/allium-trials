@@ -1,0 +1,26 @@
+-- allium: 4
+-- r_implies_p is SAFE but NOT 1-inductive: the pre-state p=F,q=T (where setr breaks it) is unreachable,
+-- because q is only set by advance (which requires p). No single-state invariant is declared to exclude
+-- it, so conjunction-strengthening cannot prove it; 2-induction can (looking one step back forces p=T).
+component Staged
+  entity S
+  observable state p(S) : bool
+  observable state q(S) : bool
+  observable state r(S) : bool
+
+  init means not p(s) and not q(s) and not r(s)
+
+  action start
+    requires not p(s)
+    ensures p(s)
+
+  action advance
+    requires p(s) and not q(s)
+    ensures q(s)
+
+  action setr
+    requires q(s) and not r(s)
+    ensures r(s)
+
+  invariant r_implies_p means r(s) implies p(s)
+end
