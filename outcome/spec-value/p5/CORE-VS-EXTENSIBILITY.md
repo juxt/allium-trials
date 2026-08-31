@@ -39,3 +39,27 @@ NOT USER-DEFINABLE (genuine CORE primitives — no recursion, no fractional-part
 - TYPE FAMILIES are fixed (money/rate/mass/...): a genuinely new numeric family (e.g. a rational/decimal
   NUMBER type for penny-exact arithmetic) is NOT user-addable. This is where "rational" actually lives:
   not a function but a TYPE. So the rational question = TYPE extensibility, the harder axis.
+
+## The rational question, resolved: three distinct layers (data-driven)
+Extensibility is not one thing. The evidence separates three layers with DIFFERENT answers:
+
+1. FUNCTIONS (min/max/clamp/abs/round-logic/domain helpers) — USER-EXTENSIBLE. Proven: definable via
+   `given f means <if/then/else + arithmetic + comparison>`, importable via `use "std.allium"`, composes,
+   monitors. The core must NOT grow here; ship a stdlib. (Done: std.allium prelude + use-loading.)
+
+2. EVALUATION SUBSTRATE (exact decimal / rational number representation) — CORE, NOT extensible. You
+   cannot make arithmetic penny-exact from user-space definitions: it is about how numbers are
+   REPRESENTED during evaluation, which sits BELOW the language. The monitor currently evaluates in f64,
+   so decimal ties (8.325) can round the "wrong" way vs BigDecimal. The fix is a core change: evaluate
+   money arithmetic in exact rationals (the LRA already has a `Rat` type). This is the ONE place
+   "expand the core" is the right answer — because it is the substrate, not a library.
+
+3. TYPE FAMILIES / DIMENSIONS — PARTLY EXTENSIBLE ALREADY. Currencies/units are open nominal tags
+   (`Money(gbp)`, `Mass(kg)`), users pick freely. A genuinely NEW type KIND with its own algebra
+   (typeclass/trait-style user-defined types + operations) is the frontier — a future big feature, not
+   needed for banking now.
+
+So the answer to "expand core vs let users contribute rational": rational-the-EXACT-ARITHMETIC is a CORE
+substrate improvement (do it in the core); rational-as-a-user-TYPE is the frontier (defer). Functions are
+already extensible and should NOT bloat the core. Net: a SMALL core (primitives + exact-decimal
+substrate) + a contributable function stdlib + open dimensions = the general, extensible design.
