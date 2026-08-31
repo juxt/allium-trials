@@ -188,3 +188,22 @@ defect; proportional tolerance was rejected). The standing bounds are real and u
 gate so it needs traces; the nonlinear laws are checked against reality, not proved statically; and the
 value concentrates on the non-textbook, institution-specific behaviour a competent model would otherwise
 get wrong, because that is the drift that actually occurs.
+
+## Detection floor: the gate is penny-sensitive, not infinitely sensitive
+
+A sensitivity sweep (wrong-rate bug at shrinking magnitudes, 100 nonzero-rate multi-period real schedules,
+rate_factor emitted at full precision) maps where the gate stops catching:
+
+```
+wrong rate  +10%   caught 100/100
+wrong rate  +2%    caught  97/100
+wrong rate  +0.5%  caught  89/100
+wrong rate  +0.1%  caught  68/100
+```
+
+Detection degrades gracefully as the monetary impact of the error shrinks toward the 2-decimal rounding
+unit: a 0.1% rate error often moves the interest by less than a penny on smaller balances, so it falls
+under tolerance and is invisible. This is an honest floor, and it is not a language limitation: it is the
+money-rounding unit, and any penny-tolerant mechanism, including a hand-written test asserting values to
+2dp, shares it. The gate catches value drift down to about the level at which the drift is financially
+visible, which is the level that matters.
