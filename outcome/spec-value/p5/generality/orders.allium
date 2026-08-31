@@ -1,0 +1,17 @@
+-- allium: 4
+-- Order-fulfilment workflow (NON-banking): a state machine gated by v4 invariants.
+-- States: created -> paid -> shipped -> delivered. Rules: no shipping before payment (ordering);
+-- once cancelled never fulfilled (monotone/temporal); a delivered order was shipped (temporal).
+component Orders
+  entity Event
+  observable state is_paid(Event) : bool
+  observable state is_shipped(Event) : bool
+  observable state is_delivered(Event) : bool
+  observable state is_cancelled(Event) : bool
+  -- ORDERING: a shipment must be preceded by a payment event
+  invariant ship_after_pay means every s :: is_shipped(s) implies some p :: (is_paid(p) and before(p, s))
+  -- ORDERING: a delivery must be preceded by a shipment
+  invariant deliver_after_ship means every d :: is_delivered(d) implies some s :: (is_shipped(s) and before(s, d))
+  -- SAFETY: an event is not both delivered and cancelled
+  invariant no_deliver_cancel means every e :: not (is_delivered(e) and is_cancelled(e))
+end

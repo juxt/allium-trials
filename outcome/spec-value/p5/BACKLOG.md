@@ -167,3 +167,14 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
   spots. A prose spec gates NONE (inert); v3 has no monitor. This is the clear air over prose AND v3,
   made concrete and reproducible, using the session's shipped constructs + extensibility (stdlib) +
   liveness-via-measure + the completeness tool together.
+
+## Iteration 12 — [EXPLORE] GENERALITY beyond banking: a workflow state machine gates cleanly
+- generality/orders.allium: an order-fulfilment WORKFLOW (created->paid->shipped->delivered), NON-
+  financial, gated by temporal-ordering + boolean-safety invariants (no arithmetic):
+    GOOD (pay->ship->deliver)   -> all hold
+    ship-before-pay             -> CAUGHT (ship_after_pay)
+    deliver-before-ship         -> CAUGHT (deliver_after_ship)
+    delivered AND cancelled     -> CAUGHT (no_deliver_cancel)
+- => the value prop + executable gate GENERALISE beyond banking: state-machine / workflow invariants
+  (ordering, illegal-state, transition legality) gate identically. The language is not finance-specific;
+  the same before/old/quantified-boolean machinery handles workflows. Supports the general-purpose goal.

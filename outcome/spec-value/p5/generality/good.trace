@@ -1,0 +1,3 @@
+entity=e0 is_paid=T is_shipped=F is_delivered=F is_cancelled=F
+entity=e1 is_paid=F is_shipped=T is_delivered=F is_cancelled=F
+entity=e2 is_paid=F is_shipped=F is_delivered=T is_cancelled=F
