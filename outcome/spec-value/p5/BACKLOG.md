@@ -254,3 +254,18 @@ to data-driven arguments; amass evidence, ratify constructs at the end. Syntax t
 - Artifact updated (+§04 "why not just tests?", ratification line reflects sugar + declined fork, 59 tests).
 - STATE: the two things that were "awaiting the human" are now decided by data — (1) block-colon fork:
   declined; (2) all construct ratification recs stand in the dossier. Nothing blocking remains.
+
+## Iteration 17 — [EXPLORE→BUG] concurrency-adjacent safety probe found a monitor false-confidence trap
+- Probed whether idempotency/no-double-spend (a concurrency-adjacent SAFETY property) is a language gap.
+  It is NOT: idem.allium `every a :: every b :: txn_id(a)=txn_id(b) implies a=b` fires on duplicates,
+  holds on unique ids — with proper `entity=<id>` traces. Generality win: uniqueness/ordering/idempotency
+  are trace-monitorable safety, no new construct.
+- BUT the probe exposed a SILENT VACUOUS-TRUTH bug: the P3 idem/uniq traces used `event Posting txn_id=1`
+  (no `entity=`), so all events collapsed to one anonymous entity and `every a :: every b ::` was
+  vacuously true. monitor reported ok:true — the P3 idempotency validation NEVER EXERCISED the invariant.
+  A false-confidence trap in our own harness (the exact failure the spec-vs-test anchor warns about).
+- FIX (tooling): monitor now emits `warnings` when a relational invariant ranges over collapsed/empty-
+  identity entities. +test vacuity_warning_on_collapsed_entities (60 tests). Logged in FRICTION.md.
+- Implication: a green gate is only as trustworthy as the trace's entity identity. The guard is what makes
+  the faithfulness anchor SOUND — without it, a passing monitor can be vacuous. High-value for the value
+  prop's credibility (the gate must actually exercise what it claims to check).
