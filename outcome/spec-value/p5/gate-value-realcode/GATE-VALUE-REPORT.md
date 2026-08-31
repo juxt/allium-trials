@@ -244,3 +244,32 @@ invariant but a spec that knows the institution's in-life operations, and it is 
 regeneration and scale-test results reached from other directions: the gate earns its keep on the
 non-textbook, institution-specific behaviour, and paying for that value means modelling that behaviour,
 not just asserting a textbook law. It is a genuine engineering cost, not a free win.
+
+## Complete picture (final, supersedes the interim syntheses above)
+
+Where the Allium language adds value as a gate, from all the evidence on real Fineract:
+
+1. It expresses the load-bearing behaviour of real financial code (7/7, and 8/8 with `^`), distilled clean
+   in one round. Faithful to the penny on 150 real schedules.
+2. Its arithmetic tier is what catches value drift a structural spec, a structural property test, and the
+   model's own edits all miss: 0/120 to 120/120 on a consistent-value bug, robust across five bug
+   morphologies, and with `^` now extending to the instalment value itself.
+3. It reproduces a hand-written oracle on a second, cross-domain invariant class (double-entry) on real
+   dumped processor legs, 75/75, negative control firing.
+
+Bounded, honestly, by:
+
+1. It is a runtime gate: it needs traces, and the nonlinear laws are checked against reality, not proved
+   statically. (Two earlier "limits" dissolved: `^` closed the emi hole; the scale false-alarm was a
+   trace-precision artifact, and proportional tolerance was the wrong fix.)
+2. Its sensitivity floor is the money-rounding unit, shared by any penny-tolerant mechanism.
+3. The deepest bound, the anchoring tension: the input-anchoring that gives an invariant its
+   value-catching power is the same anchoring that false-alarms on a legitimate in-life change. The
+   change-robust form is the value-blind form. Getting both means modelling the institution's operations,
+   a real cost, which is the same place regeneration and the scale test independently located the value:
+   the non-textbook, institution-specific behaviour a model would otherwise get wrong.
+
+The one-line answer: the language adds value as a gate through its arithmetic tier, catching value drift
+against input-anchored invariants on real code at runtime, and that value is greatest exactly where it is
+most expensive to obtain, in the institution-specific behaviour whose invariants you must model rather
+than assume.
