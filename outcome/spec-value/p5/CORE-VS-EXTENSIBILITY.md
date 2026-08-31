@@ -63,3 +63,28 @@ So the answer to "expand core vs let users contribute rational": rational-the-EX
 substrate improvement (do it in the core); rational-as-a-user-TYPE is the frontier (defer). Functions are
 already extensible and should NOT bloat the core. Net: a SMALL core (primitives + exact-decimal
 substrate) + a contributable function stdlib + open dimensions = the general, extensible design.
+
+## Type extensibility — the second axis, assessed (data + corpus discipline)
+- ALREADY EXTENSIBLE (works, tested): open nominal UNIT/CURRENCY tags. Users pick any currency/unit
+  freely — `Money(gbp)` vs `Money(usd)` is a caught category error; `Mass(kg)`, `Mass(hectogram)` etc.
+  This covers the real banking need (multi-currency, multi-unit) with NO core change per new currency.
+- GAP: a genuinely NEW numeric FAMILY (e.g. `Shares`, `BasisPoints`) is treated as an opaque entity
+  (equality only, no dimensional arithmetic; `shares = money` is NOT caught). Users cannot add new
+  numeric quantity families without editing the core `parse_ty` family list.
+- MECHANISM if wanted: a `dimension <Name>` declaration registering a new numeric family that combines
+  like money (Name + Name ok; Name + Money error). Clean, analogous to the function-stdlib mechanism.
+- CORPUS-BEFORE-GRAMMAR VERDICT: NO current banking specimen demands a new numeric family — money, rate,
+  mass, duration, count + open currency/unit tags suffice. So per the project's core rule, DO NOT build
+  `dimension` extensibility speculatively. Document the mechanism; build it when a specimen demands it
+  (or if the general-purpose-language goal is explicitly prioritised over banking-corpus discipline —
+  a human decision). The EXISTING open-tag extensibility is the realised, sufficient type-extensibility.
+
+## Overall core-vs-extensibility verdict
+- FUNCTIONS: extensible (stdlib + use-import). SHRINK the core (demote min/max). DONE + evidenced.
+- TYPES (unit/currency): already extensible (open tags), sufficient for the corpus. New numeric FAMILIES:
+  mechanism known, deferred per corpus rule.
+- EVALUATION SUBSTRATE (exact decimal): the one place to EXPAND the core (not extensible); specced,
+  deferred on ROI.
+=> The extensible design is largely IN PLACE: a small core of primitives + a contributable function
+   stdlib + open type tags. The main deliverable of this assessment: DON'T keep growing the core with
+   library functions (they're user-space); reserve core growth for genuine substrate/primitive needs.
