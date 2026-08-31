@@ -1,0 +1,44 @@
+{
+  "matrix": {
+    "rate inflated 1.2x (value)": [
+      0,
+      107,
+      107,
+      137
+    ],
+    "flat not declining (value)": [
+      0,
+      89,
+      89,
+      137
+    ],
+    "final doesn't close (struct)": [
+      114,
+      114,
+      114,
+      137
+    ],
+    "principal split off (struct)": [
+      137,
+      137,
+      137,
+      137
+    ],
+    "benign refactor (control)": [
+      0,
+      0,
+      0,
+      137
+    ]
+  },
+  "anchor": [
+    0,
+    0,
+    89,
+    137
+  ],
+  "faithfulness": [
+    145,
+    151
+  ]
+}
