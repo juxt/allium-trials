@@ -1,0 +1,9 @@
+-- allium: 4
+component Account
+  entity A
+  observable state balance(A) : Money
+  observable state amount(A) : Money
+  action withdraw
+    ensures balance(a) = old(balance(a)) - amount(a)
+  invariant non_negative means balance(a) >= 0
+end

@@ -1,0 +1,10 @@
+-- allium: 4
+component Pay
+  entity Txn
+  observable state authed(Txn) : bool
+  observable state captured(Txn) : bool
+  init means not authed(t) and not captured(t)
+  action capture
+    ensures captured(t)
+  invariant no_cap means every p :: captured(p) implies authed(p)
+end

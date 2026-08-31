@@ -1,0 +1,35 @@
+-- allium: 4
+-- A realistic payment lifecycle as a state machine, to validate the inductive-invariant checker at
+-- more than toy scale: four actions with real guards, four interacting safety invariants. The correct
+-- version should be certified fully INDUCTIVE; each guard removed in payment_bug_*.allium should be caught.
+component PaymentLifecycle
+  entity Payment
+  observable state authorized(Payment) : bool
+  observable state captured(Payment)   : bool
+  observable state refunded(Payment)   : bool
+  observable state voided(Payment)     : bool
+
+  init means not authorized(p) and not captured(p) and not refunded(p) and not voided(p)
+
+  action authorize
+    requires not authorized(p)
+    ensures authorized(p)
+
+  action capture
+    requires authorized(p) and not captured(p)
+    ensures captured(p)
+
+  action refund
+    requires captured(p) and not refunded(p)
+    ensures refunded(p)
+
+  action void
+    requires authorized(p) and not captured(p)
+    ensures voided(p)
+
+  -- Safety invariants — each must hold in every reachable state.
+  invariant capture_needs_auth means captured(p) implies authorized(p)
+  invariant refund_needs_capture means refunded(p) implies captured(p)
+  invariant no_capture_after_void means voided(p) implies not captured(p)
+  invariant void_needs_auth means voided(p) implies authorized(p)
+end
