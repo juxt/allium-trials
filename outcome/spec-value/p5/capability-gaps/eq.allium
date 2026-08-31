@@ -1,0 +1,8 @@
+-- allium: 4
+component EqTest
+  entity S
+  observable state a(S) : bool
+  observable state b(S) : bool
+  axiom link means a(s) = b(s)
+  requirement contra means a(s) and not b(s)
+end

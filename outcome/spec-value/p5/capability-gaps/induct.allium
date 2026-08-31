@@ -1,0 +1,15 @@
+-- allium: 4
+component CapturePreservation
+  entity S
+  observable state authed_pre(S) : bool
+  observable state captured_pre(S) : bool
+  observable state authed_post(S) : bool
+  observable state captured_post(S) : bool
+  -- invariant holds in the pre-state
+  axiom inv_pre means captured_pre(s) implies authed_pre(s)
+  -- capture's effect: captured becomes true; authed is unchanged (frame)
+  axiom eff_captured means captured_post(s)
+  axiom eff_frame_auth means authed_post(s) = authed_pre(s)
+  -- the counterexample we search for: the invariant is VIOLATED in the post-state
+  requirement breaks_inv means captured_post(s) and not authed_post(s)
+end

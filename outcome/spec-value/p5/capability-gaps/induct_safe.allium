@@ -1,0 +1,13 @@
+-- allium: 4
+component CaptureGuarded
+  entity S
+  observable state authed_pre(S) : bool
+  observable state captured_pre(S) : bool
+  observable state authed_post(S) : bool
+  observable state captured_post(S) : bool
+  axiom inv_pre means captured_pre(s) implies authed_pre(s)
+  axiom guard means authed_pre(s)
+  axiom eff_captured means captured_post(s)
+  axiom eff_frame_auth means authed_post(s) = authed_pre(s)
+  requirement breaks_inv means captured_post(s) and not authed_post(s)
+end

@@ -1,0 +1,12 @@
+-- allium: 4
+component Payment
+  entity Txn
+  observable state authed(Txn) : bool
+  observable state captured(Txn) : bool
+  init means not authed(t) and not captured(t)
+  action authorize
+    ensures authed(t)
+  action capture
+    ensures captured(t)
+  invariant no_capture_without_auth means captured(t) implies authed(t)
+end
