@@ -1,0 +1,23 @@
+-- allium: 4
+-- Real achronic ShardWatermarkBound, fully verified: init establishes the bound and every action
+-- preserves it, so it is INDUCTIVE (holds in every reachable state where the shard is healthy).
+component Ledger
+  entity Shard
+  observable state status(Shard) : { healthy | corrupted }
+  observable state watermark(Shard) : Number
+  given current_offset : Number where current_offset >= 0 - 1
+
+  -- ShardWatermarkBound: a healthy shard never persists beyond what has been consumed.
+  invariant watermark_bounded means status(s) = healthy implies watermark(s) <= current_offset
+
+  init means status(s) = healthy and watermark(s) = 0 - 1
+
+  action advance
+    requires status(s) = healthy and watermark(s) < current_offset
+    ensures watermark(s) = current_offset
+  action corrupt
+    requires status(s) = healthy
+    ensures status(s) = corrupted
+
+  terminal status(s) = corrupted
+end
