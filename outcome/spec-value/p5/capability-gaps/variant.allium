@@ -1,0 +1,10 @@
+-- allium: 4
+component Handler
+  entity E
+  observable state outcome(E) : { success { outputs : Number } | failure { error : Number } }
+  observable state delivered(E) : bool
+  -- OK: outputs read under the success guard
+  invariant ok means outcome(e) = success implies outputs(e) >= 0
+  -- BAD: error read without the failure guard
+  invariant bad means delivered(e) implies error(e) >= 0
+end

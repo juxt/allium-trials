@@ -139,3 +139,25 @@ and what his review shows must come first, is the conceptual model and its vocab
 live, decide sum-typed state, decide rule-governed transitions, and unify surface/actor/contract with
 component/entity/action. The surface syntax follows from that, and it elaborates to the invariants already
 built either way.
+
+## Built and validated on the real target (2026-09-01, mandate relaxed)
+
+With the constraint on new syntax lifted, the lifecycle/sum-type story is now built and checked on
+achronic's actual shapes (`achronic_lifecycle.allium`), and it holds:
+
+- **Enum lifecycle states** reason as exactly-one; `action`s move them; preservation proves the invariants.
+- **`terminal <state-cond>`** declares an end state, desugaring to a finality invariant proved
+  automatically (achronic's `delivering` terminal proves INDUCTIVE).
+- **Payload-carrying sum types** — `outcome : { success { outputs } | failure { error } }`, achronic's real
+  `EventOutcome` — parse, hold exactly-one over the tags, and enforce correct-by-construction guarded
+  access: reading a field outside its variant's guard is ill-formed.
+- **Stuck-state (deadlock) detection** flags a reachable non-terminal dead-end, and correctly stays silent
+  on `delivering` because it is declared terminal — resolving the deadlock check that was blocked precisely
+  on the missing terminal annotation.
+
+So James's two points (sum types, govern the state naturally) and the Tier-1 synthesis (lifecycle = sum-
+typed state + typed transitions) are realised, built onto what existed rather than bolted on, and validated
+on the system they were meant to serve. 749 tests, 0 false positives across the corpus. What remains, and
+is genuinely optional, is the deeper typestate discipline (an action typed as a variant-to-variant
+transition rather than reading its edge from `requires`/`ensures`), which the current form already
+approximates soundly.

@@ -1,0 +1,32 @@
+-- allium: 4
+-- Achronic's real shapes, expressed in v4 with the new state-machine and sum-type features, to validate
+-- the whole story on the target system. Two things from achronic/specs/core.allium:
+--   1. EventOutcome = a payload-carrying sum ({ success { outputs } | failure { error } }).
+--   2. Cycle.status = a lifecycle (partitioning -> processing -> delivering, terminal: delivering).
+component Achronic
+  entity Cycle
+  entity EventOutcome
+
+  -- (1) The evaluation result as a sum type. Each variant carries its own fields, and reading a field
+  -- outside its variant is ill-formed (correct by construction).
+  observable state outcome(EventOutcome) : { success { outputs : Number } | failure { error : Number } }
+
+  -- outputs read only under the success guard; error only under failure. Both well-formed.
+  invariant success_has_outputs means outcome(o) = success implies outputs(o) >= 0
+  invariant failure_has_error means outcome(o) = failure implies error(o) >= 0
+
+  -- (2) The cycle lifecycle as an enum status with a terminal end state.
+  observable state status(Cycle) : { partitioning | processing | delivering }
+
+  init means status(c) = partitioning
+
+  action partition
+    requires status(c) = partitioning
+    ensures status(c) = processing
+  action deliver
+    requires status(c) = processing
+    ensures status(c) = delivering
+
+  -- delivering is the end state: once delivering, always delivering (proved), and not a stuck-state bug.
+  terminal status(c) = delivering
+end
