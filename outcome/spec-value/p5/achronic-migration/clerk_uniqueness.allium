@@ -1,0 +1,22 @@
+-- allium: 4
+-- Migration of achronic/specs/clerk.allium relational uniqueness into v4, to stress two-entity relational
+-- preservation (the prior migrations were single-entity lifecycles and watermarks). Source:
+--   invariant UniqueSourcePriorities  -- at most one received copy per source instance:
+--                                         a != b implies a.source_priority != b.source_priority
+
+component Clerk
+  entity Copy
+
+  observable state source_priority(Copy) : Number
+  -- whether this copy slot has been filled (a registered received copy)
+  observable state registered(Copy) : bool
+
+  -- UniqueSourcePriorities: two distinct registered copies never share a source priority.
+  invariant unique_source_priority means every a :: every b ::
+    registered(a) and registered(b) and a <> b implies source_priority(a) <> source_priority(b)
+
+  -- Registering a copy sets its source priority. Whether the invariant is preserved depends on the guard:
+  -- this unguarded version can register a duplicate priority, which relational preservation should catch.
+  action register
+    ensures registered(a) and source_priority(a) = source_priority(a)
+end
