@@ -8,7 +8,7 @@ component Ledger
   observable state watermark(Shard) : Number
   observable state version(Shard) : Number
   observable state compacting(Shard) : bool
-  given current_offset : Number
+  given current_offset : Number where current_offset >= 0 - 1
 
   init means status(s) = healthy and watermark(s) = 0 - 1 and version(s) = 1 and not compacting(s)
 
