@@ -1,0 +1,14 @@
+-- allium: 4
+contract Solvent
+  entity Acct
+  observable state net(Acct) : Money
+  guarantee non_negative means every a :: net(a) >= 0
+end
+component LedgerImpl satisfies (s : Solvent)
+  entity Acct
+  observable state assets(Acct) : Money
+  observable state liabilities(Acct) : Money
+  observable state net(Acct) : Money
+  invariant net_def means every a :: net(a) = assets(a) - liabilities(a)
+  invariant covered means every a :: assets(a) >= liabilities(a)
+end

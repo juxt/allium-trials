@@ -9,6 +9,15 @@ the single static binary with no external solver.
 Everything below runs under `allium analyse <file>`, is unit-tested, and produces zero false positives
 across the 284 real v4 specs in the corpus.
 
+A later cycle added two rungs of the ladder above the safety checks (see ladders/TWO-LADDERS.md):
+**transparent tiering**, a per-component coverage report naming which reasoning engine each invariant was
+checked at (boolean or linear-arithmetic) and every invariant left unchecked with its reason (a product of
+two unknowns, a division by an unknown, a power, an existential, three-plus entities) and the `monitor`
+fallback — so nothing is skipped silently; and **refinement checking**, which verifies that a
+`component X satisfies (_ : Contract)` actually entails every promise the contract makes, at the tier each
+promise needs (boolean via SAT, linear via the simplex). The latter is the abstraction ladder's glue: each
+layer is verified alone and the abstract contract is trusted without reading the detail.
+
 ## The bug class: safety with no execution trace
 
 A safety invariant must hold in every reachable state of a system that moves through states via guarded
