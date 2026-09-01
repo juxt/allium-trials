@@ -1,0 +1,36 @@
+-- allium: 4
+-- A fuller ledger: shard lifecycle (healthy -> corrupted) + two state-guarded arithmetic bounds + a
+-- boolean-guarded bound, with several actions. Stresses state-guarded preservation in a realistic mix.
+component Ledger
+  entity Shard
+
+  observable state status(Shard) : { healthy | corrupted }
+  observable state watermark(Shard) : Number
+  observable state version(Shard) : Number
+  observable state compacting(Shard) : bool
+  given current_offset : Number
+
+  init means status(s) = healthy and watermark(s) = 0 - 1 and version(s) = 1 and not compacting(s)
+
+  -- A healthy shard's watermark never exceeds the consumed offset.
+  invariant wm_bounded means status(s) = healthy implies watermark(s) <= current_offset
+  -- A healthy shard's version is always positive.
+  invariant ver_positive means status(s) = healthy implies version(s) >= 1
+  -- While compacting, the watermark is frozen at or below the current offset.
+  invariant compact_frozen means compacting(s) implies watermark(s) <= current_offset
+
+  action advance
+    requires status(s) = healthy and watermark(s) < current_offset and not compacting(s)
+    ensures watermark(s) = current_offset
+  action bump_version
+    requires status(s) = healthy
+    ensures version(s) = old(version(s)) + 1
+  action begin_compact
+    requires status(s) = healthy
+    ensures compacting(s)
+  action corrupt
+    requires status(s) = healthy
+    ensures status(s) = corrupted
+
+  terminal status(s) = corrupted
+end
