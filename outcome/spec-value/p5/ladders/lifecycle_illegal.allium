@@ -1,0 +1,38 @@
+-- allium: 4
+-- HAND-ELABORATION of a v3-style `transitions status { created->paid->shipped->delivered; cancelled;
+--   terminal: delivered, cancelled }` block into v4 primitives, to prove the direction checks with the
+-- existing suite. The status enum is encoded as one-hot booleans (what the surface would generate); each
+-- declared edge becomes a step constraint; each terminal becomes a finality invariant.
+component Order
+  entity O
+  observable state created(O)   : bool
+  observable state paid(O)      : bool
+  observable state shipped(O)   : bool
+  observable state delivered(O) : bool
+  observable state cancelled(O) : bool
+
+  init means created(o) and not paid(o) and not shipped(o) and not delivered(o) and not cancelled(o)
+
+  -- operational moves (actions), each performing a declared edge.
+  action pay
+    requires created(o) and not cancelled(o)
+    ensures paid(o) and not created(o)
+  action ship
+    requires paid(o)
+    ensures shipped(o) and not paid(o)
+  action deliver
+    requires shipped(o)
+    ensures delivered(o) and not shipped(o)
+  action cancel
+    requires created(o) and not paid(o)
+    ensures cancelled(o) and not created(o)
+
+  action reopen
+    requires delivered(o)
+    ensures created(o) and not delivered(o)
+  -- TERMINAL finality (from `terminal: delivered, cancelled`): a terminal state is never left.
+  invariant delivered_final means old(delivered(o)) implies delivered(o)
+  invariant cancelled_final means old(cancelled(o)) implies cancelled(o)
+  -- A safety consequence of the declared graph: you cannot both deliver and cancel.
+  invariant no_deliver_and_cancel means not (delivered(o) and cancelled(o))
+end
