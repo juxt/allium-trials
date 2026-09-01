@@ -1,0 +1,72 @@
+-- allium: 4
+-- Migration of achronic/specs/core.allium (v3) lifecycle + sum-type + refinement shapes into v4, to test
+-- whether the built features express the real system naturally and whether the suite says something true.
+-- Source shapes:
+--   enum InstanceStatus { starting | running | shutting_down | dead }  + transitions + terminal: dead
+--   enum ShardStatus { healthy | corrupted }                            + transitions + terminal: corrupted
+--   variant Success | Failure : EventOutcome                            (payload-carrying sum)
+--   invariant PositiveGap { gap >= 1 } etc.                             (field refinements)
+
+component AchronicCore
+  entity Instance
+  entity Shard
+  entity EventOutcome
+  entity InputEvent
+
+  ------------------------------------------------------------
+  -- Instance lifecycle. v3 declared the transition relation directly; v4 states each edge as a guarded
+  -- action that moves the status. init pins the start state (v3 left it implicit at `starting`).
+  ------------------------------------------------------------
+  observable state status(Instance) : { starting | running | shutting_down | dead }
+  init means status(instance) = starting
+
+  action start_running
+    requires status(instance) = starting
+    ensures status(instance) = running
+  action start_draining
+    requires status(instance) = starting
+    ensures status(instance) = shutting_down
+  action start_dies
+    requires status(instance) = starting
+    ensures status(instance) = dead
+  action run_draining
+    requires status(instance) = running
+    ensures status(instance) = shutting_down
+  action run_dies
+    requires status(instance) = running
+    ensures status(instance) = dead
+  action drain_dead
+    requires status(instance) = shutting_down
+    ensures status(instance) = dead
+
+  -- v3: `terminal: dead`. A dead instance stays dead (proved), and is not flagged a stuck-state bug.
+  terminal status(instance) = dead
+
+  ------------------------------------------------------------
+  -- Shard lifecycle: healthy -> corrupted, terminal corrupted.
+  ------------------------------------------------------------
+  observable state shard_status(Shard) : { healthy | corrupted }
+  init means shard_status(shard) = healthy
+
+  action corrupt
+    requires shard_status(shard) = healthy
+    ensures shard_status(shard) = corrupted
+
+  terminal shard_status(shard) = corrupted
+
+  ------------------------------------------------------------
+  -- EventOutcome as a payload-carrying sum (v3 `variant Success/Failure : EventOutcome`). Reading a
+  -- variant's payload outside its tag is ill-formed (correct by construction).
+  ------------------------------------------------------------
+  observable state outcome(EventOutcome) : { success { output_count : Number } | failure { error_len : Number } }
+
+  invariant success_outputs_bounded means outcome(o) = success implies output_count(o) >= 0
+  invariant failure_error_present means outcome(o) = failure implies error_len(o) >= 1
+
+  ------------------------------------------------------------
+  -- Field refinements (v3 entity invariants on scalar fields). These are the `where`-style constraints
+  -- pinned to the value: a positive gap, a non-negative output index.
+  ------------------------------------------------------------
+  observable state gap(InputEvent) : Number where gap(e) >= 1
+  observable state output_index(InputEvent) : Number where output_index(e) >= 0
+end
