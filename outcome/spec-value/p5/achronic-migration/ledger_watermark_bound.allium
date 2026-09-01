@@ -1,0 +1,27 @@
+-- allium: 4
+-- Migration of achronic core.allium ShardWatermarkBound into v4, to validate state-guarded arithmetic
+-- preservation on a real invariant. Source:
+--   invariant ShardWatermarkBound: shard.status = healthy implies
+--       shard.persistence_watermark.value <= partition.current_offset.value
+-- Simplified to single entity: the input offset is a global given (all shards read the one partition).
+
+component Ledger
+  entity Shard
+
+  observable state status(Shard) : { healthy | corrupted }
+  observable state watermark(Shard) : Number
+  given current_offset : Number
+
+  -- ShardWatermarkBound: a healthy shard never persists beyond what has been consumed.
+  invariant watermark_bounded means status(s) = healthy implies watermark(s) <= current_offset
+
+  -- A correct advance: only up to the consumed offset (guarded). Must NOT break the bound.
+  action advance_safe
+    requires status(s) = healthy and watermark(s) < current_offset
+    ensures watermark(s) = current_offset
+
+  -- A buggy advance: past the consumed offset while healthy. Must BREAK the bound.
+  action advance_past
+    requires status(s) = healthy
+    ensures watermark(s) = current_offset + 1
+end
