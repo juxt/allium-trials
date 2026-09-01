@@ -1,0 +1,35 @@
+-- allium: 4
+-- A three-level abstraction ladder, each level checkable against the one above. You can enter at any
+-- rung: read `Compliant` for the one-line architectural promise, `Pipeline` for the subsystem shape, or
+-- `Impl` for the detail. Refinement proves each level honours the level above, so the top promise is
+-- trustworthy without reading the bottom.
+
+-- Level 0 — architecture. The single promise the whole system makes.
+contract Compliant
+  entity Report
+  observable state reported(Report)  : bool
+  observable state validated(Report) : bool
+  guarantee reported_is_validated means reported(r) implies validated(r)
+end
+
+-- Level 1 — subsystem. Introduces "checked" as the mechanism, and honours the architectural promise.
+component Pipeline satisfies (c : Compliant)
+  entity Report
+  observable state reported(Report)  : bool
+  observable state checked(Report)   : bool
+  observable state validated(Report) : bool
+  invariant reported_is_checked means reported(r) implies checked(r)
+  invariant checked_is_validated means checked(r) implies validated(r)
+end
+
+-- Level 2 — detail. Introduces a queue, and honours the subsystem's invariants.
+component Impl satisfies (p : Pipeline)
+  entity Report
+  observable state reported(Report)  : bool
+  observable state queued(Report)    : bool
+  observable state checked(Report)   : bool
+  observable state validated(Report) : bool
+  invariant reported_is_queued means reported(r) implies queued(r)
+  invariant queued_is_checked means queued(r) implies checked(r)
+  invariant checked_is_validated means checked(r) implies validated(r)
+end

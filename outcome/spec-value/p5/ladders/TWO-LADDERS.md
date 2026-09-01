@@ -68,3 +68,17 @@ Three rungs, each standing on the last.
 
 The through-line: a spec as a navigable stack of layers, each met by the cheapest engine that suffices,
 connected by refinement, honest at every step about what it has and has not established.
+
+## Worked demonstration
+
+`three_level.allium` shows the stack for real. A one-line architectural contract (`Compliant`: everything
+reported is validated) is refined by a subsystem (`Pipeline`, which introduces "checked"), refined in turn
+by the detail (`Impl`, which introduces a queue). `allium analyse` proves both links: Pipeline satisfies
+Compliant, and Impl satisfies Pipeline. So a reader, or an AI, can enter at any rung. Ask a high-level
+question and read `Compliant`, and the refinement proofs let you trust it without opening `Impl`. Ask a
+detailed question and drop into `Impl`, knowing it still honours the promise above. That is the ladder made
+navigable: the tool tells you, at each level, what holds and what it rests on. `refinement_arithmetic.allium`
+shows the same with an arithmetic promise (`net >= 0` from `net = assets - liabilities` and
+`assets >= liabilities`), checked at the linear-arithmetic rung rather than the boolean one, which is the
+two ladders meeting: the higher-detail promise needed the more powerful engine, and the tool used exactly
+that one and said so.
