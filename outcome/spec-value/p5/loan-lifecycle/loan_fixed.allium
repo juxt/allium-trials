@@ -1,0 +1,25 @@
+-- allium: 4
+component Loan
+  entity L
+  observable state status(L) : { active | closed | written_off }
+  observable state outstanding(L) : Money
+  given principal : Money where principal >= 0
+
+  init means status(l) = active and outstanding(l) = principal
+
+  invariant active_nonneg means status(l) = active implies outstanding(l) >= 0
+  invariant closed_paid means status(l) = closed implies outstanding(l) = 0
+
+  action repay
+    requires status(l) = active and outstanding(l) >= 1
+    ensures outstanding(l) = old(outstanding(l)) - 1
+  action close
+    requires status(l) = active and outstanding(l) = 0
+    ensures status(l) = closed
+  action write_off
+    requires status(l) = active
+    ensures status(l) = written_off
+
+  terminal status(l) = closed
+  terminal status(l) = written_off
+end
