@@ -1,0 +1,35 @@
+-- allium: 4
+-- Migration of achronic/specs/ledger.allium watermark + ordering shapes into v4, to stress passes the core
+-- lifecycle migration did not: old-based transition invariants (monotonicity), a refinement-type bound, and
+-- a relational (2-entity) ordering invariant. Source:
+--   rule LedgerAdvancesShardWatermark  -- advances only when new > current (monotone)
+--   invariant WatermarkMonotonicity     -- persistence_watermark.value >= -1
+--   invariant VersionsOrderedByOffset    -- same key, higher version => equal-or-higher offset
+
+component Ledger
+  entity Shard
+  entity EntityState
+
+  -- WatermarkMonotonicity as a refinement-type bound on the value itself.
+  observable state watermark(Shard) : Number where watermark(s) >= -1
+  -- HighestContiguouslyPersistedOffset(shard): the candidate the save batch computes.
+  observable state proposed(Shard) : Number
+
+  -- LedgerAdvancesShardWatermark: the watermark only ever moves forward.
+  action advance
+    requires proposed(s) > watermark(s)
+    ensures watermark(s) = proposed(s)
+
+  -- Monotonicity as an old-based transition invariant: the watermark never moves backwards. Preservation
+  -- should prove this from the guard (proposed > watermark) — the interesting cross-check.
+  invariant watermark_monotone means watermark(s) >= old(watermark(s))
+
+  -- VersionsOrderedByOffset: within a shard, a higher entity version has an equal-or-higher source offset.
+  -- A relational (two-entity) ordering property.
+  observable state version(EntityState) : Number
+  observable state source_offset(EntityState) : Number
+  observable state ekey(EntityState) : Number
+
+  invariant versions_ordered means every a :: every b ::
+    ekey(a) = ekey(b) and version(a) > version(b) implies source_offset(a) >= source_offset(b)
+end
