@@ -40,10 +40,35 @@ not mine to settle:
   A refinement *mapping* (`funded := cash_moved and sec_moved`) would let the layers differ, which is
   where the abstraction ladder earns its keep. This is the natural next increment and it needs a construct.
 
+## Update: vocabulary mapping needs no new construct
+
+The note first assumed cross-vocabulary refinement would need a new mapping construct. It does not. A
+detailed component bridges the abstract vocabulary with an ordinary `given` definition — the abstract
+`funded` is `given funded(t) means cash_moved(t) and sec_moved(t)` in detail terms — and refinement inlines
+those definitions into each promise before the entailment check. So the abstract and detailed layers can
+use different words, bridged by definitions the detail already provides, with no syntax added. Shipped and
+tested (`refinement_vocab_mapping.allium`: `funded := cash_moved and sec_moved`, proved; drop a leg, fails).
+
+That changes the picture. The abstraction ladder is now largely delivered without any new construct:
+
+- **Layers**: `contract` + `component` (existing).
+- **Refinement**: entailment, checked at the tier each promise needs — boolean via SAT, linear via the
+  simplex (shipped).
+- **Cross-vocabulary**: `given` mapping, inlined (shipped).
+- **Multi-level**: chains — a component both satisfies a higher contract and serves as the contract for a
+  lower one (`three_level.allium` proves both links).
+
+## What remains a human decision
+
+Only the deeper *semantics* choice is still yours, and it is now optional rather than blocking:
+
+- **Behavioural refinement / simulation.** The shipped reading checks that the detail's stated invariants
+  *entail* the abstract promises. It does not check that the detail's *state machine* refines the
+  abstract one (every behaviour the detail can exhibit is permitted by the abstraction). That richer
+  relation is heavier and would be worth adding only when a specimen needs it. It is a genuine construct-
+  and-semantics decision, so it waits for you; nothing built so far depends on it.
+
 ## Recommendation
 
-Keep the entailment check as the base rung — it is sound and already useful for interface contracts — and
-treat the vocabulary mapping as the first extension, because that is what turns `satisfies` from
-"same-vocabulary interface entailment" into genuine cross-level refinement, which is the abstraction-ladder
-vision. The mapping needs a small new construct, so it is a human decision; the entailment check is not and
-is shipped. The heavier simulation semantics can wait until a specimen forces it.
+The entailment reading, across both tiers and across vocabularies, covers the abstraction-ladder use we
+have. Ship it as the meaning of `satisfies`, and defer behavioural simulation until a specimen forces it.

@@ -1,0 +1,17 @@
+-- allium: 4
+contract Settlement
+  entity Trade
+  observable state settled(Trade) : bool
+  observable state funded(Trade) : bool
+  guarantee settled_funded means settled(t) implies funded(t)
+end
+component AtomicImpl satisfies (s : Settlement)
+  entity Trade
+  observable state settled(Trade) : bool
+  observable state cash_moved(Trade) : bool
+  observable state sec_moved(Trade) : bool
+  -- vocabulary mapping: the abstract 'funded' IS both legs moved, in detail terms.
+  given funded(t) means cash_moved(t) and sec_moved(t)
+  invariant settle_moves_cash means settled(t) implies cash_moved(t)
+  invariant settle_moves_sec means settled(t) implies sec_moved(t)
+end
