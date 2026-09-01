@@ -49,6 +49,14 @@ SAFE by k-induction          1
 (deliberate-fixture) other   1 dead action + 1 failed refinement
 ```
 
+## Re-run after the refinement and transition-invariant additions
+
+Repeating the sweep with the fuller suite (finality, assume-guarantee, refinement across vocabularies and
+levels) over 319 v4 specs holds the same shape: 32 INDUCTIVE proofs, 6 SATISFIES verdicts, 1 conditional
+(assume-guarantee) satisfaction, and again zero findings on any genuine, non-fixture spec. Every break,
+reachable violation, dead action, and failed refinement is in a spec authored to be broken. The
+soundness-at-scale property survives each capability added.
+
 ## Reading
 
 The sweep is the honest, corpus-scale version of the per-example validation. It shows the suite is sound

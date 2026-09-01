@@ -1,0 +1,13 @@
+-- allium: 4
+contract Available
+  entity R
+  observable state ok(R) : bool
+  guarantee delivers_ok means ok(r)
+end
+component Service satisfies (a : Available)
+  entity R
+  observable state up(R) : bool
+  observable state ok(R) : bool
+  rely env_up means up(r)
+  invariant ok_when_up means up(r) implies ok(r)
+end

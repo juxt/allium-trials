@@ -52,6 +52,14 @@ can break relational invariant Y** (acting on one entity violates the relation a
 the design-time counterpart of the runtime uniqueness/no-double-spend checks, and it covers the
 segregation concern the corpus raises (N75 margin pools).
 
+For **transition** invariants — those using `old`, e.g. finality (`old(settled) implies settled`, never
+un-settle) or a monotone total (`old(total) <= total`, append-only) — preservation checks that no action
+can break the two-state property, in both the boolean and the arithmetic fragments. And **refinement** now
+spans more than a same-vocabulary contract: layers may use different words bridged by a `given` definition,
+refinement chains across levels, a `contract` may itself satisfy a higher contract, and a component may
+discharge a promise **conditionally** on its `rely` assumptions (assume-guarantee), the verdict then naming
+the conditions the environment must provide.
+
 ## How it is built (all in `analyse.rs` / `arith.rs`, no external solver)
 
 - **Preservation (1-induction).** For each action × invariant, the verification condition

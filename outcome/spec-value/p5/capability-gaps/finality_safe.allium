@@ -1,0 +1,13 @@
+-- allium: 4
+component Ledger
+  entity Trade
+  observable state settled(Trade) : bool
+  observable state logged(Trade) : bool
+  init means not settled(t) and not logged(t)
+  action settle
+    requires not settled(t)
+    ensures settled(t)
+  action log
+    ensures logged(t)
+  invariant finality means old(settled(t)) implies settled(t)
+end
