@@ -1,0 +1,16 @@
+-- allium: 4
+-- Migration of achronic warden ResolvedHasResponse: a resolved entry always has a materialised response.
+-- Presence modelled as a boolean has_response. Two resolve actions: one correct, one buggy (forgets it).
+component Warden
+  entity Entry
+  observable state status(Entry) : { pending | resolved }
+  observable state has_response(Entry) : bool
+  init means status(e) = pending and not has_response(e)
+  invariant resolved_has_response means status(e) = resolved implies has_response(e)
+  action resolve_ok
+    requires status(e) = pending
+    ensures status(e) = resolved and has_response(e)
+  action resolve_bug
+    requires status(e) = pending
+    ensures status(e) = resolved
+end
