@@ -1,0 +1,34 @@
+-- allium: 4
+-- A full account system: lifecycle + balances + money conservation + transfers. Stresses conservation,
+-- state-guarded arithmetic, and lifecycle preservation together.
+component Ledger
+  entity Account
+  observable state status(Account) : { open | frozen | closed }
+  observable state balance(Account) : Money
+  observable state total : Money
+
+  init means status(a) = open and balance(a) = 0 and total = 0
+
+  invariant conserved means total = sum p :: balance(p)
+  invariant open_nonneg means status(a) = open implies balance(a) >= 0
+  invariant closed_zero means status(a) = closed implies balance(a) = 0
+  invariant frozen_nonneg means status(a) = frozen implies balance(a) >= 0
+
+  action deposit
+    requires status(a) = open
+    ensures balance(a) = old(balance(a)) + 1 and total = old(total) + 1
+  action withdraw
+    requires status(a) = open and balance(a) >= 1
+    ensures balance(a) = old(balance(a)) - 1 and total = old(total) - 1
+  action freeze
+    requires status(a) = open
+    ensures status(a) = frozen
+  action unfreeze
+    requires status(a) = frozen
+    ensures status(a) = open
+  action close
+    requires status(a) = open and balance(a) = 0
+    ensures status(a) = closed
+
+  terminal status(a) = closed
+end
