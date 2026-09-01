@@ -1,0 +1,24 @@
+-- allium: 4
+-- The abstraction ladder, made checkable. The abstract contract `Settlement` states one high-level
+-- promise: a settled trade is funded. The detailed component `SettlementImpl` refines it, introducing an
+-- intermediate concept (cash actually moved) and two finer invariants that TOGETHER entail the abstract
+-- promise. Refinement checking proves the detail honours the contract, so the abstract promise can be
+-- trusted without reading the detail — the navigation the ladder is meant to give.
+
+contract Settlement
+  entity Trade
+  observable state settled(Trade) : bool
+  observable state funded(Trade)  : bool
+  -- The interface promise the abstract layer guarantees.
+  guarantee settled_is_funded means settled(t) implies funded(t)
+end
+
+component SettlementImpl satisfies (s : Settlement)
+  entity Trade
+  observable state settled(Trade)    : bool
+  observable state cash_moved(Trade) : bool
+  observable state funded(Trade)     : bool
+  -- Detailed invariants: settlement moves cash, and moved cash means funded. Their composition entails
+  -- the abstract promise `settled implies funded`.
+  invariant settle_moves_cash means settled(t) implies cash_moved(t)
+end
