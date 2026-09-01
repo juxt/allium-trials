@@ -1,0 +1,16 @@
+-- allium: 4
+component Order
+  entity O
+  observable state status(O) : { created | paid | delivered }
+  init means status(o) = created
+  action pay
+    requires status(o) = created
+    ensures status(o) = paid
+  action deliver
+    requires status(o) = paid
+    ensures status(o) = delivered
+  action reopen
+    requires status(o) = delivered
+    ensures status(o) = created
+  invariant delivered_final means old(status(o) = delivered) implies status(o) = delivered
+end
