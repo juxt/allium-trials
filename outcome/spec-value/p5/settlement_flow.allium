@@ -1,0 +1,28 @@
+-- allium: 4
+-- A settlement flow: enum lifecycle (pending -> settled/failed) + money bounds guarded by state, plus an
+-- old-based conservation invariant. Stresses state-guarded arithmetic preservation in the banking domain.
+component Settlement
+  entity Trade
+
+  observable state phase(Trade) : { pending | settled | failed }
+  observable state amount(Trade) : Money
+  observable state paid(Trade) : Money
+
+  init means phase(t) = pending and paid(t) = 0
+
+  -- A settled trade has been paid in full; a pending trade has paid nothing yet.
+  invariant settled_paid means phase(t) = settled implies paid(t) >= amount(t)
+  invariant pending_unpaid means phase(t) = pending implies paid(t) = 0
+  -- Amounts are always non-negative (a refinement-style bound).
+  invariant amount_nonneg means amount(t) >= 0
+
+  action settle
+    requires phase(t) = pending
+    ensures phase(t) = settled and paid(t) = amount(t)
+  action fail
+    requires phase(t) = pending
+    ensures phase(t) = failed
+
+  terminal phase(t) = settled
+  terminal phase(t) = failed
+end
