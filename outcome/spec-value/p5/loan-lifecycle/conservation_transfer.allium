@@ -1,0 +1,9 @@
+-- allium: 4
+component Bank
+  entity Acct
+  observable state balance(Acct) : Money
+  observable state total : Money
+  invariant conserved means total = sum p :: balance(p)
+  action transfer
+    ensures balance(a) = old(balance(a)) - 1 and balance(b) = old(balance(b)) + 1
+end
