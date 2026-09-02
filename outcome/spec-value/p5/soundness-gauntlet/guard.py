@@ -81,6 +81,11 @@ CASES = [
      "enum value `archived` is never produced — flagged unreachable"),
     ("soundness-gauntlet/enum_input_not_dead.allium",          "CLEAN",
      "an enum INPUT (never written) must not be flagged dead"),
+    # boolean-literal / biconditional encoding (guards the `= true` SAT fix)
+    ("soundness-gauntlet/bool_literal_true_preserved.allium",  "CLEAN",
+     "`ensures logged = true` preserves fail=>logged — no false break from the true literal"),
+    ("soundness-gauntlet/bool_biconditional_break.allium",     "BREAK",
+     "`a = b` broken by setting a=true, b=false"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

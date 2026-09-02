@@ -1,0 +1,10 @@
+-- allium: 4
+-- BOOLEAN BICONDITIONAL guard. `a = b` is broken by an action setting a=true, b=false. Must BREAK.
+component C
+  entity X
+  observable state a(X) : Boolean
+  observable state b(X) : Boolean
+  invariant sync means a(x) = b(x)
+  action bad
+    ensures a(x) = true and b(x) = false
+end

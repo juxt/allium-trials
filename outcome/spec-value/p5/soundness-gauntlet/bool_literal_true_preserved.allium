@@ -1,0 +1,12 @@
+-- allium: 4
+-- REGRESSION for the `= true` SAT-literal fix. `record` sets logged=true, preserving fail=>logged.
+-- Before the fix, `true` was a free atom and this false-alarmed. Must be CLEAN.
+component C
+  entity X
+  observable state outcome(X) : { pass | fail }
+  observable state logged(X) : Boolean
+  invariant note means outcome(x) = fail implies logged(x)
+  action record
+    requires outcome(x) = fail
+    ensures logged(x) = true
+end
