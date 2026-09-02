@@ -45,11 +45,12 @@ bound fell through the seam between the two tiers.
 ## A static-analysis soundness gauntlet (and the bug it caught)
 
 `reproduce.py` guards the MONITOR (runtime traces); the reverted unsound pass lived in the static ANALYSER,
-unguarded. So `p5/soundness-gauntlet/` now holds 21 known-verdict `analyse` specimens across six verdicts
-(CLEAN / BREAK / ERROR / SAT / NOSAT / INFEAS) and five tool surfaces — preservation, conservation,
-state-guarded arithmetic, refinement entailment (both directions, incl. the false-certification refusal),
-and feasibility. `guard.py` asserts every verdict and is wired into `reproduce.py`. The centrepiece
-`trap_monotone_overwrite` is the exact interacting shape that broke the reverted relational pass.
+unguarded. So `p5/soundness-gauntlet/` now holds 27 known-verdict `analyse` specimens across seven verdicts
+(CLEAN / BREAK / ERROR / SAT / NOSAT / INFEAS / DEAD) and the main tool surfaces — preservation,
+conservation, state-guarded arithmetic, refinement entailment (both directions, incl. the
+false-certification refusal), feasibility, types/dimensions, dead-state and boolean-literal encoding.
+`guard.py` asserts every verdict and is wired into `reproduce.py`. The centrepiece `trap_monotone_overwrite`
+is the exact interacting shape that broke the reverted relational pass.
 
 On its FIRST run the gauntlet caught a real bug: an action with two separate `ensures` lines silently kept
 only the first (`ensures` isn't an item-starter, so the clauses ran into one span and only the first
@@ -57,9 +58,19 @@ equality parsed) — a false positive in the aggregate pass and a latent false n
 clause breaks a bound. Fixed: the parser now rejects a second `ensures`/`requires` with a pointed message
 (combine with `and`).
 
-Ten further adversarial probes (guard on/off, negated-guard activation, conjunctive and arithmetic-guard
-breaks, computed-given totals, nonlinear graceful-skip, refinement near-misses, feasibility) all came back
-sound — the discovery loop went dry after the one find.
+Extending the gauntlet to type/dimension and dead-state surfaces caught a SECOND bug: `ensures logged(x) =
+true` false-alarmed as a break because the SAT encoder treated the boolean literal `true` as a free atom
+(so the solver could pick `true = false`). Fixed: `true`/`false` now encode as the constants ⊤/⊥. This one
+lived in the core SAT engine and affected any boolean-literal equality — seven real specs use the pattern.
+
+Around twenty further adversarial probes (guard on/off, negated-guard activation, conjunctive and
+arithmetic-guard breaks, computed-given totals and conditionals, nonlinear graceful-skip, refinement
+near-misses, feasibility, universal and existential quantifiers, establishment, type/dimension, dead-state,
+biconditional encoding) all came back sound. The gauntlet is 27 specimens across seven verdicts
+(CLEAN / BREAK / ERROR / SAT / NOSAT / INFEAS / DEAD) plus two cross-module tripwires. One design question
+was logged, not fixed (an agent should not decide it): dead-state on a written enum with NO `init` flags a
+guard-required value as unreachable — it hinges on whether a missing `init` means "vacuous" or
+"unconstrained initial", a human semantics call.
 
 ## Cross-module is the next frontier (filed, not fixed)
 
