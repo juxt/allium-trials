@@ -40,6 +40,17 @@ CASES = [
      "open/frozen/closed + balances + conservation, fully inductive"),
     ("loan-lifecycle/conservation_transfer.allium",         "CLEAN",
      "balanced single-unit transfer"),
+    # state-guarded arithmetic — the interacting shapes, each with a known verdict
+    ("soundness-gauntlet/p1_guard_deactivated.allium",      "CLEAN",
+     "close turns the guard off; the bound need not hold after"),
+    ("soundness-gauntlet/p4_neg_guard_activated.allium",    "CLEAN",
+     "settle makes a negated guard true and sets a valid value"),
+    ("soundness-gauntlet/p5_neg_guard_break.allium",        "BREAK",
+     "settle makes the guard true but sets a negative value"),
+    ("soundness-gauntlet/p6_conj_guard_break.allium",       "BREAK",
+     "bump pushes wm past the cap while the conjunctive guard holds"),
+    ("soundness-gauntlet/p8_arith_guard_break.allium",      "BREAK",
+     "jump sets wm above the band while status stays healthy"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

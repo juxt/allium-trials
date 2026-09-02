@@ -1,0 +1,11 @@
+-- allium: 4
+-- active implies balance>=0. `close` sets active false and zeroes nothing; after close the guard
+-- is off, so the bound need not hold. Should be PRESERVED/clean (no false break).
+component C
+  entity X
+  observable state active(X) : Boolean
+  observable state balance(X) : Money
+  invariant guarded means active(x) implies balance(x) >= 0
+  action close
+    ensures active(x) = false
+end

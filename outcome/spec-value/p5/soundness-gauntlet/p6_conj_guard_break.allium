@@ -1,0 +1,10 @@
+-- allium: 4
+component C
+  entity S
+  observable state healthy(S) : Boolean
+  observable state wm(S) : Number
+  invariant band means healthy(s) and wm(s) >= 5 implies wm(s) <= 10
+  action bump
+    requires healthy(s)
+    ensures wm(s) = old(wm(s)) + 1
+end
