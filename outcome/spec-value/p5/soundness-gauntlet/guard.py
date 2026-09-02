@@ -61,6 +61,11 @@ CASES = [
      "component only guarantees net>=-3; the promise net>=0 must be refused"),
     ("soundness-gauntlet/refine_weaker_guard_refused.allium",  "NOSAT",
      "component only guarantees active=>bal>=-1; the promise active=>bal>=0 must be refused"),
+    # feasibility — a real contradiction is flagged; a satisfiable spec is never false-flagged
+    ("soundness-gauntlet/feas_computed_contradiction.allium",  "INFEAS",
+     "b>=a+1 with net=a-b and net>=0 is contradictory (via the computed given)"),
+    ("soundness-gauntlet/feas_computed_satisfiable.allium",    "CLEAN",
+     "a>=b with net=a-b and net>=0 is consistent — must not be false-flagged"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
@@ -77,8 +82,12 @@ def verdict_of(spec):
     msgs = [d["message"] for d in diags]
     nosat = [m for m in msgs if "does NOT satisfy" in m or "not entailed" in m]
     sat = [m for m in msgs if "SATISFIES" in m]
+    infeas = [m for m in msgs if "CONTRADICTORY" in m or "not jointly satisfiable" in m.lower()
+              or "unsatisfiable" in m.lower()]
     if errs:
         return "ERROR", errs
+    if infeas:
+        return "INFEAS", infeas
     # a refused certification takes precedence over the SATISFIES banner for other promises
     if nosat:
         return "NOSAT", nosat

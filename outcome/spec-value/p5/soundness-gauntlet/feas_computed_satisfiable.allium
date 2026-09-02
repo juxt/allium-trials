@@ -1,0 +1,9 @@
+-- allium: 4
+component C
+  entity X
+  observable state a(X) : Money
+  observable state b(X) : Money
+  given net(x) means a(x) - b(x)
+  invariant cov means a(x) >= b(x)
+  invariant nn means net(x) >= 0
+end
