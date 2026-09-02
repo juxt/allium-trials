@@ -89,7 +89,28 @@ imported `given` bodies or contracts: an invariant using an imported `given` is 
 real break is missed), and a component that `satisfies` an imported contract reports "no such contract is
 declared" instead of a proper SAT/NOSAT. Same root cause, filed as #61 with two gauntlet tripwires that flip
 when the fix lands. Not attempted under time pressure — it is a cross-cutting change to the import-merge
-layer.
+layer. A third attempted fix (expanding `in { a, b }` guards to disjunctions, #63) caught its target break
+but introduced a false positive on the guard-off case and was reverted too — an "equivalent" rewrite that
+diverges in the encoder, the same lesson as the relational pass.
+
+## What the real target specs actually need (the prioritisation signal)
+
+Running `analyse` over the real `achronic/specs` (10 files) reframes where value comes from. Those specs
+produce **zero** invariant-verification diagnostics — they are event-driven (rules, triggers, surfaces,
+deferred specifications) and multi-file, not the invariant-preservation shape the arithmetic tier proves. So
+the arithmetic/state-guarded verification hardened here delivers on the **banking** specimens (Fineract loan
+schedules, the gauntlet); achronic value is gated by **cross-module resolution**, which is blind in three
+places at once: semantic (imported `given`/contracts, #61), structural triggers (a rule consuming a trigger
+emitted in an imported module, 17 times, #66 — needs confirmation vs spec subtlety), and the unreferenced
+lint (a `core/Type` used across files flagged as unreferenced). All three share the crate `allium` import
+context. For achronic, closing cross-module outranks any further single-module verification feature.
+
+## The one feature added (safe, message-only)
+
+An arithmetic preservation break now names the weakest guard — `To fix, guard it: requires balance(e) -
+fee(e) >= 0` — instead of a generic "Add a guard." (the elicit value). It reuses the boolean pass's tested
+`guard_suggestion` with `old` read as the pre-state. Message-only, so no verdict-soundness risk — which is
+why it was safe to build when the verdict-affecting fixes were not.
 
 ## The lesson (an unsound pass, reverted)
 
@@ -102,6 +123,18 @@ soundness-sensitive pass on a realistic MIXED spec, not only the corpus.
 
 ## Open (filed)
 
+- **#61 cross-module semantic** (imported `given` bodies + contracts unreachable) and **#66 cross-module
+  structural** (imported→importer trigger flow; unreferenced-lint blindness) — the priority for achronic.
+- #63 `in { }` guards not preservation-checked (fix reverted as unsound; tripwire pinned).
+- #64 monitor enum-value point invariants (transparent skip today; widen the fragment).
+- #65 monitor-schedule warns on zero period rows.
 - #49 relational arithmetic (ordering needs the full disjunctive/SMT pre-reasoning; uniqueness deferred).
-- #58 conditional/guarded sums (`sum of active balances`).
-- #48 transitions-block sugar (cosmetic; needs a Span→Expr body mechanism).
+- #58 conditional/guarded sums; #60 conjoined multi-clause `ensures`; #48 transitions-block sugar.
+
+## Scoreboard
+
+31-specimen gauntlet, seven verdicts, wired into `reproduce.py`. Two soundness bugs fixed with tests
+(multi-`ensures` drop, `= true` SAT literal); one elicit feature added (weakest-guard suggestion); two fixes
+reverted rather than shipped unsound (relational overwrite, `in`-guard). 774 workspace tests green, master
+reproducer green, 0 corpus panics. The through-line: known-verdict adversarial mixed specimens on a proven
+engine either confirm soundness or find a bug on first run — four verdict issues surfaced this way.
