@@ -1,0 +1,17 @@
+-- allium: 4
+-- #48 TRANSITIONS guard. `rush` ships without funds_cleared, violating `paid -> shipped when funds_cleared`.
+-- Must BREAK legality (the guard is part of the safety contract).
+component Order
+  entity O
+  observable state status(O) : { created | paid | shipped | delivered }
+  observable state funds_cleared(O) : Boolean
+  transitions status
+    initial created
+    created -> paid
+    paid -> shipped when funds_cleared(e)
+    shipped -> delivered
+    terminal delivered
+  action rush
+    requires status(o) = paid
+    ensures status(o) = shipped
+end

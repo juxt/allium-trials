@@ -108,6 +108,10 @@ CASES = [
      "only declared edges occur; terminals never left"),
     ("soundness-gauntlet/transitions_illegal.allium",          "BREAK",
      "created -> delivered is not a declared edge — breaks the generated legality invariant"),
+    ("soundness-gauntlet/transitions_guarded_ok.allium",       "CLEAN",
+     "`initial` + `when` guard: clean lifecycle, start not dead"),
+    ("soundness-gauntlet/transitions_guard_violated.allium",   "BREAK",
+     "shipping without funds_cleared violates `paid -> shipped when funds_cleared`"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

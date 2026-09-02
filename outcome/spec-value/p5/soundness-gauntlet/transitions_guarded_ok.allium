@@ -1,0 +1,13 @@
+-- allium: 4
+-- #48 TRANSITIONS with `initial` + a `when` edge guard. Clean lifecycle; start not dead. Must be CLEAN.
+component Order
+  entity O
+  observable state status(O) : { created | paid | shipped | delivered }
+  observable state funds_cleared(O) : Boolean
+  transitions status
+    initial created
+    created -> paid
+    paid -> shipped when funds_cleared(e)
+    shipped -> delivered
+    terminal delivered
+end
