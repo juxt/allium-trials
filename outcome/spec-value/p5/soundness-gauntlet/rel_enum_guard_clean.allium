@@ -1,0 +1,20 @@
+-- allium: 4
+-- #72 enum-guarded RELATIONAL, hypothesis-cleared. Same bound; `reset` sets a healthy shard's watermark to
+-- zero, which the offset non-negativity invariant proves keeps `wm <= off`. Must be CLEAN — the pass USES
+-- offset_nonneg as a pre-hypothesis, and the generated `healthy -> corrupted` edge makes the guard vacuous.
+component Core
+  entity Shard
+  entity Part
+  observable state status(Shard) : { healthy | corrupted }
+  observable state wm(Shard) : Number
+  observable state off(Part) : Number
+  transitions status
+    initial healthy
+    healthy -> corrupted
+    terminal corrupted
+  invariant offset_nonneg means every p :: off(p) >= 0
+  invariant bound means every s :: every p :: status(s) = healthy implies wm(s) <= off(p)
+  action reset
+    requires status(s) = healthy
+    ensures wm(s) = 0
+end

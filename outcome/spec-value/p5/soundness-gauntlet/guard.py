@@ -117,6 +117,11 @@ CASES = [
      "force_close requires `balance <= 0`, matching the edge guard — the guarded close keeps its bound"),
     ("soundness-gauntlet/transitions_arith_guard_violated.allium", "BREAK",
      "closing without `balance <= 0` bypasses `closing -> closed when balance <= 0` — breaks legality"),
+    # enum-guarded relational arithmetic (#72): two-entity, enum-guarded, arithmetic bound
+    ("soundness-gauntlet/rel_enum_guard_break.allium",             "BREAK",
+     "racing a healthy shard's watermark past the partition offset breaks the enum-guarded relation"),
+    ("soundness-gauntlet/rel_enum_guard_clean.allium",             "CLEAN",
+     "offset_nonneg hypothesis clears a reset-to-zero; a corrupting action makes the guard vacuous"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
