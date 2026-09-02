@@ -16,6 +16,11 @@ component Ledger
   invariant wm_bounded means status(s) = healthy implies watermark(s) <= current_offset
   -- version ordering: same key, higher version => equal-or-higher watermark
   invariant vorder means every a :: every b :: ekey(a) = ekey(b) and version(a) > version(b) implies watermark(a) >= watermark(b)
+  -- This capstone does not model version changes (init pins version = 0, no action moves it). Stating that
+  -- is what makes `vorder` inductive: without it, `advance` could lift a low-version shard's watermark past
+  -- a higher-version same-key peer. The relational pass now checks the conjunctive guard and needs the fact
+  -- (#77); it is the assumption the spec relies on, made explicit.
+  invariant versions_frozen means version(s) = 0
 
   action advance
     requires status(s) = healthy and watermark(s) < current_offset

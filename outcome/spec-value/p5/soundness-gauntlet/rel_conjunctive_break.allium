@@ -1,0 +1,13 @@
+-- allium: 4
+-- #77 conjunctive-antecedent relational break. `vo` guards on TWO conditions (same key AND higher version).
+-- `lower_off` drops an entity's offset to 0, inverting the ordering against a higher-version same-key peer
+-- whose offset is positive. Must BREAK — the relational pass now checks conjunctive guards.
+component L
+  entity E
+  observable state ekey(E) : Number
+  observable state version(E) : Number
+  observable state off(E) : Number
+  invariant vo means every a :: every b :: ekey(a) = ekey(b) and version(a) > version(b) implies off(a) >= off(b)
+  action lower_off
+    ensures off(e) = 0
+end

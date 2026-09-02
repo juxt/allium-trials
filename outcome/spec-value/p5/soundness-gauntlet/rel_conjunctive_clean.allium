@@ -1,0 +1,14 @@
+-- allium: 4
+-- #77 conjunctive-antecedent, hypothesis-cleared. Same conjunctive-guard invariant; `version_frozen` pins
+-- every version to 0, so `version(a) > version(b)` never fires and `vo` is vacuously preserved. Must be
+-- CLEAN — the pass must USE the frozen-version hypothesis.
+component L
+  entity E
+  observable state ekey(E) : Number
+  observable state version(E) : Number
+  observable state off(E) : Number
+  invariant version_frozen means version(e) = 0
+  invariant vo means every a :: every b :: ekey(a) = ekey(b) and version(a) > version(b) implies off(a) >= off(b)
+  action lower_off
+    ensures off(e) = 0
+end

@@ -122,6 +122,11 @@ CASES = [
      "racing a healthy shard's watermark past the partition offset breaks the enum-guarded relation"),
     ("soundness-gauntlet/rel_enum_guard_clean.allium",             "CLEAN",
      "offset_nonneg hypothesis clears a reset-to-zero; a corrupting action makes the guard vacuous"),
+    # conjunctive-antecedent relational preservation (#77): a two-condition guard
+    ("soundness-gauntlet/rel_conjunctive_break.allium",            "BREAK",
+     "lowering an offset inverts the ordering against a higher-version same-key peer (conjunctive guard)"),
+    ("soundness-gauntlet/rel_conjunctive_clean.allium",            "CLEAN",
+     "version-frozen hypothesis makes the `version >` conjunct never fire — vo vacuously preserved"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
