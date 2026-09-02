@@ -1,8 +1,17 @@
 # Overnight session — 2026-09-02 (the SMT rung + arithmetic verification)
 
 A single autonomous session extending the v4 static verification suite. Every change is committed with
-tests green (770 workspace tests), the master reproducer passing, and **0 false positives on 346 corpus
-specs, 0 crashes**. One unsound pass was built and reverted (see the lesson at the end).
+tests green (773 workspace tests), the master reproducer passing, and **0 false positives on the corpus,
+0 crashes**. One unsound pass was built and reverted (see the lesson at the end).
+
+**Headline:** built a 28-specimen static-analysis soundness gauntlet (the missing guard for the static
+analyser — the reproducer only guarded the monitor). It surfaced four verdict issues from mixed specimens
+the corpus lacked. Two were FIXED with tests (a second `ensures` clause silently dropped; the boolean
+literal `= true` encoded as a free SAT atom). Two are FILED with diagnosis and gauntlet tripwires that flip
+when fixed (cross-module `given`/contract resolution, #61; `in { }` guards not preservation-checked, #63 —
+its expand-in fix reverted as unsound). The monitor was spot-validated and found transparent (it reports
+enum-value invariants as skipped rather than passing them silently). The recurring discipline: when a
+soundness-sensitive fix cannot be fully validated, REVERT and file rather than ship.
 
 ## What the tool can now verify (this session's additions)
 
