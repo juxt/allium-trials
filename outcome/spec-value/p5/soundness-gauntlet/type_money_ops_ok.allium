@@ -1,0 +1,12 @@
+-- allium: 4
+-- TYPE GUARD (clean). Money>=Money and Money=Money+Money are dimensionally valid — no false type
+-- error. No action, so there is no arithmetic preservation obligation to break; this isolates the
+-- dimension check.
+component C
+  entity X
+  observable state a(X) : Money
+  observable state b(X) : Money
+  observable state tot(X) : Money
+  invariant ordered means a(x) >= b(x)
+  invariant summed means tot(x) = a(x) + b(x)
+end

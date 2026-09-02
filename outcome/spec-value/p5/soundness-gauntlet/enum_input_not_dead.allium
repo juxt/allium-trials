@@ -1,0 +1,11 @@
+-- allium: 4
+-- DEAD-STATE GUARD (clean). outcome{pass|fail} is an INPUT (never written) — neither value is dead.
+component C
+  entity X
+  observable state outcome(X) : { pass | fail }
+  observable state logged(X) : Boolean
+  invariant note means outcome(x) = fail implies logged(x)
+  action record
+    requires outcome(x) = fail
+    ensures logged(x) = true
+end

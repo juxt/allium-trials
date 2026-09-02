@@ -72,6 +72,15 @@ CASES = [
      "TODO(#61): flip to NOSAT when cross-module refinement resolves imported contracts"),
     ("soundness-gauntlet/xmod/xmod_given_gap.allium",          "CLEAN",
      "TODO(#61): flip to BREAK when imported `given` bodies are inlined (break silently missed today)"),
+    # types / dimensions and dead-state — both directions
+    ("soundness-gauntlet/type_dimension_mismatch.allium",      "ERROR",
+     "comparing Money with Count is a dimension error"),
+    ("soundness-gauntlet/type_money_ops_ok.allium",            "CLEAN",
+     "Money>=Money and Money+Money are valid — no false dimension error"),
+    ("soundness-gauntlet/dead_enum_value.allium",              "DEAD",
+     "enum value `archived` is never produced — flagged unreachable"),
+    ("soundness-gauntlet/enum_input_not_dead.allium",          "CLEAN",
+     "an enum INPUT (never written) must not be flagged dead"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
@@ -91,8 +100,11 @@ def verdict_of(spec):
     infeas = [m for m in msgs if "CONTRADICTORY" in m or "not jointly satisfiable" in m.lower()
               or "unsatisfiable" in m.lower()]
     nodecl = [m for m in msgs if "no such contract is declared" in m]
+    dead = [m for m in msgs if "never produced" in m or "is unreachable" in m]
     if errs:
         return "ERROR", errs
+    if dead:
+        return "DEAD", dead
     # NODECL only when it is NOT overridden by a genuine SAT/NOSAT (a resolved cross-module fix)
     if nodecl and not any("SATISFIES" in m or "does NOT satisfy" in m for m in msgs):
         return "NODECL", nodecl

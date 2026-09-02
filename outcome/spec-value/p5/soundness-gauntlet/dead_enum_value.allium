@@ -1,0 +1,9 @@
+-- allium: 4
+-- DEAD-STATE GUARD. `archived` is never produced by init or any action — must be flagged unreachable.
+component C
+  entity X
+  observable state status(X) : { active | closed | archived }
+  init means status(x) = active
+  action close
+    ensures status(x) = closed
+end

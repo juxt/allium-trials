@@ -1,0 +1,8 @@
+-- allium: 4
+-- TYPE GUARD. Comparing Money with Count must be a dimension Error, not silently accepted.
+component C
+  entity X
+  observable state price(X) : Money
+  observable state qty(X) : Count
+  invariant bad means price(x) = qty(x)
+end

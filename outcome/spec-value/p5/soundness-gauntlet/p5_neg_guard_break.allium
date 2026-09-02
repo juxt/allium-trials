@@ -2,8 +2,9 @@
 -- same, but settle sets out = -5 while making the guard true -> genuine break, must be caught.
 component C
   entity Op
-  observable state phase(Op) : { pending | settled | failed }
+  observable state phase(Op) : { pending | settled }
   observable state out(Op) : Money
+  init means phase(o) = pending
   invariant nn means phase(o) <> pending implies out(o) >= 0
   action settle
     requires phase(o) = pending
