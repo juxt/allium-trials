@@ -1,0 +1,15 @@
+-- allium: 4
+-- #68 ARITH edge guard, honoured. `force_close` requires `balance <= 0` before closing, matching the edge
+-- guard `closing -> closed when balance <= 0`. Must be CLEAN — the guarded transition keeps its bound.
+component Loan
+  entity L
+  observable state phase(L) : { open | closing | closed }
+  observable state balance(L) : Money
+  transitions phase
+    initial open
+    open -> closing
+    closing -> closed when balance(e) <= 0
+  action force_close
+    requires phase(l) = closing and balance(l) <= 0
+    ensures phase(l) = closed
+end

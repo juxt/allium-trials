@@ -1,0 +1,16 @@
+-- allium: 4
+-- #68 ARITH edge guard, bypassed. `force_close` closes from `closing` WITHOUT requiring `balance <= 0`,
+-- defeating the edge guard `closing -> closed when balance <= 0`. Must BREAK legality — the arithmetic
+-- guard is part of the safety contract, not just the generated edge-action's precondition.
+component Loan
+  entity L
+  observable state phase(L) : { open | closing | closed }
+  observable state balance(L) : Money
+  transitions phase
+    initial open
+    open -> closing
+    closing -> closed when balance(e) <= 0
+  action force_close
+    requires phase(l) = closing
+    ensures phase(l) = closed
+end

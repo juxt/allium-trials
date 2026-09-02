@@ -112,6 +112,11 @@ CASES = [
      "`initial` + `when` guard: clean lifecycle, start not dead"),
     ("soundness-gauntlet/transitions_guard_violated.allium",   "BREAK",
      "shipping without funds_cleared violates `paid -> shipped when funds_cleared`"),
+    # arithmetic edge guards in legality (#68): a `when <cmp>` guard is enforced, not just a precondition
+    ("soundness-gauntlet/transitions_arith_guard_ok.allium",       "CLEAN",
+     "force_close requires `balance <= 0`, matching the edge guard — the guarded close keeps its bound"),
+    ("soundness-gauntlet/transitions_arith_guard_violated.allium", "BREAK",
+     "closing without `balance <= 0` bypasses `closing -> closed when balance <= 0` — breaks legality"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
