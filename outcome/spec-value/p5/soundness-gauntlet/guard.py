@@ -66,12 +66,14 @@ CASES = [
      "b>=a+1 with net=a-b and net>=0 is contradictory (via the computed given)"),
     ("soundness-gauntlet/feas_computed_satisfiable.allium",    "CLEAN",
      "a>=b with net=a-b and net>=0 is consistent — must not be false-flagged"),
-    # TRIPWIRE (task #61): cross-module refinement is single-module today, so an imported contract
-    # reads as undeclared. Pinned as NODECL; when #61 lands this should become NOSAT and fail here.
+    # #61 RESOLVED (cross-module givens + contracts). These specimens are analysed SINGLE-FILE by guard.py,
+    # where imports correctly cannot resolve (you must pass the whole check set) — so they stay NODECL/CLEAN
+    # by design. The multi-file resolution is covered by the t61_* integration tests in
+    # allium/tests/cross_module_lifecycle.rs (weaker->NOSAT, stronger->SATISFIES, given break caught).
     ("soundness-gauntlet/xmod/xmod_refinement_gap.allium",     "NODECL",
-     "TODO(#61): flip to NOSAT when cross-module refinement resolves imported contracts"),
+     "single-file: imported contract unresolved by design; multi-file NOSAT covered by t61 tests"),
     ("soundness-gauntlet/xmod/xmod_given_gap.allium",          "CLEAN",
-     "TODO(#61): flip to BREAK when imported `given` bodies are inlined (break silently missed today)"),
+     "single-file: imported given unresolved by design; multi-file BREAK covered by t61 tests"),
     # types / dimensions and dead-state — both directions
     ("soundness-gauntlet/type_dimension_mismatch.allium",      "ERROR",
      "comparing Money with Count is a dimension error"),
