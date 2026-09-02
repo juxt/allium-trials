@@ -1,0 +1,18 @@
+-- allium: 4
+-- #48 TRANSITIONS (break). `skip` moves created -> delivered, not a declared edge — breaks the generated
+-- legality invariant. Must BREAK.
+component Order
+  entity O
+  observable state status(O) : { created | paid | shipped | delivered | cancelled }
+  init means status(o) = created
+  transitions status
+    created -> paid
+    paid -> shipped
+    shipped -> delivered
+    created -> cancelled
+    terminal delivered
+    terminal cancelled
+  action skip
+    requires status(o) = created
+    ensures status(o) = delivered
+end

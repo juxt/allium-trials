@@ -1,0 +1,15 @@
+-- allium: 4
+-- #48 TRANSITIONS (clean). Only declared edges occur (the generated edge-actions); no illegal move,
+-- terminals never left. Must be CLEAN.
+component Order
+  entity O
+  observable state status(O) : { created | paid | shipped | delivered | cancelled }
+  init means status(o) = created
+  transitions status
+    created -> paid
+    paid -> shipped
+    shipped -> delivered
+    created -> cancelled
+    terminal delivered
+    terminal cancelled
+end

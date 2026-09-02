@@ -103,6 +103,11 @@ CASES = [
      "bumping a version past another's without lifting its offset breaks the ordering"),
     ("soundness-gauntlet/rel_ordering_hypclean.allium",        "CLEAN",
      "off=ver hypothesis keeps a joint version+offset bump ordered — the reverted pass false-alarmed here"),
+    # transitions desugaring (#48): legality invariant catches an undeclared transition
+    ("soundness-gauntlet/transitions_legal.allium",            "CLEAN",
+     "only declared edges occur; terminals never left"),
+    ("soundness-gauntlet/transitions_illegal.allium",          "BREAK",
+     "created -> delivered is not a declared edge — breaks the generated legality invariant"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
