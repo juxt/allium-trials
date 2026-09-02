@@ -1,0 +1,28 @@
+-- allium: 4
+-- KNOWN MISS (task #72): faithful fragment of achronic core.allium ShardWatermarkBound. A two-entity,
+-- enum-guarded, arithmetic invariant (shard_status(s)=healthy implies watermark(s) <= offset(p), over two
+-- ENTITY TYPES). It falls through the seam between #49 (relational: two-entity but boolean) and #52
+-- (enum-guarded arithmetic: single-entity), so  (races the watermark ahead while healthy) is
+-- NOT caught. Honestly reported NOT preservation-checked (#50). Once #72 lands, persist_ahead must BREAK.
+-- Faithful fragment — a healthy shard's persistence
+-- watermark never exceeds the input partition's current offset. Enum guard + arithmetic + two entity types.
+component Core
+  entity Shard
+  entity InputPartition
+  observable state shard_status(Shard) : { healthy | corrupted }
+  observable state persistence_watermark(Shard) : Number
+  observable state current_offset(InputPartition) : Number
+
+  invariant shard_watermark_bound means every s :: every p ::
+    shard_status(s) = healthy implies persistence_watermark(s) <= current_offset(p)
+
+  -- A shard persists up to the consumed offset: safe (keeps the bound).
+  action persist_safe
+    requires shard_status(s) = healthy and persistence_watermark(s) <= current_offset(p)
+    ensures persistence_watermark(s) = current_offset(p)
+
+  -- A shard that races ahead of the consumed offset: MUST break the bound.
+  action persist_ahead
+    requires shard_status(s) = healthy
+    ensures persistence_watermark(s) = current_offset(p) + 1
+end
