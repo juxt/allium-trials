@@ -89,6 +89,13 @@ CASES = [
     # TRIPWIRE (task #63): an `in { }` guard is not preservation-checked, so this real break is missed.
     ("soundness-gauntlet/in_guard_gap.allium",                 "CLEAN",
      "TODO(#63): flip to BREAK when `x in {a,b}` guards are expanded soundly"),
+    # quantifiers, establishment, multi-promise refinement — verdict paths locked as regressions
+    ("soundness-gauntlet/quant_universal_break.allium",        "BREAK",
+     "deactivating an admin breaks `every x :: role=admin => active`"),
+    ("soundness-gauntlet/establish_fail.allium",               "BREAK",
+     "init bal=-5 does not establish bal>=0"),
+    ("soundness-gauntlet/refine_multi_promise.allium",         "NOSAT",
+     "Impl entails nonneg but not frozen_zero — the contract is not satisfied"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

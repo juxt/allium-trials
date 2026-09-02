@@ -1,0 +1,16 @@
+-- allium: 4
+-- REFINEMENT multi-promise. Impl entails `nonneg` but not `frozen_zero` (its bound is >=5, not =0).
+contract Safe
+  entity Acct
+  observable state bal(Acct) : Money
+  observable state frozen(Acct) : Boolean
+  guarantee nonneg means every a :: bal(a) >= 0
+  guarantee frozen_zero means every a :: frozen(a) implies bal(a) = 0
+end
+component Impl satisfies (s : Safe)
+  entity Acct
+  observable state bal(Acct) : Money
+  observable state frozen(Acct) : Boolean
+  invariant b1 means every a :: bal(a) >= 0
+  invariant b2 means every a :: frozen(a) implies bal(a) >= 5
+end

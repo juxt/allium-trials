@@ -1,0 +1,8 @@
+-- allium: 4
+-- ESTABLISH guard. init sets bal=-5, which does not establish `bal >= 0`.
+component C
+  entity X
+  observable state bal(X) : Money
+  init means bal(x) = 0 - 5
+  invariant nn means bal(x) >= 0
+end
