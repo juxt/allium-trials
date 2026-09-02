@@ -42,6 +42,35 @@ bound fell through the seam between the two tiers.
   the one missing invariant (`frozen_nonneg`), after which everything verifies (4 INDUCTIVE + conservation
   PRESERVED). Specimens under `p5/loan-lifecycle/`.
 
+## A static-analysis soundness gauntlet (and the bug it caught)
+
+`reproduce.py` guards the MONITOR (runtime traces); the reverted unsound pass lived in the static ANALYSER,
+unguarded. So `p5/soundness-gauntlet/` now holds 21 known-verdict `analyse` specimens across six verdicts
+(CLEAN / BREAK / ERROR / SAT / NOSAT / INFEAS) and five tool surfaces — preservation, conservation,
+state-guarded arithmetic, refinement entailment (both directions, incl. the false-certification refusal),
+and feasibility. `guard.py` asserts every verdict and is wired into `reproduce.py`. The centrepiece
+`trap_monotone_overwrite` is the exact interacting shape that broke the reverted relational pass.
+
+On its FIRST run the gauntlet caught a real bug: an action with two separate `ensures` lines silently kept
+only the first (`ensures` isn't an item-starter, so the clauses ran into one span and only the first
+equality parsed) — a false positive in the aggregate pass and a latent false negative anywhere a dropped
+clause breaks a bound. Fixed: the parser now rejects a second `ensures`/`requires` with a pointed message
+(combine with `and`).
+
+Ten further adversarial probes (guard on/off, negated-guard activation, conjunctive and arithmetic-guard
+breaks, computed-given totals, nonlinear graceful-skip, refinement near-misses, feasibility) all came back
+sound — the discovery loop went dry after the one find.
+
+## Cross-module is the next frontier (filed, not fixed)
+
+Probing the cross-module surface (the v3 postmortem's dominant defect class) found that v4's semantic passes
+are single-module. Name resolution is import-aware, but the arithmetic and refinement passes never receive
+imported `given` bodies or contracts: an invariant using an imported `given` is silently under-checked (a
+real break is missed), and a component that `satisfies` an imported contract reports "no such contract is
+declared" instead of a proper SAT/NOSAT. Same root cause, filed as #61 with two gauntlet tripwires that flip
+when the fix lands. Not attempted under time pressure — it is a cross-cutting change to the import-merge
+layer.
+
 ## The lesson (an unsound pass, reverted)
 
 Relational arithmetic ordering (`version(a)>version(b) implies offset(a)>=offset(b)`) was attempted for
