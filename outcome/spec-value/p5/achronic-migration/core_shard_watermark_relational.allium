@@ -2,7 +2,7 @@
 -- KNOWN MISS (task #72): faithful fragment of achronic core.allium ShardWatermarkBound. A two-entity,
 -- enum-guarded, arithmetic invariant (shard_status(s)=healthy implies watermark(s) <= offset(p), over two
 -- ENTITY TYPES). It falls through the seam between #49 (relational: two-entity but boolean) and #52
--- (enum-guarded arithmetic: single-entity), so  (races the watermark ahead while healthy) is
+-- (enum-guarded arithmetic: single-entity), so persist_ahead (races the watermark ahead while healthy) is
 -- NOT caught. Honestly reported NOT preservation-checked (#50). Once #72 lands, persist_ahead must BREAK.
 -- Faithful fragment — a healthy shard's persistence
 -- watermark never exceeds the input partition's current offset. Enum guard + arithmetic + two entity types.
