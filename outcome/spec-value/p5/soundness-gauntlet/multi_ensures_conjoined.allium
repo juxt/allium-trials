@@ -1,0 +1,15 @@
+-- allium: 4
+-- MULTI-ENSURES. Separate `ensures` lines read as their conjunction (#60). This balanced transfer
+-- (debit a, credit b; total unchanged) verifies conservation PRESERVED — no parse error, all clauses
+-- participate.
+component Book
+  entity Acct
+  observable state bal(Acct) : Money
+  observable state total : Money
+
+  invariant conserved means total = sum a :: bal(a)
+
+  action transfer
+    ensures bal(a) = old(bal(a)) - 100
+    ensures bal(b) = old(bal(b)) + 100
+end
