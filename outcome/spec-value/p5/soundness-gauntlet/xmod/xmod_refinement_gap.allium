@@ -1,0 +1,12 @@
+-- allium: 4
+-- TRIPWIRE for task #61. This component satisfies an imported contract with a WEAKER promise
+-- (net>=-3 vs the contract's net>=0), so it should be REFUSED (NOSAT). Today the refinement pass
+-- is single-module and cannot see the imported contract, so it wrongly reports NODECL ("no such
+-- contract is declared"). The gauntlet pins that current behaviour; when #61 lands and cross-module
+-- refinement resolves, this flips to NOSAT and the guard fails — the signal to update the manifest.
+use "contract.allium"
+component Ledger satisfies (s : Solvent)
+  entity Acct
+  observable state net(Acct) : Money
+  invariant weak means every a :: net(a) >= 0 - 3
+end

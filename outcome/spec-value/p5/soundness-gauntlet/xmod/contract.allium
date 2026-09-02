@@ -1,0 +1,7 @@
+-- allium: 4
+-- Imported contract for the cross-module refinement tripwire (see xmod_refinement_gap.allium).
+contract Solvent
+  entity Acct
+  observable state net(Acct) : Money
+  guarantee nn means every a :: net(a) >= 0
+end

@@ -66,6 +66,10 @@ CASES = [
      "b>=a+1 with net=a-b and net>=0 is contradictory (via the computed given)"),
     ("soundness-gauntlet/feas_computed_satisfiable.allium",    "CLEAN",
      "a>=b with net=a-b and net>=0 is consistent — must not be false-flagged"),
+    # TRIPWIRE (task #61): cross-module refinement is single-module today, so an imported contract
+    # reads as undeclared. Pinned as NODECL; when #61 lands this should become NOSAT and fail here.
+    ("soundness-gauntlet/xmod/xmod_refinement_gap.allium",     "NODECL",
+     "TODO(#61): flip to NOSAT when cross-module refinement resolves imported contracts"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
@@ -84,8 +88,12 @@ def verdict_of(spec):
     sat = [m for m in msgs if "SATISFIES" in m]
     infeas = [m for m in msgs if "CONTRADICTORY" in m or "not jointly satisfiable" in m.lower()
               or "unsatisfiable" in m.lower()]
+    nodecl = [m for m in msgs if "no such contract is declared" in m]
     if errs:
         return "ERROR", errs
+    # NODECL only when it is NOT overridden by a genuine SAT/NOSAT (a resolved cross-module fix)
+    if nodecl and not any("SATISFIES" in m or "does NOT satisfy" in m for m in msgs):
+        return "NODECL", nodecl
     if infeas:
         return "INFEAS", infeas
     # a refused certification takes precedence over the SATISFIES banner for other promises
