@@ -1,9 +1,8 @@
 -- allium: 4
--- TRIPWIRE for task #63. `promote_admin` sets role=admin (and `promote_user` sets role=user) while
--- active stays false, breaking `role in {user,admin} => active`. But an `in` guard is silently NOT
--- preservation-checked, so this reads CLEAN today (a false negative). When #63 expands `in` soundly it
--- flips to BREAK and this guard fails — the signal to update the manifest. All three enum values are
--- produced (guest by init, admin/user by the actions), so there is no incidental dead-state flag.
+-- #63 REGRESSION (was a tripwire). `promote_admin` sets role=admin (and `promote_user` sets role=user)
+-- while active stays false, breaking `role in {user,admin} => active`. The `in` guard is expanded to a
+-- disjunction and preservation-checked, so this BREAK is caught. All three enum values are produced
+-- (guest by init, admin/user by the actions), so there is no incidental dead-state flag.
 component C
   entity X
   observable state role(X) : { guest | user | admin }

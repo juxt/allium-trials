@@ -88,9 +88,9 @@ CASES = [
      "`ensures logged = true` preserves fail=>logged — no false break from the true literal"),
     ("soundness-gauntlet/bool_biconditional_break.allium",     "BREAK",
      "`a = b` broken by setting a=true, b=false"),
-    # TRIPWIRE (task #63): an `in { }` guard is not preservation-checked, so this real break is missed.
-    ("soundness-gauntlet/in_guard_gap.allium",                 "CLEAN",
-     "TODO(#63): flip to BREAK when `x in {a,b}` guards are expanded soundly"),
+    # #63 RESOLVED: an `in { }` guard is now expanded and preservation-checked.
+    ("soundness-gauntlet/in_guard_gap.allium",                 "BREAK",
+     "promote into `role in {user,admin}` with active false breaks the guarded invariant"),
     # quantifiers, establishment, multi-promise refinement — verdict paths locked as regressions
     ("soundness-gauntlet/quant_universal_break.allium",        "BREAK",
      "deactivating an admin breaks `every x :: role=admin => active`"),
