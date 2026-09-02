@@ -70,6 +70,8 @@ CASES = [
     # reads as undeclared. Pinned as NODECL; when #61 lands this should become NOSAT and fail here.
     ("soundness-gauntlet/xmod/xmod_refinement_gap.allium",     "NODECL",
      "TODO(#61): flip to NOSAT when cross-module refinement resolves imported contracts"),
+    ("soundness-gauntlet/xmod/xmod_given_gap.allium",          "CLEAN",
+     "TODO(#61): flip to BREAK when imported `given` bodies are inlined (break silently missed today)"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

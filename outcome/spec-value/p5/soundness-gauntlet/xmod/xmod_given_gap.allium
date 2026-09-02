@@ -1,0 +1,15 @@
+-- allium: 4
+-- TRIPWIRE for task #61 (the `given` half). `tie` says w = dbl(v) = 2v, but `bump` moves w by 1
+-- while v moves by 1 — a genuine break. The single-file control catches it. Cross-module, the
+-- imported `given` body is not inlined, so `dbl(v)` stays opaque and the break is SILENTLY missed:
+-- today this reads CLEAN. When #61 inlines imported given bodies, it flips to BREAK and this guard
+-- fails — the signal to update the manifest.
+use "lib.allium"
+component Main
+  entity X
+  observable state v(X) : Number
+  observable state w(X) : Number
+  invariant tie means w(x) = dbl(v(x))
+  action bump
+    ensures v(x) = old(v(x)) + 1 and w(x) = old(w(x)) + 1
+end

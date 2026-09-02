@@ -1,0 +1,5 @@
+-- allium: 4
+-- Imported computed definition for the cross-module `given` tripwire.
+component Lib
+  given dbl(x) means x + x
+end
