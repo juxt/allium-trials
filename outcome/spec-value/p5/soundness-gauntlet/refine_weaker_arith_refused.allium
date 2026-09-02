@@ -1,0 +1,11 @@
+-- allium: 4
+contract P
+  entity Acct
+  observable state net(Acct) : Money
+  guarantee nn means every a :: net(a) >= 0
+end
+component Impl satisfies (s : P)
+  entity Acct
+  observable state net(Acct) : Money
+  invariant weak means every a :: net(a) >= 0 - 3
+end

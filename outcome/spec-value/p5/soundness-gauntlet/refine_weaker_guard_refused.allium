@@ -1,0 +1,13 @@
+-- allium: 4
+contract P
+  entity X
+  observable state active(X) : Boolean
+  observable state bal(X) : Money
+  guarantee g means every x :: active(x) implies bal(x) >= 0
+end
+component Impl satisfies (s : P)
+  entity X
+  observable state active(X) : Boolean
+  observable state bal(X) : Money
+  invariant w means every x :: active(x) implies bal(x) >= 0 - 1
+end

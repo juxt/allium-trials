@@ -5,10 +5,13 @@ The master `reproduce.py` guards the MONITOR (runtime traces). This guards the s
 (`allium analyse`) — the layer where an unsound preservation pass was built and reverted on
 2026-09-02. Each specimen carries a known-correct verdict; the tool's diagnostics must match.
 
-Three verdicts:
+Five verdicts:
   CLEAN  — no break/violation finding and no parse Error (a sound analyser stays silent).
   BREAK  — at least one "can break"/"does not establish" finding (a real bug must be caught).
   ERROR  — at least one Error-severity diagnostic (a malformed spec must be rejected, not mis-parsed).
+  SAT    — a component genuinely SATISFIES its contract (refinement holds).
+  NOSAT  — a component does NOT satisfy its contract (a false certification must be refused —
+           the dangerous direction, so a weaker-than-promised component must never read as SAT).
 
 The CLEAN cases are the important ones: they are the interacting shapes that expose false
 positives. `trap_monotone_overwrite` is the exact pattern that broke the reverted relational pass.
@@ -51,6 +54,13 @@ CASES = [
      "bump pushes wm past the cap while the conjunctive guard holds"),
     ("soundness-gauntlet/p8_arith_guard_break.allium",      "BREAK",
      "jump sets wm above the band while status stays healthy"),
+    # refinement / contract entailment — the false-certification direction is the risk
+    ("soundness-gauntlet/refine_stronger_arith_ok.allium",     "SAT",
+     "component invariant net>=5 entails the promise net>=0"),
+    ("soundness-gauntlet/refine_weaker_arith_refused.allium",  "NOSAT",
+     "component only guarantees net>=-3; the promise net>=0 must be refused"),
+    ("soundness-gauntlet/refine_weaker_guard_refused.allium",  "NOSAT",
+     "component only guarantees active=>bal>=-1; the promise active=>bal>=0 must be refused"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")
@@ -64,8 +74,16 @@ def verdict_of(spec):
         return "PARSE-FAIL", []
     errs = [d for d in diags if d.get("severity") == "Error"]
     breaks = [d for d in diags if any(m in d["message"] for m in BREAK_MARKERS)]
+    msgs = [d["message"] for d in diags]
+    nosat = [m for m in msgs if "does NOT satisfy" in m or "not entailed" in m]
+    sat = [m for m in msgs if "SATISFIES" in m]
     if errs:
         return "ERROR", errs
+    # a refused certification takes precedence over the SATISFIES banner for other promises
+    if nosat:
+        return "NOSAT", nosat
+    if sat:
+        return "SAT", sat
     if breaks:
         return "BREAK", breaks
     return "CLEAN", []
