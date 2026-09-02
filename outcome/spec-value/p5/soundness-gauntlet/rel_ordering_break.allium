@@ -1,0 +1,11 @@
+-- allium: 4
+-- #49 REGRESSION. Bumping one entity's version above another's, without lifting its offset, breaks
+-- `higher version => higher-or-equal offset`. Must BREAK.
+component Log
+  entity E
+  observable state ver(E) : Number
+  observable state off(E) : Number
+  invariant ordered means every a :: every b :: ver(a) > ver(b) implies off(a) >= off(b)
+  action bump
+    ensures ver(e) = old(ver(e)) + 10
+end

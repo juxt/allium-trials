@@ -98,6 +98,11 @@ CASES = [
      "init bal=-5 does not establish bal>=0"),
     ("soundness-gauntlet/refine_multi_promise.allium",         "NOSAT",
      "Impl entails nonneg but not frozen_zero — the contract is not satisfied"),
+    # relational 2-entity numeric ordering preservation (#49)
+    ("soundness-gauntlet/rel_ordering_break.allium",           "BREAK",
+     "bumping a version past another's without lifting its offset breaks the ordering"),
+    ("soundness-gauntlet/rel_ordering_hypclean.allium",        "CLEAN",
+     "off=ver hypothesis keeps a joint version+offset bump ordered — the reverted pass false-alarmed here"),
 ]
 
 BREAK_MARKERS = ("can break", "does not establish", "init does not")

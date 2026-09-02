@@ -1,0 +1,12 @@
+-- allium: 4
+-- #49 SOUNDNESS REGRESSION. With `off = ver` invariant, a joint +1 bump preserves the ordering — the
+-- pass must USE that hypothesis and stay CLEAN (the case the earlier reverted pass false-alarmed).
+component Log
+  entity E
+  observable state ver(E) : Number
+  observable state off(E) : Number
+  invariant synced means every x :: off(x) = ver(x)
+  invariant ordered means every a :: every b :: ver(a) > ver(b) implies off(a) >= off(b)
+  action bump
+    ensures ver(e) = old(ver(e)) + 1 and off(e) = old(off(e)) + 1
+end
