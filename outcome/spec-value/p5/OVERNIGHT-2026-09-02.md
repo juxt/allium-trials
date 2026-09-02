@@ -30,6 +30,9 @@ bound fell through the seam between the two tiers.
   status = frozen implies balance >= 0`).
 - **Dead-state detection** — an enum lifecycle value no init/action ever produces is flagged unreachable
   (gated to written observables, so enum inputs are never flagged).
+- **Computed-given inlining** — `given available means limit - used`, invariant `available >= 0`: the
+  derived definition is inlined into invariants/effects/guards across all arithmetic passes, so a
+  derived-value bound ties to the states an action actually changes (multi-level givens too).
 
 ## Validated on realistic banking / distributed specs
 

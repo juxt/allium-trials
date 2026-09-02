@@ -1,0 +1,21 @@
+-- allium: 4
+-- SOUNDNESS TRAP. This is the exact interacting shape that exposed the unsound
+-- relational-overwrite pass (reverted 2026-09-02): a state-guarded arithmetic bound
+-- AND a relational ordering over the SAME numeric state, where the "overwrite" action
+-- actually relates the new value to the pre-state via its guard (advance only INCREASES
+-- the watermark, so it preserves both). A sound analyser must report NO break here.
+-- If any future pass false-alarms on this, it has repeated the reverted mistake.
+component Ledger
+  entity Shard
+  observable state wm(Shard) : Number          -- watermark offset
+  observable state current(Shard) : Number      -- current stream offset
+  observable state healthy(Shard) : Boolean
+
+  -- state-guarded bound: a healthy shard is never ahead of the stream
+  invariant caught_up means healthy(s) implies wm(s) <= current(s)
+
+  -- advance never decreases the watermark, and only moves it up to where the stream is
+  action advance
+    requires wm(s) < current(s)
+    ensures wm(s) = current(s)
+end

@@ -1,0 +1,15 @@
+-- allium: 4
+-- FALSE-NEGATIVE GUARD. The same book, but the transfer credits less than it debits:
+-- the total is asserted unchanged while the balances lose money. Conservation is broken.
+-- A sound analyser MUST report a break here. If it goes silent, a preservation pass has
+-- regressed to a false negative.
+component Book
+  entity Acct
+  observable state bal(Acct) : Money
+  observable state total : Money
+
+  invariant conserved means total = sum a :: bal(a)
+
+  action leaky_transfer
+    ensures bal(a) = old(bal(a)) - 100 and bal(b) = old(bal(b)) + 40 and total = old(total)
+end

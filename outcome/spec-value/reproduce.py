@@ -85,6 +85,15 @@ def main():
     fails += not st_ok
     print(f"{'spec-vs-test: gate==oracle, anchor wins':<40} {'TRUE':>8} {str(st_ok).upper():>8}  {'PASS' if st_ok else 'FAIL <<<'}")
 
+    # static-analysis soundness gauntlet: known-verdict specimens for `allium analyse`, including the
+    # interacting shapes that expose false positives (the reverted unsound pass). Separate from the
+    # monitor claims above — this guards the static analyser.
+    g = subprocess.run([sys.executable, os.path.join(HERE, "p5/soundness-gauntlet/guard.py")],
+                       capture_output=True, text=True)
+    gauntlet_ok = g.returncode == 0
+    fails += not gauntlet_ok
+    print(f"{'static gauntlet: analyse verdicts match':<40} {'CLEAN':>8} {('CLEAN' if gauntlet_ok else 'WRONG'):>8}  {'PASS' if gauntlet_ok else 'FAIL <<<'}")
+
     print("-"*72)
     print(f"{'ALL CLAIMS REPRODUCE' if not fails else str(fails)+' CLAIM(S) FAILED'}")
     return 1 if fails else 0

@@ -1,0 +1,20 @@
+-- allium: 4
+-- SOUNDNESS TRAP. A conservation invariant (double-entry) together with a state-guarded
+-- non-negativity bound, where every money-moving action is correctly guarded. A sound
+-- analyser must report NO break: the transfer is balanced (total conserved) and the debit
+-- is guarded so the balance never goes negative.
+component Book
+  entity Acct
+  observable state bal(Acct) : Money
+  observable state frozen(Acct) : Boolean
+  observable state total : Money
+
+  invariant conserved means total = sum a :: bal(a)
+  invariant nonneg means bal(a) >= 0
+  invariant frozen_nonneg means frozen(a) implies bal(a) >= 0
+
+  -- balanced internal transfer: one debit, one matching credit, total unchanged
+  action transfer
+    requires bal(a) >= 100
+    ensures bal(a) = old(bal(a)) - 100 and bal(b) = old(bal(b)) + 100 and total = old(total)
+end
