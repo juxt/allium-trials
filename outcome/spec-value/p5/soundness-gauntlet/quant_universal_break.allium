@@ -1,11 +1,14 @@
 -- allium: 4
--- QUANTIFIER guard. `every x :: role=admin => active` is broken by deactivating an admin.
+-- QUANTIFIER guard. `every x :: role=admin => active` is broken by promoting to admin without
+-- activating (and by deactivating an admin). Both enum values are produced, so no dead-state flag.
 component C
   entity X
   observable state role(X) : { user | admin }
   observable state active(X) : Boolean
   init means role(x) = user and active(x) = false
   invariant admins_active means every x :: role(x) = admin implies active(x)
+  action promote
+    ensures role(x) = admin
   action deactivate
     ensures active(x) = false
 end
