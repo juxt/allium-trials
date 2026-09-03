@@ -1,0 +1,14 @@
+-- allium: 4
+-- A consumer design that only dedups (states idempotency) and ignores the other three obligations.
+use "queue_consumer_contract.allium"
+component NaiveConsumer satisfies (q : QueueConsumer)
+  entity Message
+  observable state applied(Message) : bool
+  observable state deduped(Message) : bool
+  observable state acked(Message) : bool
+  observable state processed(Message) : bool
+  observable state lease_held(Message) : bool
+  observable state exhausted(Message) : bool
+  observable state dead_lettered(Message) : bool
+  invariant idempotent_apply means applied(m) implies deduped(m)
+end

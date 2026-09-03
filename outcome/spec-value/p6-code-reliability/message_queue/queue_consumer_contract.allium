@@ -1,0 +1,18 @@
+-- allium: 4
+-- LIBRARY SPEC for the at-least-once broker. The obligations it places on a consumer, each as a
+-- contract promise in the consumer's own vocabulary. A consumer that references this is checked
+-- against all four. (The CODE-level behaviour behind each predicate is tested separately.)
+contract QueueConsumer
+  entity Message
+  observable state applied(Message) : bool
+  observable state deduped(Message) : bool
+  observable state acked(Message) : bool
+  observable state processed(Message) : bool
+  observable state lease_held(Message) : bool
+  observable state exhausted(Message) : bool
+  observable state dead_lettered(Message) : bool
+  guarantee idempotent_apply  means applied(m) implies deduped(m)
+  guarantee ack_after_process means acked(m) implies processed(m)
+  guarantee apply_under_lease means applied(m) implies lease_held(m)
+  guarantee dead_letter_poison means exhausted(m) implies dead_lettered(m)
+end

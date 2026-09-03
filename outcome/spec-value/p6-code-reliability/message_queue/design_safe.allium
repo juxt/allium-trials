@@ -1,0 +1,17 @@
+-- allium: 4
+-- A consumer design that states all four obligations as invariants. Should SATISFY.
+use "queue_consumer_contract.allium"
+component SafeConsumer satisfies (q : QueueConsumer)
+  entity Message
+  observable state applied(Message) : bool
+  observable state deduped(Message) : bool
+  observable state acked(Message) : bool
+  observable state processed(Message) : bool
+  observable state lease_held(Message) : bool
+  observable state exhausted(Message) : bool
+  observable state dead_lettered(Message) : bool
+  invariant idempotent_apply  means applied(m) implies deduped(m)
+  invariant ack_after_process means acked(m) implies processed(m)
+  invariant apply_under_lease means applied(m) implies lease_held(m)
+  invariant dead_letter_poison means exhausted(m) implies dead_lettered(m)
+end
