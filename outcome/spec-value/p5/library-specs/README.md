@@ -37,9 +37,23 @@ consumer_naive.allium  vs kafka_at_least_once.allium   -> does NOT satisfy
 ```
 
 The naive consumer is the bug the vision is about: a client that would double-process under at-least-once
-delivery. It is caught the moment the client references the library spec, and not before. That is the
-resilience story in one specimen: the library spec carries the obligation, and the client is checked
-against it.
+delivery. It is caught the moment the client references the library spec, and not before.
+
+## The before/after — where the value is
+
+`consumer_unaware.allium` is the same naive behaviour written by someone who never considered at-least-once
+delivery: it applies events, references no library spec, states no obligation. Analysed on its own it is
+**clean** — nothing in its own text is violated, so the tool has nothing to flag. The double-processing bug
+is invisible.
+
+```
+consumer_unaware.allium  (no library spec)          -> 0 mismatches   (bug invisible)
+consumer_naive.allium    (references KafkaAtLeastOnce) -> REFUSED       (bug caught)
+```
+
+That contrast is the hypothesis: the flaw is latent in the client and only becomes visible once the client
+is checked against the library it depends on. The library spec carries the knowledge — "delivery is
+at-least-once, so you must dedup" — that the client's author did not have.
 
 ## What this exercises, and one gap
 

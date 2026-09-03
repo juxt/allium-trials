@@ -1,0 +1,11 @@
+-- allium: 4
+-- The SAME naive behaviour as consumer_naive, but written WITHOUT referencing the Kafka library spec —
+-- a consumer that never considered at-least-once delivery. Analysed on its own it is CLEAN: nothing in
+-- its own text is violated. The latent double-processing bug is invisible until the library spec is
+-- referenced (consumer_naive.allium). This is the before half of the resilience story.
+component UnawareConsumer
+  entity Event
+  observable state applied(Event) : bool
+  action apply
+    ensures applied(e)
+end
