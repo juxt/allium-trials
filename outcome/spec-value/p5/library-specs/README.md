@@ -92,12 +92,28 @@ Each client is refused on exactly the obligation it breaks. Two independent depe
 and a database), three classes of client-library mismatch (double-processing, lost updates, overdraw),
 caught by one mechanism spanning boolean and arithmetic reasoning. `verify.py` asserts all five verdicts.
 
+## The other direction — the consumer relies on the library
+
+So far each library places an *obligation* on the consumer. The dual is the consumer *relying* on what the
+library *provides*. `kafka_guarantees.allium` states Kafka's guarantee (`consumed(m) implies in_order(m)`),
+and the checker discharges a matching consumer rely against it — the compositional rely-guarantee Decision 2
+deferred, now built (`rely_discharge` in the checker).
+
+- `consumer_relies_ok.allium` — relies on ordering, which Kafka guarantees. The rely is **DISCHARGED** by
+  the dependency: it is backed, not merely assumed of the environment.
+- `consumer_relies_wrong.allium` — relies on exactly-once (no duplicates), which Kafka never guarantees
+  (it is at-least-once). The rely is **NOT discharged**: the consumer assumes a property its dependency does
+  not provide. That is the latent bug the reliance direction catches — the mirror of the naive consumer,
+  from the other side of the contract.
+
+A rely stated in a library's vocabulary but not guaranteed is flagged; a rely over the component's own
+terms is a genuine environmental assumption and left alone. Together with the obligation direction, a
+library spec is now a true two-way contract: the client is checked both for what it must provide and for
+what it may assume.
+
 ## Where next
 
-- **The other direction of the contract.** Here each library places an obligation on the consumer. The
-  dual is the consumer *relying* on a library guarantee (Kafka's offset ordering), expressed with the rely
-  role built in Decision 2. A richer specimen would show both directions across one dependency edge — and
-  it needs the compositional discharge (a library guarantee discharging a consumer rely), the piece
-  Decision 2 deferred.
 - **Referencing by name.** Closing #79 (the `use`-resolution decision) turns "hand the checker both files"
   into "reference a dependency and it is pulled in" — the package-manager flow.
+- **Arithmetic relies.** The discharge check is boolean for now; an arithmetic rely (a client relying on a
+  numeric bound the library guarantees) would extend it via the LRA entailment already used for `satisfies`.

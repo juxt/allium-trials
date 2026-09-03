@@ -1,0 +1,9 @@
+-- allium: 4
+-- The GUARANTEE side of the Kafka contract — what Kafka PROVIDES, that a consumer may rely on.
+contract KafkaGuarantees
+  entity Msg
+  observable state consumed(Msg) : bool
+  observable state in_order(Msg) : bool
+  observable state unique(Msg) : bool
+  guarantee ordered_delivery means consumed(m) implies in_order(m)
+end

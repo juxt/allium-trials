@@ -1,0 +1,9 @@
+-- allium: 4
+-- Relies on Kafka's ordering guarantee — which Kafka provides, so the rely is DISCHARGED by the dependency.
+use "kafka_guarantees.allium"
+component OrderingConsumer
+  entity Msg
+  observable state consumed(Msg) : bool
+  observable state in_order(Msg) : bool
+  rely needs_order means consumed(m) implies in_order(m)
+end
