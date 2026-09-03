@@ -42,6 +42,13 @@ class Store:
     def get(self, key: int): ...                 # value for key, or None. Searches segments newest-first
 `
 
+const METRIC_HARNESS = `# harness.py — API reference for a time-series metric store (read-only).
+class Store:
+    def create_series(self, name: str) -> None: ...          # register a series
+    def append(self, series: str, t: int, value: float) -> None: ...  # append a (t, value) point to a series
+    def read(self, series: str) -> list: ...                 # the (t, value) points stored for a series, in append order
+`
+
 const DOMAINS = [
   {
     name: 'message_queue',
@@ -79,6 +86,22 @@ contract SortedStore
   observable state entry_count(Batch) : Number
   guarantee sorted_input   means committed(b) implies keys_ascending(b)
   guarantee capacity_bound means committed(b) implies entry_count(b) <= 4
+end`,
+  },
+  {
+    name: 'metric_store',
+    evalDir: `${BASE}/metric_store`,
+    harness: METRIC_HARNESS,
+    total: 2,
+    task: `Implement \`run(store, points)\` in solution.py. points is a list of (series, t, value) triples (series str, t int, value float). Persist every point so store.read(series) contains all points for that series. Decide what persisting them correctly requires. solution.py imports from harness.`,
+    contract: `-- allium: 4
+contract MetricStore
+  entity Point
+  observable state appended(Point) : bool
+  observable state series_created(Point) : bool
+  observable state time_monotonic(Point) : bool
+  guarantee create_before_append means appended(p) implies series_created(p)
+  guarantee monotonic_time       means appended(p) implies time_monotonic(p)
 end`,
   },
 ]
@@ -131,9 +154,13 @@ ${code}
 \`\`\``
 }
 
+// args may name a subset of domains to run (string or array); default is all.
+const wanted = args ? (Array.isArray(args) ? args : [args]) : null
+const RUN_DOMAINS = wanted ? DOMAINS.filter(d => wanted.includes(d.name)) : DOMAINS
+
 phase('Implement')
 const items = []
-for (const d of DOMAINS) for (const armKey of Object.keys(ARMS)) for (let i = 0; i < N; i++) items.push({ d, armKey, i })
+for (const d of RUN_DOMAINS) for (const armKey of Object.keys(ARMS)) for (let i = 0; i < N; i++) items.push({ d, armKey, i })
 
 const results = await pipeline(
   items,
@@ -146,7 +173,7 @@ const results = await pipeline(
 )
 
 const summary = {}
-for (const d of DOMAINS) {
+for (const d of RUN_DOMAINS) {
   summary[d.name] = {}
   for (const armKey of Object.keys(ARMS)) {
     const rs = results.filter(Boolean).filter(r => r.domain === d.name && r.armKey === armKey)
@@ -154,6 +181,7 @@ for (const d of DOMAINS) {
     const cov = n ? rs.reduce((a, r) => a + (r.total ? r.passed / r.total : 0), 0) / n : 0
     summary[d.name][armKey] = { n, coverage_pct: Number((cov * 100).toFixed(1)) }
   }
+  const s = summary[d.name]
+  log(`${d.name}: base ${s.baseline.coverage_pct}  naive ${s.naive.coverage_pct}  skill ${s.skill.coverage_pct}`)
 }
-log(`queue base ${summary.message_queue.baseline.coverage_pct} naive ${summary.message_queue.naive.coverage_pct} skill ${summary.message_queue.skill.coverage_pct} | store base ${summary.sorted_store.baseline.coverage_pct} naive ${summary.sorted_store.naive.coverage_pct} skill ${summary.sorted_store.skill.coverage_pct}`)
 return { N, summary, raw: results.filter(Boolean) }
