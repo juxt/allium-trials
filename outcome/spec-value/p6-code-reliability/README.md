@@ -99,16 +99,23 @@ The wrapper fix above was inline prompt text. It is now a shipped v4 skill
 (`allium/skills-v4/implement`), and this eval tests the skill itself: three conditions implement each
 domain, and the skill arm makes the agent read and follow the real `SKILL.md`.
 
-| condition | message queue | sorted store |
-|---|---|---|
-| baseline, no spec | 75% | 25% |
-| naive wrapper (contract, "implement it faithfully") | 81% | 100% |
-| **the skill** (floor + reconcile) | **94%** | **100%** |
+| condition | message queue | sorted store | metric store |
+|---|---|---|---|
+| baseline, no spec | 75% | 25% | 50% |
+| naive wrapper (contract, "implement it faithfully") | 81% | 100% | 100% |
+| **the skill** (floor + reconcile) | **94%** | **100%** | **100%** |
 
-Two claims hold. **Never worse:** the skill sits above baseline on both, +19 and +75. **Value captured:**
-the skill takes the bespoke store from a 25% baseline to 100%. The skill's edge over a plain "implement
-the contract faithfully" wrapper is real but modest: +13 on the queue, where getting every operational
-obligation right is fiddly, and a tie on the store, where simply being handed the obligations was enough.
+Two claims hold. **Never worse:** the skill sits above baseline everywhere, +19 on the queue and +75 /
++50 on the two bespoke stores. **Value captured:** the skill takes each bespoke store from a low baseline
+to 100%. The skill's edge over a plain "implement the contract faithfully" wrapper is real but modest:
++13 on the queue, where getting every operational obligation right is fiddly, and a tie on both bespoke
+stores, where simply being handed the obligations was enough.
+
+The metric store is a *replication*: a second, unrelated bespoke dependency, different obligations
+(create-a-series-before-appending, and time-monotonic appends, both silently dropped otherwise). Its
+baseline sits at 50% — every unguided agent reliably got one obligation and missed the other — and the
+library spec lifts it to 100%, the same shape as the sorted store. Two bespoke domains, same law: the
+control misses what it cannot guess, and the library spec carries it into the code.
 
 The honest reading is that this run validates the skill as never-worse and value-capturing rather than
 proving a naive wrapper always degrades. In this controlled comparison the naive wrapper did *not* fall
