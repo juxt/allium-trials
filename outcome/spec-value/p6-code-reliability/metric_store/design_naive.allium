@@ -1,0 +1,9 @@
+-- allium: 4
+use "store_contract.allium"
+component NaiveWriter satisfies (s : MetricStore)
+  entity Point
+  observable state appended(Point) : bool
+  observable state series_created(Point) : bool
+  observable state time_monotonic(Point) : bool
+  invariant create_before_append means appended(p) implies series_created(p)
+end

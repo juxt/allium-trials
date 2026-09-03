@@ -1,0 +1,11 @@
+-- allium: 4
+-- LIBRARY SPEC for the metric store. Two obligations, neither visible in the API: a series must be
+-- created before appending, and appends within a series must be time-monotonic.
+contract MetricStore
+  entity Point
+  observable state appended(Point) : bool
+  observable state series_created(Point) : bool
+  observable state time_monotonic(Point) : bool
+  guarantee create_before_append means appended(p) implies series_created(p)
+  guarantee monotonic_time       means appended(p) implies time_monotonic(p)
+end
