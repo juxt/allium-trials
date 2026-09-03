@@ -106,6 +106,15 @@ contract QueueConsumer
   guarantee dead_letter_poison means exhausted(m) implies dead_lettered(m)
 end`
 
+// The spec is a FLOOR, never a ceiling, and every obligation it states must be reconciled into
+// the code before finishing (the weed step). Without this a spec can make code WORSE than none:
+// attention narrows to the abstract invariants, and stated-but-unimplemented obligations ship.
+const DISCIPLINE = `
+
+CRITICAL — how to use the spec so it never makes your code worse:
+1. The spec is a FLOOR, not a ceiling. It names properties you MUST guarantee; it does not excuse you from every other thing a robust implementation needs. Do everything you would normally do to make this correct, PLUS everything the spec requires. Never let specifying narrow your implementation.
+2. RECONCILE the code against the spec before you finish (this is the weed step). For EACH invariant/obligation in your Allium spec, point to the exact line(s) of solution.py that actually realise it in behaviour. If any obligation is stated in the spec but not truly implemented in the code (e.g. the spec says applied implies deduped but the code does not dedup by message id), FIX THE CODE. Do not return until every obligation is realised in the code, not merely asserted in the spec.`
+
 const ARMS = {
   A: { label: 'no-allium', extra: '' },
   B: {
@@ -113,7 +122,7 @@ const ARMS = {
     extra: `\n\nBEFORE writing Python, design your consumer as an Allium v4 behavioural specification and check it.
 ${PRIMER}
 Write your design to design.allium in your working directory and run \`${ALLIUM} check design.allium\`. Fix anything it reports.
-Let the discipline of specifying your consumer's behaviour and checking it inform the implementation. Then implement solution.py faithfully to that design.`,
+Let the discipline of specifying your consumer's behaviour and checking it inform the implementation. Then implement solution.py.${DISCIPLINE}`,
   },
   C: {
     label: 'allium+libspec',
@@ -123,7 +132,7 @@ ${CONTRACT}
 
 Design your consumer as an Allium v4 spec that references this contract.
 ${PRIMER}
-Write the contract above to contract.allium and your design to design.allium, with \`component YourConsumer satisfies (q : QueueConsumer)\` and an invariant for each obligation. Run \`${ALLIUM} analyse contract.allium design.allium\`. It reports any obligation your design does NOT entail. Revise until it SATISFIES all four. Then implement solution.py so the Python actually REALISES each obligation the contract names (do not just restate them: make the code dedup, hold the lease, ack only after processing, and dead-letter exhausted messages).`,
+Write the contract above to contract.allium and your design to design.allium, with \`component YourConsumer satisfies (q : QueueConsumer)\` and an invariant for each obligation. Run \`${ALLIUM} analyse contract.allium design.allium\`. It reports any obligation your design does NOT entail. Revise until it SATISFIES all four. Then implement solution.py.${DISCIPLINE}`,
   },
 }
 
