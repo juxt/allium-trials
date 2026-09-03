@@ -124,6 +124,37 @@ authoring its *own* design and then hand-coding, where the spec became a ceiling
 The skill's contribution is best stated as a guarantee, never worse, plus a small uplift where correctness
 is easy to half-do, not as a large average lift over any sensible use of the contract.
 
+## Where the value comes from — decomposing the uplift
+
+A five-arm factorial separates the three possible causes of the uplift: the explicit spec
+(baseline→spec), the deterministic CLI check on its own (spec→check, `analyse` with no reconcile
+prose), and the floor/reconcile discipline on its own (spec→discipline, prose with no CLI).
+
+On the paged-reader domain, clean enough to read at N=4:
+
+| baseline | spec | spec+check | spec+discipline | skill |
+|---|---|---|---|---|
+| 50% | **100%** | 100% | 100% | 75%\* |
+
+The explicit spec is the entire lift, +50. The deterministic check adds nothing on top (check =
+spec), and the discipline adds nothing either (discipline = spec). This matches the two bespoke
+stores, where the library spec alone already reached 100%. Three clean domains, same verdict:
+**the credit goes to the explicit spec; the model check carries no independent weight here.** (\*the
+skill arm drew one crashed agent, N=4 noise.)
+
+Mechanistically that is what you would expect. `allium analyse` guards against a *design-level gap*
+— a design that fails to entail a stated obligation. An agent handed the obligations explicitly
+does not leave such a gap, so the checker has nothing to catch. The check's value needs the gap to
+exist: larger interacting specs where an obligation is dropped, human authors, or change over time
+where an edit silently breaks an obligation. None of these "told the obligations, implement once"
+tasks produce one, so the check is inert — not worthless, unexercised.
+
+The message-queue arm of the same factorial was too noisy to decompose (N=4 with several
+total-failure agents and a scorer miscount). It is the one place with a *hint* the check might
+carry weight — check and skill beat spec and discipline — but that gap is consistent with sampling,
+not a demonstrated effect. Settling it needs a clean re-run at higher N with crash-vs-miss
+separated in scoring.
+
 ## The law, and the honest limits
 
 One rule explains p5 and both p6 domains: **value tracks non-obviousness.** A library spec pays off
