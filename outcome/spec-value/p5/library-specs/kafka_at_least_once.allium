@@ -1,0 +1,11 @@
+-- allium: 4
+-- LIBRARY SPEC (a dependency a consumer imports). One facet of Kafka a consumer builds on:
+-- delivery is AT-LEAST-ONCE, so a duplicate of any event may be delivered. The obligation this
+-- places on a consumer is stated as the contract's promise: anything the consumer APPLIES must have
+-- been DEDUPED first. A consumer that references this spec is checked against that obligation.
+contract KafkaAtLeastOnce
+  entity Event
+  observable state applied(Event) : bool
+  observable state deduped(Event) : bool
+  guarantee apply_needs_dedup means applied(e) implies deduped(e)
+end
