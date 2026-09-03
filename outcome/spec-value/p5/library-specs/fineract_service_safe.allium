@@ -1,0 +1,18 @@
+-- allium: 4
+-- A CORRECT Fineract loan service: it checks the version and guards the balance before committing a post.
+-- Both obligations hold and are preserved by its actions. Must SATISFY the store contract.
+use "fineract_loan_store.allium"
+component FineractLoanService satisfies (db : LoanAccountStore)
+  entity Post
+  observable state committed(Post) : bool
+  observable state version_checked(Post) : bool
+  observable state balance_after(Post) : Money
+  invariant commit_checks_version means committed(p) implies version_checked(p)
+  invariant balance_non_negative means committed(p) implies balance_after(p) >= 0
+  action check_version
+    requires not committed(p)
+    ensures version_checked(p)
+  action post
+    requires version_checked(p) and balance_after(p) >= 0
+    ensures committed(p)
+end

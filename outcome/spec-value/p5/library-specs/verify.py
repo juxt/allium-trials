@@ -12,10 +12,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # (consumer file, library file, expected verdict): SATISFY or REFUSE.
 CASES = [
-    ("consumer_safe.allium",   "kafka_at_least_once.allium",        "SATISFY"),
-    ("consumer_naive.allium",  "kafka_at_least_once.allium",        "REFUSE"),
-    ("loan_update_safe.allium",  "db_optimistic_concurrency.allium", "SATISFY"),
-    ("loan_update_naive.allium", "db_optimistic_concurrency.allium", "REFUSE"),
+    ("consumer_safe.allium",              "kafka_at_least_once.allium", "SATISFY"),
+    ("consumer_naive.allium",             "kafka_at_least_once.allium", "REFUSE"),
+    ("fineract_service_safe.allium",       "fineract_loan_store.allium", "SATISFY"),
+    ("fineract_service_lostupdate.allium", "fineract_loan_store.allium", "REFUSE"),
+    ("fineract_service_overdraw.allium",   "fineract_loan_store.allium", "REFUSE"),
 ]
 
 def verdict(lib, consumer):
@@ -29,13 +30,13 @@ def verdict(lib, consumer):
 
 def main():
     ok = True
-    print(f"{'consumer':<26}{'library':<34}{'want':<9}{'got':<9}result")
+    print(f"{"consumer":<38}{"library":<32}{'want':<9}{'got':<9}result")
     print("-" * 86)
     for consumer, lib, want in CASES:
         got = verdict(lib, consumer)
         passed = got == want
         ok = ok and passed
-        print(f"{consumer:<26}{lib:<34}{want:<9}{got:<9}{'PASS' if passed else 'FAIL <<<'}")
+        print(f"{consumer:<38}{lib:<32}{want:<9}{got:<9}{'PASS' if passed else 'FAIL <<<'}")
     print("-" * 86)
     print("LIBRARY-SPEC HYPOTHESIS VALIDATED" if ok else "VALIDATION FAILED")
     sys.exit(0 if ok else 1)

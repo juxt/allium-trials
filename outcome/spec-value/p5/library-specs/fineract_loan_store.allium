@@ -1,0 +1,15 @@
+-- allium: 4
+-- LIBRARY SPEC (second independent dependency): the relational database backing Fineract loan accounts.
+-- It provides optimistic concurrency and a non-negative-balance CHECK constraint. Two obligations fall on
+-- a client, stated as the contract's promises:
+--   1. a committed update must have CHECKED the row version first (or a concurrent write is lost);
+--   2. a committed update must leave the outstanding balance NON-NEGATIVE (the store rejects a violating
+--      write, so an unguarded debit fails at runtime).
+contract LoanAccountStore
+  entity Post
+  observable state committed(Post) : bool
+  observable state version_checked(Post) : bool
+  observable state balance_after(Post) : Money
+  guarantee commit_checks_version means committed(p) implies version_checked(p)
+  guarantee balance_non_negative means committed(p) implies balance_after(p) >= 0
+end

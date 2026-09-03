@@ -1,0 +1,13 @@
+-- allium: 4
+-- A client that commits without checking the version — a lost update under concurrency. Fails obligation 1.
+use "fineract_loan_store.allium"
+component LostUpdateService satisfies (db : LoanAccountStore)
+  entity Post
+  observable state committed(Post) : bool
+  observable state version_checked(Post) : bool
+  observable state balance_after(Post) : Money
+  invariant balance_non_negative means committed(p) implies balance_after(p) >= 0
+  action post
+    requires balance_after(p) >= 0
+    ensures committed(p)
+end

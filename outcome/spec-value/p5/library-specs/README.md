@@ -68,19 +68,29 @@ not yet resolve the imported contract into the satisfaction pass on its own — 
 Wiring the `use` directive through to the satisfaction pass is the next step toward referencing a hosted
 library spec by name (task filed).
 
-## A second, independent instance (database)
+## A second, independent instance — Fineract's database
 
-To show the result is not Kafka-specific, `db_optimistic_concurrency.allium` is a second library spec for
-a different dependency: a store with optimistic concurrency control. Its obligation is that any committed
-update must have checked the record's version first, or a concurrent write is silently lost.
+To show the result is not Kafka-specific, `fineract_loan_store.allium` is a second library spec for a
+different dependency: the relational store behind Fineract loan accounts. It carries two obligations, one
+boolean and one arithmetic, so a client can fail on either:
 
-- `loan_update_safe.allium` — a Fineract-style updater that checks the version before committing. **SATISFIES.**
-- `loan_update_naive.allium` — commits without checking. Referencing the library spec catches the
-  lost-update risk: it does **NOT satisfy** the contract.
+```
+contract LoanAccountStore
+  guarantee commit_checks_version  means committed(p) implies version_checked(p)
+  guarantee balance_non_negative   means committed(p) implies balance_after(p) >= 0
+```
 
-Two independent dependencies (a message broker and a database), two different classes of client-library
-mismatch (double-processing under at-least-once; lost updates under concurrency), both caught by the same
-mechanism. `verify.py` asserts all four verdicts.
+- `fineract_service_safe.allium` — checks the version and guards the balance before committing. It
+  **SATISFIES** both promises, and its guarded `post` action genuinely **preserves** the arithmetic bound
+  (not merely restates it), so the guarantee holds in every reachable state.
+- `fineract_service_lostupdate.allium` — commits without a version check. Refused on `commit_checks_version`
+  (a lost update under concurrency).
+- `fineract_service_overdraw.allium` — commits without guarding the balance. Refused on
+  `balance_non_negative` (an overdraw the store's CHECK constraint would reject at runtime).
+
+Each client is refused on exactly the obligation it breaks. Two independent dependencies (a message broker
+and a database), three classes of client-library mismatch (double-processing, lost updates, overdraw),
+caught by one mechanism spanning boolean and arithmetic reasoning. `verify.py` asserts all five verdicts.
 
 ## Where next
 
