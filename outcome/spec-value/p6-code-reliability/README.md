@@ -93,6 +93,30 @@ Arm B — Allium discipline *without* the library spec — scored zero: you cann
 rule you have never heard of, so specifying your own design surfaces nothing. The value is the library
 spec carrying the obligation from the library's authors to the consumer, not the act of specifying.
 
+## Evaluating the ImplementFromSpec skill
+
+The wrapper fix above was inline prompt text. It is now a shipped v4 skill
+(`allium/skills-v4/implement`), and this eval tests the skill itself: three conditions implement each
+domain, and the skill arm makes the agent read and follow the real `SKILL.md`.
+
+| condition | message queue | sorted store |
+|---|---|---|
+| baseline, no spec | 75% | 25% |
+| naive wrapper (contract, "implement it faithfully") | 81% | 100% |
+| **the skill** (floor + reconcile) | **94%** | **100%** |
+
+Two claims hold. **Never worse:** the skill sits above baseline on both, +19 and +75. **Value captured:**
+the skill takes the bespoke store from a 25% baseline to 100%. The skill's edge over a plain "implement
+the contract faithfully" wrapper is real but modest: +13 on the queue, where getting every operational
+obligation right is fiddly, and a tie on the store, where simply being handed the obligations was enough.
+
+The honest reading is that this run validates the skill as never-worse and value-capturing rather than
+proving a naive wrapper always degrades. In this controlled comparison the naive wrapper did *not* fall
+below baseline. The below-baseline degradation seen earlier came from a different, worse flow — an agent
+authoring its *own* design and then hand-coding, where the spec became a ceiling and was never reconciled.
+The skill's contribution is best stated as a guarantee, never worse, plus a small uplift where correctness
+is easy to half-do, not as a large average lift over any sensible use of the contract.
+
 ## The law, and the honest limits
 
 One rule explains p5 and both p6 domains: **value tracks non-obviousness.** A library spec pays off
