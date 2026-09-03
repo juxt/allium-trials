@@ -1,0 +1,16 @@
+-- allium: 4
+-- A CORRECT Fineract-style loan updater: it reads-and-checks the version before committing, so no lost
+-- updates. Must SATISFY the database contract.
+use "db_optimistic_concurrency.allium"
+component LoanUpdater satisfies (db : OptimisticConcurrency)
+  entity Update
+  observable state committed(Update) : bool
+  observable state version_checked(Update) : bool
+  invariant commit_checks_version means committed(u) implies version_checked(u)
+  action check_version
+    requires not committed(u)
+    ensures version_checked(u)
+  action commit
+    requires version_checked(u)
+    ensures committed(u)
+end

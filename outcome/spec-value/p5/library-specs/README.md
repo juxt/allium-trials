@@ -54,11 +54,26 @@ not yet resolve the imported contract into the satisfaction pass on its own — 
 Wiring the `use` directive through to the satisfaction pass is the next step toward referencing a hosted
 library spec by name (task filed).
 
+## A second, independent instance (database)
+
+To show the result is not Kafka-specific, `db_optimistic_concurrency.allium` is a second library spec for
+a different dependency: a store with optimistic concurrency control. Its obligation is that any committed
+update must have checked the record's version first, or a concurrent write is silently lost.
+
+- `loan_update_safe.allium` — a Fineract-style updater that checks the version before committing. **SATISFIES.**
+- `loan_update_naive.allium` — commits without checking. Referencing the library spec catches the
+  lost-update risk: it does **NOT satisfy** the contract.
+
+Two independent dependencies (a message broker and a database), two different classes of client-library
+mismatch (double-processing under at-least-once; lost updates under concurrency), both caught by the same
+mechanism. `verify.py` asserts all four verdicts.
+
 ## Where next
 
-- **The other direction of the contract.** Here the library places an obligation on the consumer. The
+- **The other direction of the contract.** Here each library places an obligation on the consumer. The
   dual is the consumer *relying* on a library guarantee (Kafka's offset ordering), expressed with the rely
-  role built in Decision 2. A richer specimen would show both directions across one dependency edge.
-- **A second library.** Fineract depends on a database; a `Transactional` or `Durable` library spec with
-  an obligation on its client (e.g. writes are idempotent, or reads-after-commit see the write) would be a
-  second, independent instance of the same hypothesis.
+  role built in Decision 2. A richer specimen would show both directions across one dependency edge — and
+  it needs the compositional discharge (a library guarantee discharging a consumer rely), the piece
+  Decision 2 deferred.
+- **Referencing by name.** Closing #79 (the `use`-resolution decision) turns "hand the checker both files"
+  into "reference a dependency and it is pulled in" — the package-manager flow.
