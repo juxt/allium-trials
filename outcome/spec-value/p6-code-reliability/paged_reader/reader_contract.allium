@@ -1,0 +1,11 @@
+-- allium: 4
+-- LIBRARY SPEC for the paginated source. Two obligations, neither visible in the API: the reader
+-- must follow pagination to the end, and must dedupe records that repeat across pages.
+contract PagedReader
+  entity Record
+  observable state collected(Record) : bool
+  observable state from_all_pages(Record) : bool
+  observable state deduped(Record) : bool
+  guarantee reads_all_pages means collected(r) implies from_all_pages(r)
+  guarantee dedupes means collected(r) implies deduped(r)
+end

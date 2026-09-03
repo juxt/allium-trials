@@ -1,0 +1,10 @@
+-- allium: 4
+use "reader_contract.allium"
+component SafeReader satisfies (p : PagedReader)
+  entity Record
+  observable state collected(Record) : bool
+  observable state from_all_pages(Record) : bool
+  observable state deduped(Record) : bool
+  invariant reads_all_pages means collected(r) implies from_all_pages(r)
+  invariant dedupes means collected(r) implies deduped(r)
+end
