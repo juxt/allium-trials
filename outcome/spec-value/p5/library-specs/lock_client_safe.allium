@@ -1,0 +1,16 @@
+-- allium: 4
+-- A CORRECT client: it attaches the current fencing token before committing a write, so a stale lock holder
+-- is fenced off by the store. Must SATISFY the lock contract.
+use "distributed_lock.allium"
+component FencedWriter satisfies (l : DistributedLock)
+  entity Write
+  observable state committed(Write) : bool
+  observable state fenced(Write) : bool
+  invariant write_is_fenced means committed(w) implies fenced(w)
+  action attach_token
+    requires not committed(w)
+    ensures fenced(w)
+  action commit
+    requires fenced(w)
+    ensures committed(w)
+end

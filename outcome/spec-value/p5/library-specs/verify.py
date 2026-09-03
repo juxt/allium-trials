@@ -21,6 +21,8 @@ CASES = [
     ("fineract_service_overdraw.allium",   "fineract_loan_store.allium", "REFUSE"),
     ("consumer_relies_ok.allium",          "kafka_guarantees.allium",    "DISCHARGE"),
     ("consumer_relies_wrong.allium",       "kafka_guarantees.allium",    "UNDISCHARGE"),
+    ("lock_client_safe.allium",            "distributed_lock.allium",    "SATISFY"),
+    ("lock_client_naive.allium",           "distributed_lock.allium",    "REFUSE"),
 ]
 
 def verdict(lib, consumer):

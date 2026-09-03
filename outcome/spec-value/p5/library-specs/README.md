@@ -111,6 +111,20 @@ terms is a genuine environmental assumption and left alone. Together with the ob
 library spec is now a true two-way contract: the client is checked both for what it must provide and for
 what it may assume.
 
+## A third domain — a distributed lock service
+
+`distributed_lock.allium` is the third independent dependency: a lock service that issues a monotonic
+fencing token with each grant, so the store can reject a write from a client whose lock silently expired
+(a GC pause, a partition). Its obligation: a committed write must carry the fencing token.
+
+- `lock_client_safe.allium` — attaches the token before committing. **SATISFIES.**
+- `lock_client_naive.allium` — commits without a token: the classic stale-lock-holder bug, where a client
+  keeps writing after losing its lock and corrupts shared state. Refused on `write_is_fenced`.
+
+Three independent dependencies now — a message broker, a database, and a lock service — three unrelated
+failure modes (double-processing, lost updates and overdraw, the stale writer), each caught by the same
+contract mechanism.
+
 ## Where next
 
 - **Referencing by name.** Closing #79 (the `use`-resolution decision) turns "hand the checker both files"

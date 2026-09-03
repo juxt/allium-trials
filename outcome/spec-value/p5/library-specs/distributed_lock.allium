@@ -1,0 +1,11 @@
+-- allium: 4
+-- LIBRARY SPEC (third independent dependency): a distributed lock service that issues a monotonic FENCING
+-- TOKEN with each lock grant. The store rejects any write whose token is stale, which lets it fence off a
+-- client that kept working after its lock silently expired (a GC pause, a network partition). The
+-- obligation on a client: every committed write must carry the fencing token from its current grant.
+contract DistributedLock
+  entity Write
+  observable state committed(Write) : bool
+  observable state fenced(Write) : bool
+  guarantee write_is_fenced means committed(w) implies fenced(w)
+end
