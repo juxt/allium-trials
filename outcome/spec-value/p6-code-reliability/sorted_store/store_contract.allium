@@ -1,0 +1,12 @@
+-- allium: 4
+-- LIBRARY SPEC for the sorted-segment store. Two obligations a consumer must meet, neither
+-- visible in the API: keys within a committed batch must be ascending, and a batch holds at
+-- most 4 entries. A consumer that references this is checked against both.
+contract SortedStore
+  entity Batch
+  observable state committed(Batch) : bool
+  observable state keys_ascending(Batch) : bool
+  observable state entry_count(Batch) : Number
+  guarantee sorted_input   means committed(b) implies keys_ascending(b)
+  guarantee capacity_bound means committed(b) implies entry_count(b) <= 4
+end

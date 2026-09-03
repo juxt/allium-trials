@@ -1,0 +1,9 @@
+-- allium: 4
+use "store_contract.allium"
+component NaiveWriter satisfies (s : SortedStore)
+  entity Batch
+  observable state committed(Batch) : bool
+  observable state keys_ascending(Batch) : bool
+  observable state entry_count(Batch) : Number
+  invariant sorted_input means committed(b) implies keys_ascending(b)
+end

@@ -1,0 +1,10 @@
+-- allium: 4
+use "store_contract.allium"
+component SafeWriter satisfies (s : SortedStore)
+  entity Batch
+  observable state committed(Batch) : bool
+  observable state keys_ascending(Batch) : bool
+  observable state entry_count(Batch) : Number
+  invariant sorted_input   means committed(b) implies keys_ascending(b)
+  invariant capacity_bound means committed(b) implies entry_count(b) <= 4
+end
