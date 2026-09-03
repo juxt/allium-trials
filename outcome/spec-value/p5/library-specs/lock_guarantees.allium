@@ -1,0 +1,11 @@
+-- allium: 4
+-- The GUARANTEE side of the lock — what it PROVIDES: while a grant is held it is exclusive. Note it does
+-- NOT guarantee a write is FRESH: a client whose lock silently expired can still issue a write (hence
+-- fencing tokens). So a rely on exclusivity is backed; a rely on freshness is not.
+contract LockGuarantees
+  entity Client
+  observable state granted(Client) : bool
+  observable state exclusive(Client) : bool
+  observable state fresh(Client) : bool
+  guarantee mutual_exclusion means granted(c) implies exclusive(c)
+end

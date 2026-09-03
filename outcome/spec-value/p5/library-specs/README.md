@@ -111,6 +111,18 @@ terms is a genuine environmental assumption and left alone. Together with the ob
 library spec is now a true two-way contract: the client is checked both for what it must provide and for
 what it may assume.
 
+The reliance direction runs on all three dependencies, over boolean and arithmetic reasoning alike:
+
+- **Database (arithmetic).** `fineract_store_guarantees.allium` guarantees `committed(u) implies
+  balance_after(u) >= 0`. `loan_reader_relies.allium` relies on it and is **DISCHARGED** — the discharge
+  check now spans the LRA fragment, reusing the same entailment `satisfies` uses.
+- **Lock (the sharp one).** `lock_guarantees.allium` guarantees mutual exclusion of a grant, but not that a
+  write is *fresh*. `lock_reader_relies.allium` relies on exclusivity → **DISCHARGED**;
+  `lock_reader_wrong.allium` relies on the lock alone keeping its writes fresh → **NOT discharged**. That is
+  exactly why fencing tokens exist: holding a lock does not mean a stale holder never writes. The reliance
+  direction catches the wrong assumption from the other side of the contract that the fencing obligation
+  guards from the client side.
+
 ## A third domain — a distributed lock service
 
 `distributed_lock.allium` is the third independent dependency: a lock service that issues a monotonic

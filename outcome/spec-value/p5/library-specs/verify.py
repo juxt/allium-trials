@@ -23,6 +23,9 @@ CASES = [
     ("consumer_relies_wrong.allium",       "kafka_guarantees.allium",    "UNDISCHARGE"),
     ("lock_client_safe.allium",            "distributed_lock.allium",    "SATISFY"),
     ("lock_client_naive.allium",           "distributed_lock.allium",    "REFUSE"),
+    ("loan_reader_relies.allium",          "fineract_store_guarantees.allium", "DISCHARGE"),   # arithmetic rely
+    ("lock_reader_relies.allium",          "lock_guarantees.allium",     "DISCHARGE"),
+    ("lock_reader_wrong.allium",           "lock_guarantees.allium",     "UNDISCHARGE"),        # lock alone != fresh
 ]
 
 def verdict(lib, consumer):
@@ -40,14 +43,14 @@ def verdict(lib, consumer):
 
 def main():
     ok = True
-    print(f"{"consumer":<38}{"library":<32}{"want":<13}{"got":<13}result")
-    print("-" * 86)
+    print(f"{"consumer":<38}{"library":<36}{"want":<13}{"got":<13}result")
+    print("-" * 90)
     for consumer, lib, want in CASES:
         got = verdict(lib, consumer)
         passed = got == want
         ok = ok and passed
-        print(f"{consumer:<38}{lib:<32}{want:<13}{got:<13}{'PASS' if passed else 'FAIL <<<'}")
-    print("-" * 86)
+        print(f"{consumer:<38}{lib:<36}{want:<13}{got:<13}{'PASS' if passed else 'FAIL <<<'}")
+    print("-" * 90)
     print("LIBRARY-SPEC HYPOTHESIS VALIDATED" if ok else "VALIDATION FAILED")
     sys.exit(0 if ok else 1)
 

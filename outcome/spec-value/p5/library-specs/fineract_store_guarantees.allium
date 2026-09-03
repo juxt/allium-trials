@@ -1,0 +1,9 @@
+-- allium: 4
+-- The GUARANTEE side of the store — what it PROVIDES: it enforces the non-negative-balance CHECK
+-- constraint, so a client may rely on committed balances never being negative.
+contract StoreGuarantees
+  entity U
+  observable state committed(U) : bool
+  observable state balance_after(U) : Money
+  guarantee enforces_nonneg means committed(u) implies balance_after(u) >= 0
+end
