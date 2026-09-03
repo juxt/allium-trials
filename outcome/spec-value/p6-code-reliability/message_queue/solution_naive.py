@@ -1,6 +1,6 @@
-"""A plausible but naive consumer — acks after processing and retries on error, but does
-not dedup, does not extend the lease for slow jobs, and never dead-letters a poison message.
-Used to validate that the oracle catches those bugs. Expected: passes ack-ordering only."""
+"""A plausible but naive consumer: acks after processing and retries on failure, but does not
+dedup, does not extend the lease for slow jobs, and never gives up on a failing message. Used to
+validate the oracle catches those bugs. Expected: passes ack-ordering only."""
 from harness import Broker, Sink, Clock
 
 

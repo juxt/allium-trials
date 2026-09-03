@@ -1,7 +1,7 @@
 """A correct consumer — passes all four obligation groups. Used to validate the oracle."""
-from harness import Broker, Sink, Clock, Poison, TransientError
+from harness import Broker, Sink, Clock, WorkFailed
 
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = 5
 
 
 def run(broker: Broker, sink: Sink, work, clock: Clock, max_polls: int = 1000) -> None:
@@ -14,7 +14,7 @@ def run(broker: Broker, sink: Sink, work, clock: Clock, max_polls: int = 1000) -
             return
         m = r.message
 
-        if m.id in applied:        # a duplicate delivery of work we already did
+        if m.id in applied:        # a repeat delivery of work already done
             broker.ack(r)
             continue
 
@@ -24,14 +24,11 @@ def run(broker: Broker, sink: Sink, work, clock: Clock, max_polls: int = 1000) -
 
         try:
             work(m)
-        except Poison:
+        except WorkFailed:
             attempts[m.id] = attempts.get(m.id, 0) + 1
             if attempts[m.id] >= MAX_ATTEMPTS:
                 broker.dead_letter(r)
-            # otherwise leave it unacked to be redelivered
-            continue
-        except TransientError:
-            continue               # do not ack; let it be redelivered and retried
+            continue               # do not ack; leave it for redelivery
 
         sink.apply(m.payload)      # apply exactly once, only after work succeeded
         applied.add(m.id)

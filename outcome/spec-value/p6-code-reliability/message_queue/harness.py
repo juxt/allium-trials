@@ -1,20 +1,16 @@
 """Message-queue harness — the published interface, and the simulator behind it.
 
-This file is GIVEN to the implementer (read-only). It defines the broker they consume from
-and the sink they apply work to. It states the broker's *mechanics* honestly (delivery is
-at-least-once; a message not acked before its visibility deadline is redelivered). It does
-NOT state the consumer's obligations — those are what the eval measures.
-
-Time is simulated. `work()` advances a logical clock; there is no wall-clock sleeping, so
-every test is deterministic.
+Given to the implementer (read-only). API reference only: it documents what each operation does
+mechanically, not how to use the queue correctly. Time is simulated: work() advances a logical
+clock, so behaviour is deterministic.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
 class Clock:
-    """A logical millisecond clock. Advanced by work, read by the broker."""
+    """A logical millisecond clock."""
     def __init__(self) -> None:
         self.now: int = 0
 
@@ -24,16 +20,16 @@ class Clock:
 
 @dataclass
 class Message:
-    id: str                 # logical identity; the same id may be delivered more than once
+    id: str                 # logical identity of the message
     payload: str
-    processing_ms: int      # how long work() on this message will take
+    processing_ms: int      # how long work() on this message takes
     _next_visible_at: int = 0
-    delivery_count: int = 0
+    delivery_count: int = 0  # how many times this message has been returned by poll()
 
 
 @dataclass
 class Receipt:
-    """Handed out by poll(). Names the message and the deadline by which you must ack."""
+    """Returned by poll(). Names the leased message and the time the lease expires."""
     message: Message
     deadline: int
     delivery_count: int
@@ -41,7 +37,7 @@ class Receipt:
 
 
 class Sink:
-    """The downstream effect. Applying the same payload twice is the observable bug."""
+    """The downstream effect. sink.applied records every apply() call."""
     def __init__(self) -> None:
         self.applied: list[str] = []
 
@@ -50,14 +46,7 @@ class Sink:
 
 
 class Broker:
-    """An at-least-once queue with a visibility timeout.
-
-    poll() leases the next available message for `visibility_timeout` ms and returns a
-    Receipt. If you do not ack (or extend) before the lease deadline, the message becomes
-    available again and a later poll() will return it once more — this is the at-least-once
-    guarantee, not a fault. ack() after the deadline has passed is rejected: you no longer
-    own the lease.
-    """
+    """A message queue with leased delivery and a visibility timeout."""
     def __init__(self, messages: list[Message], clock: Clock,
                  visibility_timeout: int = 1000) -> None:
         self._messages = list(messages)
@@ -66,11 +55,8 @@ class Broker:
         self.dead_letter_queue: list[Message] = []
 
     def poll(self) -> Optional[Receipt]:
-        """Return a Receipt for the next available message, or None if the queue is empty.
-
-        If messages remain but none is visible yet (all leased and not due for redelivery),
-        the clock advances to the next redelivery time — the consumer waits for a message.
-        """
+        """Lease and return the next available message, or None if the queue is empty.
+        The lease lasts visibility_timeout ms from now."""
         if not self._messages:
             return None
         if all(m._next_visible_at > self._clock.now for m in self._messages):
@@ -81,18 +67,18 @@ class Broker:
         return Receipt(m, deadline=m._next_visible_at, delivery_count=m.delivery_count)
 
     def ack(self, receipt: Receipt) -> bool:
-        """Remove the message. Succeeds only if the lease has not expired. Returns success."""
+        """Complete the message and remove it. Returns False if the lease has expired."""
         if receipt._acked:
             return True
         if self._clock.now > receipt.deadline:
-            return False  # lease lost: the message has already been made available again
+            return False
         if receipt.message in self._messages:
             self._messages.remove(receipt.message)
         receipt._acked = True
         return True
 
     def extend_visibility(self, receipt: Receipt, ms: int) -> bool:
-        """Push the lease deadline out by `ms` from now. Fails if the lease already expired."""
+        """Set the lease to expire ms from now. Returns False if it has already expired."""
         if self._clock.now > receipt.deadline:
             return False
         receipt.message._next_visible_at = self._clock.now + ms
@@ -100,19 +86,15 @@ class Broker:
         return True
 
     def dead_letter(self, receipt: Receipt) -> None:
-        """Move the message off the main queue into the dead-letter queue."""
+        """Remove the message from the queue and place it on the dead-letter queue."""
         if receipt.message in self._messages:
             self._messages.remove(receipt.message)
             self.dead_letter_queue.append(receipt.message)
 
     def pending(self) -> int:
-        """How many messages remain on the main queue (test helper)."""
+        """Number of messages still on the queue."""
         return len(self._messages)
 
 
-class Poison(Exception):
-    """Raised by work() for a message that can never be processed successfully."""
-
-
-class TransientError(Exception):
-    """Raised by work() for a failure that may succeed if the message is processed again."""
+class WorkFailed(Exception):
+    """Raised by work() when processing a message does not succeed."""
