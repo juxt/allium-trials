@@ -173,3 +173,32 @@ Before building all 8–10, prove the harness on ONE task end to end, all three 
 sorted-segment store as a greenfield task (its obligations are proven non-obvious, and the p6 oracle
 exists). That yields the first honest three-way number and validates the scoring before the suite is
 scaled. Then add one of each remaining type.
+
+## Meta-finding — the single-shot instrument is wrong for V4 (three saturations)
+
+Three single-shot tasks saturated: cache-implementation (caching is obvious), acct-fee (overdraft guard
+instinctive + telegraphed by the base code), legacy-terminate (the termination budget was a required
+signature parameter, maximally legible). The pattern is not three task-design misses; it is the finding:
+**for a strong model, the bugs V4's checker catches are mostly bugs the model does not make.** A single-shot
+benchmark with a fresh capable agent measures first-draft quality, and there V4 ≈ V3 ≈ prose.
+
+V4's value is not first-draft pass-rate. It is **assurance** (a property PROVED over all cases, not five
+tested examples — the regulator-facing difference) and **durability** (a standing gate that catches drift
+when a later edit, by someone who has lost the original intent, breaks a load-bearing property). Neither is
+visible in a one-shot implement-from-spec measurement.
+
+### The pivot: measure durability, not first-draft correctness
+
+- **Durability eval.** Start from spec + correct code. Apply a SEQUENCE of feature edits, each by a fresh
+  agent that sees only the code and its own edit request (not the accumulated intent). A later edit
+  naturally breaks an earlier invariant/objective because it is not in the editor's local context. Measure
+  whether each arm's GATE catches the regression: V4 `analyse`/`weed` (deterministic), V3 regenerated tests
+  (coverage-dependent), prose (nothing). This is where the spec earns its keep, and it does not depend on a
+  single agent making a mistake — it depends on intent being lost across edits, which is realistic.
+- **Assurance is a capability, not a rate.** "Prove the property holds for ALL reachable states" is
+  yes/no per tool (V4 design-time proof; V3/prose tested examples only). Report it as a capability matrix,
+  not a percentage. The one clean single-shot V4>V3 result we have — p7, the anti-vacuity test GENERATED
+  from the objective — is itself a gate-generation result, consistent with this reframe.
+
+The single-shot tasks stay in the suite only where the obligation is genuinely non-obvious to a strong
+model (the bespoke stores for prose<V3 elicitation). The V3<V4 story moves to durability + assurance.
