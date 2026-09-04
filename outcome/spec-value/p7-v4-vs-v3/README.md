@@ -11,15 +11,20 @@ and the vacuous always-miss cache and reports whether it CATCHES the vacuous one
 
 ## Result (N=4 per arm)
 
+First run (loose `never_stale`, N=4): V4 caught vacuous 100%, V3 50% — but muddied by two confounds
+(agents over-specifying `never_stale` as reflecting out-of-band store writes, and a couple leaking the
+caching intuition). **Tightened** so the cache is the sole writer and correctness is stated only in terms
+of the cache's own operations, the signal is clean (N=4):
+
 | arm | catches the vacuous cache | passes the correct cache |
 |---|---|---|
-| V4 (safety + objective) | **100%** (4/4) | 50% |
-| V3 (safety only) | **50%** (2/4) | 25% |
+| V4 (safety + objective) | **100%** (4/4) | **100%** |
+| V3 (safety only) | **~0%** (1/4, and that one is a test-logic bug) | 75% |
 
-The catches-vacuous column is the signal. **V4 is reliable: every suite generated from the objective
-obligation caught the vacuous cache**, via read-count "serves-from-cache" tests. **V3 is a coin-flip**:
-the clean safety-only case let the vacuous cache pass everything (the predicted blind spot), but two of
-four agents leaked the caching intuition and wrote a read-count test anyway.
+Every clean V3 run wrote safety-only tests that the vacuous always-miss cache passed; the lone V3 "catch"
+was a buggy test that also fails the correct reference, not a genuine catch. V4's suites all passed the
+correct cache and caught the vacuous one via read-count "serves-from-cache" tests derived from the
+objective obligation.
 
 ## Reading it honestly
 
