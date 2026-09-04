@@ -234,3 +234,27 @@ less game-able one.
 bespoke stores, whose internal constraint (write ascending or corrupt the index) genuinely is not guessable
 from the API. There is nothing hidden; the domain is simply specialised. That is the clean home for the
 prose < V3 elicitation rung.
+
+## The real-code instrument (supersedes toy tasks for the code-quality claim)
+
+A language-capability claim is circular: "V4 expresses termination objectives" proves nothing about a
+user's code. The measure must be CODE-LEVEL and grounded in REAL code, or it is marketing. So the
+benchmark's spine becomes real Fineract modules, scored by behavioural fidelity — not toy tasks we author.
+
+**Distil → hide → reconstruct → differential.** Take a real Fineract module. Each arm distils a spec
+(prose / V3 / V4). Hide the original. A fresh agent reconstructs the code from the spec alone. Score by
+DIFFERENTIAL testing against the real original — Fineract's OWN test suite already carries golden expected
+values (real behaviour, real quirks, that we did not write and cannot tune). Fidelity = fraction of golden
+cases the reconstruction matches. A better spec preserves more real behaviour, and that is a code-level
+score no language feature can fake.
+
+The same real code supports the other honest task shapes, each scored the same way: add a feature to it,
+change an existing behaviour, port it to a new language, reconstruct a faithful copy. This kills two worries
+at once — the obfuscation dial (nothing is hidden but the code itself; the quirks are inherent) and the
+language-feature circularity (the score is behavioural match to real code, not expressiveness).
+
+**First target: `fineract-amortization`.** `ProjectedAmortizationScheduleCalculator` (89 LOC, self-
+contained working-capital-loan amortization, 1 light dep) with a 2377-LOC golden test. Instrument: extract
+real (input → expected schedule) cases from the test as JSON; distil prose/V3/V4 specs from the Java; hide
+it; reconstruct in Python; score against the golden cases. Build steps: (1) extract golden cases, (2) 3-arm
+distil, (3) reconstruct, (4) differential score.
