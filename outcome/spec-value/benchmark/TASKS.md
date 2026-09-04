@@ -5,6 +5,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 
 | slug | type | domain | gotcha (authentic failure mode) | status |
 |---|---|---|---|---|
+| `payment-allocation` | gate/anti-vacuity | Fineract default alloc order | a vacuous allocator (allocates nothing) is SAFE but useless; does the V4 anti-vacuity objective make the catch reliable where V3 (safety-only) misses it? Replicates p7 on real domain | running |
 | `loop-guard` | gate/liveness | Fineract LoopGuard | the max-iterations termination guard is load-bearing; does each arm's generated test suite CATCH a version with the guard removed? (V4 objective = liveness test; V3 no construct) | running |
 | `loan-status` | reconstruct/behavioural | Fineract loan lifecycle | isClosed quirk | **SATURATED** (prose=V3=V4=100%, all got the quirk). 6th data point: reconstruction-fidelity retired — cannot favour a declarative language |
 | `fineract-amortization` | reconstruct/real | Fineract TVM math | fidelity of a spec-reconstructed `rate()` solver vs real Fineract golden values (differential) | **DONE — INVERTED**: prose 100 / V3 97 / V4 86. Numerical algorithm = wrong code for a declarative language; reconstruction-fidelity favours transcription. Boundary case: where Allium does NOT help |

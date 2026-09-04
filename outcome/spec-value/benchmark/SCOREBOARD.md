@@ -24,5 +24,8 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 - **Precision thread DEAD (N=10):** structured specs do NOT generate more precise gates — prose is most
   precise; V3/V4 over-specify and false-alarm more. The only clean real V4>V3 remains p7 (anti-vacuity).
 
-This scoreboard is deliberately unflattering where the truth is unflattering. That is what makes the two
-places V4 genuinely wins — the anti-vacuity gate and (emerging) gate precision — credible.
+This scoreboard is deliberately unflattering where the truth is unflattering. Eight data points in, the
+ONE clean place V4 genuinely beats V3 is the anti-vacuity gate (p7) — the objective generates a check V3
+has no construct to express. Everything else on real code ties, or (numerical algorithm, gate precision)
+mildly favours prose. The credibility of the p7 win comes precisely from the rest of the board being honest
+about where there is no advantage.
