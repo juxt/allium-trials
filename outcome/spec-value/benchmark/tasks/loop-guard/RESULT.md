@@ -18,3 +18,17 @@ cannot be reduced to a concrete safety test — not for a concrete throw.
 (50% vs 75% pass-correct): they get the exact `++count > maxIterations` boundary wrong and over-specify more.
 Structured specs yield more accurate gates. A suite that cries wolf on correct code is worse than useless, so
 this is a genuine structure > prose signal — but weak at N=4 (2/4 vs 3/4), and no V3<V4. Re-running at N=10.
+
+## N=10 UPDATE — the precision signal was noise, and INVERTS
+
+| arm | catches regression | passes correct (precision) |
+|---|---|---|
+| prose | 100% | **80%** |
+| V3 | 100% | 50% |
+| V4 | 100% | 40% |
+
+The N=4 "structured specs are more precise" signal was noise. At N=10 the opposite holds: **prose generates
+the MOST precise gates, V4 the least.** Cause: the structured specs (V3/V4) OVER-SPECIFY — they add
+invariants/objectives that generate extra tests which then false-alarm on the correct code. Catch stays
+saturated (100% all). Net for this task: structure gives NO advantage and slightly more false alarms.
+Precision thread is DEAD.

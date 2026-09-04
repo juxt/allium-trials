@@ -9,7 +9,7 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | `fineract-amortization` | reconstruct | Fineract TvmFunctions (RATE solver) | fidelity vs real golden | **100** | 97 | 86 | prose > V3 > V4 — a numerical algorithm; declarative abstraction discards it. Boundary case. |
 | `loan-status` | reconstruct | Fineract LoanStatus state machine | fidelity vs 168 golden | 100 | 100 | 100 | tie — simple enum behaviour transcribes losslessly into any form. |
 | `loop-guard` | gate | Fineract LoopGuard (termination guard) | catches guard-removed regression | 100 | 100 | 100 | tie on catch (guard too obvious); precision differs → next row |
-| `loop-guard` | gate | Fineract LoopGuard | passes correct (precision) | 50 | 75 | 75 | structured gates false-alarm less; N=4, firming at N=10 |
+| `loop-guard` | gate | Fineract LoopGuard | passes correct (precision), N=10 | **80** | 50 | 40 | INVERTED at N=10 — prose MOST precise; structured specs over-specify → more false alarms. Precision thread dead. |
 | p7 (cache) | gate | cache anti-vacuity | catches vacuous impl | — | ~0 | **100** | V4-only: the objective generates a test V3 has no construct for. The clean V4>V3. |
 | p6 (bespoke stores) | greenfield | sorted/metric store | obligation coverage | 20 (no-spec) | → 100 (spec) | 100 | writing the obligation down (any form) is the win; elicitation. |
 
@@ -21,8 +21,8 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 - **The spec's value is not the code, it is the checkable artefact:** writing the obligation down at all
   (p6), and the GATE — a check that catches a regression. V4 beats V3 on the gate ONLY for a true
   anti-vacuity property (p7); for a concrete-safety property (loop-guard's throw) V3 = V4.
-- **Emerging real-code signal:** structured specs generate MORE PRECISE gates (fewer false alarms on correct
-  code). prose < V3 ≈ V4 on loop-guard precision; firming up.
+- **Precision thread DEAD (N=10):** structured specs do NOT generate more precise gates — prose is most
+  precise; V3/V4 over-specify and false-alarm more. The only clean real V4>V3 remains p7 (anti-vacuity).
 
 This scoreboard is deliberately unflattering where the truth is unflattering. That is what makes the two
 places V4 genuinely wins — the anti-vacuity gate and (emerging) gate precision — credible.
