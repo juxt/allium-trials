@@ -202,3 +202,35 @@ visible in a one-shot implement-from-spec measurement.
 
 The single-shot tasks stay in the suite only where the obligation is genuinely non-obvious to a strong
 model (the bespoke stores for prose<V3 elicitation). The V3<V4 story moves to durability + assurance.
+
+## The line: legitimate legacy obfuscation vs gaming the harness
+
+A real concern once we deliberately obscure a quirk to beat saturation. The test for which side we are on:
+
+**Legitimate** — the quirk is hard to see because it is hard to see IN REAL LEGACY CODE: a magic constant
+with no comment, a budget buried in tangled control flow, an invariant maintained implicitly across
+scattered sites, a behaviour that emerged from an old bugfix. A real engineer, modernising in good faith,
+plausibly misses it. We are reproducing the actual conditions under which the bug ships. Two hard
+requirements keep it honest:
+1. The quirk must be RECOVERABLE by a careful human from the code alone — it is real, not invented.
+2. All arms get EQUAL-FIDELITY artefacts. No arm is handed intent the others are denied. If the V4 spec
+   states the objective, it is because the tool's own elicitation process surfaced it from the same code —
+   not because we typed the answer into V4 and gave prose a vaguer description. Where practical, produce
+   each arm's spec by running that tool's real process on the code, rather than hand-authoring the answer.
+
+**Gaming** — obfuscation contrived specifically to defeat the model, hiding the gotcha in a way real code
+never would, or withholding from prose/V3 an understanding the V4 spec was simply handed. If the only way
+to recover the quirk is the spec we wrote, the spec is a crib sheet and the result is manufactured.
+
+**Why the gate/durability pivot is also the honest pivot.** The single-shot obfuscation approach is exactly
+where the gaming risk concentrates — we end up tuning *how hidden* the gotcha is until a gap appears, and
+that dial has no principled stop. The gate and durability measurements avoid the dial entirely: they
+measure a CAPABILITY (can the tool express and check this property; does the standing gate catch a
+regression) that does not depend on hiding anything. A termination objective is either expressible or not
+(V4 yes, V3 no) regardless of how legible max_ops is. So the pivot is not just a better instrument, it is a
+less game-able one.
+
+**Where single-shot stays legitimate.** Only where non-obviousness is INHERENT, not obfuscated — the
+bespoke stores, whose internal constraint (write ascending or corrupt the index) genuinely is not guessable
+from the API. There is nothing hidden; the domain is simply specialised. That is the clean home for the
+prose < V3 elicitation rung.
