@@ -10,7 +10,8 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | `loan-status` | reconstruct | Fineract LoanStatus state machine | fidelity vs 168 golden | 100 | 100 | 100 | tie — simple enum behaviour transcribes losslessly into any form. |
 | `loop-guard` | gate | Fineract LoopGuard (termination guard) | catches guard-removed regression | 100 | 100 | 100 | tie on catch (guard too obvious); precision differs → next row |
 | `loop-guard` | gate | Fineract LoopGuard | passes correct (precision), N=10 | **80** | 50 | 40 | INVERTED at N=10 — prose MOST precise; structured specs over-specify → more false alarms. Precision thread dead. |
-| p7 (cache) | gate | cache anti-vacuity | catches vacuous impl | — | ~0 | **100** | V4-only: the objective generates a test V3 has no construct for. The clean V4>V3. |
+| p7 (cache) | gate | cache anti-vacuity (SYNTHETIC) | catches vacuous impl | — | ~0 | 100 | V4>V3 — but ONLY because V3's spec was pure safety (no positive obligation). |
+| `payment-allocation` | gate | Fineract alloc order (REAL) | catches vacuous impl | 100 | **100** | 100 | p7 does NOT replicate: V3's order obligation already forces the anti-vacuity test. V4 adds nothing. |
 | p6 (bespoke stores) | greenfield | sorted/metric store | obligation coverage | 20 (no-spec) | → 100 (spec) | 100 | writing the obligation down (any form) is the win; elicitation. |
 
 ## The honest one-line summary per finding
@@ -24,8 +25,9 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 - **Precision thread DEAD (N=10):** structured specs do NOT generate more precise gates — prose is most
   precise; V3/V4 over-specify and false-alarm more. The only clean real V4>V3 remains p7 (anti-vacuity).
 
-This scoreboard is deliberately unflattering where the truth is unflattering. Eight data points in, the
-ONE clean place V4 genuinely beats V3 is the anti-vacuity gate (p7) — the objective generates a check V3
-has no construct to express. Everything else on real code ties, or (numerical algorithm, gate precision)
-mildly favours prose. The credibility of the p7 win comes precisely from the rest of the board being honest
-about where there is no advantage.
+This scoreboard is deliberately unflattering where the truth is unflattering. Nine data points in, there is NO demonstrated code-level V4>V3 on real code. The one apparent win (p7)
+was an artifact of a synthetic spec with no positive obligation; on real Fineract logic (payment-allocation)
+V3's positive obligations already force the anti-vacuity test, so V4's objective adds nothing. First-draft
+code, reconstruction, and gate catch-rate are all FLAT across prose/V3/V4 for a strong model. Allium's value
+is NOT a code-quality delta — it is a CAPABILITY (design-time proof over all cases; provenance; a durable
+checkable artefact), which this code-level benchmark is the wrong instrument to measure.
