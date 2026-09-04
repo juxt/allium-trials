@@ -20,10 +20,13 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
   capable model given the obligation in any form writes correct code. (loan-status tie; amortization even
   inverts, because prose can transcribe an algorithm a declarative spec abstracts away.)
 - **The spec's value is not the code, it is the checkable artefact:** writing the obligation down at all
-  (p6), and the GATE — a check that catches a regression. V4 beats V3 on the gate ONLY for a true
-  anti-vacuity property (p7); for a concrete-safety property (loop-guard's throw) V3 = V4.
-- **Precision thread DEAD (N=10):** structured specs do NOT generate more precise gates — prose is most
-  precise; V3/V4 over-specify and false-alarm more. The only clean real V4>V3 remains p7 (anti-vacuity).
+  (p6, no-spec → spec). But among spec FORMS, code-level outcomes tie.
+- **No code-level V4>V3 survives on real code.** p7 (V4>V3 on anti-vacuity) was an artifact of a synthetic
+  spec with no positive obligation; on real Fineract logic (payment-allocation) V3's positive obligations
+  already force the anti-vacuity test, so V4's objective adds nothing. Precision thread also dead (N=10).
+- **What is left for V4 is a CAPABILITY, not a rate:** design-time proof over ALL cases (not tested
+  examples), and provenance / a durable checkable artefact. Yes/no per tool, not a code-quality percentage.
+  A code-level differential benchmark is the wrong instrument to measure it.
 
 This scoreboard is deliberately unflattering where the truth is unflattering. Nine data points in, there is NO demonstrated code-level V4>V3 on real code. The one apparent win (p7)
 was an artifact of a synthetic spec with no positive obligation; on real Fineract logic (payment-allocation)
