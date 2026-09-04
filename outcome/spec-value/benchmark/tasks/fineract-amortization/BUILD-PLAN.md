@@ -21,4 +21,11 @@ Code-level (behavioural match to real code), inherent non-obviousness (real nume
 author), no obfuscation dial (hide only the code), ungameable by language features (score is fidelity, not
 expressiveness). A better spec → a more faithful reconstruction.
 
-## Status: target pinned + staged. Next: step 1 (golden extraction), then the 4-step workflow.
+## Status
+- [x] **Step 1 golden extraction DONE** — TvmFunctions compiles standalone (0 deps); ran the REAL function
+  on a grid -> `golden.json` (102 real cases: 86 rate + 16 discountFactor, incl. the zero-rate edge).
+  Generator: `golden_generator.java` (strip the package line from TvmFunctions.java, javac, run).
+- [ ] Step 2: 3-arm distil (prose/V3/V4 specs from TvmFunctions.java) — allium:distill for V3/V4.
+- [ ] Step 3: hide + reconstruct rate/discountFactor in Python from each spec.
+- [ ] Step 4: differential score vs golden.json (match to golden precision) -> fidelity % per arm.
+Steps 2-4 are one workflow; the oracle (step 1) is now real and reusable.
