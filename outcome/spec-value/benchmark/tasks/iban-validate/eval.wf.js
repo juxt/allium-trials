@@ -29,7 +29,7 @@ function portPrompt(arm, spec) {
   const g = arm === 'none'
     ? `You are implementing an IBAN validator in pure Python. You have ONLY the signature below — infer the full validation (checksum + per-country rules) as best you can.`
     : `Implement an IBAN validator in pure Python, guided by this ${arm} specification. Follow it exactly, including the per-country rules.\n\nSpecification:\n"""\n${spec}\n"""`
-  return `${g}\n\n${API}\n\nReturn the COMPLETE pure-Python module in `code`.`
+  return `${g}\n\n${API}\n\nReturn the COMPLETE pure-Python module in \`code\`.`
 }
 function scorePrompt(code) {
   return `Score a Python IBAN validator against real python-stdnum golden values. Mechanical.
