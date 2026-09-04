@@ -5,6 +5,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 
 | slug | type | domain | gotcha (authentic failure mode) | status |
 |---|---|---|---|---|
+| `loan-status` | reconstruct/behavioural | Fineract loan lifecycle | isClosed quirk | **SATURATED** (prose=V3=V4=100%, all got the quirk). 6th data point: reconstruction-fidelity retired — cannot favour a declarative language |
 | `fineract-amortization` | reconstruct/real | Fineract TVM math | fidelity of a spec-reconstructed `rate()` solver vs real Fineract golden values (differential) | **DONE — INVERTED**: prose 100 / V3 97 / V4 86. Numerical algorithm = wrong code for a declarative language; reconstruction-fidelity favours transcription. Boundary case: where Allium does NOT help |
 | `legacy-terminate` | legacy/objective | worklist drain | termination via max_ops budget | **SATURATED** (all arms 100%) — max_ops was a required signature parameter, too legible; every arm kept and used it |
 | `acct-fee` | feature | account / money | overdraft on an unguarded fee | **SATURATED** (all arms 100%; gotcha too obvious, base code telegraphs the guard) — harden or replace |
