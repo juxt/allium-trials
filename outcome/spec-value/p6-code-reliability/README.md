@@ -149,11 +149,27 @@ exist: larger interacting specs where an obligation is dropped, human authors, o
 where an edit silently breaks an obligation. None of these "told the obligations, implement once"
 tasks produce one, so the check is inert — not worthless, unexercised.
 
-The message-queue arm of the same factorial was too noisy to decompose (N=4 with several
-total-failure agents and a scorer miscount). It is the one place with a *hint* the check might
-carry weight — check and skill beat spec and discipline — but that gap is consistent with sampling,
-not a demonstrated effect. Settling it needs a clean re-run at higher N with crash-vs-miss
-separated in scoring.
+The fiddly message queue told a sharper story once run cleanly (N=10, scoring separating crashed from
+ran-but-missed; all 50 agents ran, 0 crashes):
+
+| baseline | spec | spec+check | spec+discipline | skill |
+|---|---|---|---|---|
+| 52.5% | 57.5% | **12.5%** | 42.5% | **67.5%** |
+
+The explicit spec gives a small lift (+5). But the deterministic check *on its own* is not merely
+inert here — it is **actively harmful**: 12.5%, with 8 of 10 agents scoring zero. Told to write an
+Allium design, make `analyse` report SATISFIES, then "implement to match the design", the agent pours
+effort into the spec and ships hollow Python that asserts the invariants abstractly instead of doing
+the operational work. That is the ceiling failure caught in the act: the very step of checking, unbound
+by the floor-and-reconcile discipline, degrades the code. Only when the discipline binds it (the full
+skill) does the pair become the best arm, 67.5%, +15 over baseline.
+
+So the check carries no independent *positive* weight on either kind of domain. On the clean domains it
+was inert (check = spec); on the fiddly domain, bare, it is a trap. Its worth is entirely conditional on
+the discipline that keeps the spec a floor. This is the strongest evidence yet for *why* the
+ImplementFromSpec skill needs its two rules: without them, adding the checker makes the code worse, not
+better. (Caveat: N=10, agent-authored, so the 42.5–57.5% cluster of baseline/spec/discipline is noisy;
+the robust signals are the bare-check collapse to 12.5% and the skill topping the table.)
 
 ## The law, and the honest limits
 
