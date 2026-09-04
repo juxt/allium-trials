@@ -26,3 +26,23 @@ The gap is SMALL because the 980-case oracle is dominated by INFERABLE compariso
 ~100). The signal lives in the ~5% arbitrary-semantics cases. A sharper task concentrated ONLY on
 non-inferable conventions should widen the gap and confirm: structured > none > prose-when-it-misleads.
 This is the recipe: real code with ARBITRARY/OPAQUE conventions + a graded oracle weighted to them.
+
+## HARD subset (287 non-inferable null-handling cases) — the sharpened signal
+
+| arm | opus | sonnet |
+|---|---|---|
+| none | 94.8 | 88.2 |
+| prose | 86.1 | 100 |
+| v3 | 100 | 100 |
+| v4 | 100 | 100 |
+
+Removing the inferable dilution, the gap is real and clear:
+- **Structured specs (V3/V4) = reliable 100% on both models.** They pin the arbitrary null conventions.
+- **No-spec drops to 88.2% (sonnet) / 94.8% (opus).** A real correctness margin: the mid-tier model misses
+  ~12% of non-inferable null-handling without a spec, and the gap is LARGER for the weaker model (as
+  hypothesised — spec value rises as capability falls).
+- **Prose is unreliable: 86.1% (opus) to 100% (sonnet).** Prose can actively mislead a strong model (Opus
+  below even no-spec Opus). Structured specs did not have this failure mode.
+
+**The first clean positive: on non-inferable real conventions, a structured spec takes a mid-tier model
+from 88% to a reliable 100%, where prose is erratic (86-100%). V3 = V4 here (both structured, both 100).**

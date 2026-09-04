@@ -19,7 +19,8 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 
 | task | none/opus | none/son | prose/opus | prose/son | v3/opus | v3/son | v4/opus | v4/son | reads as |
 |---|---|---|---|---|---|---|---|---|---|
-| mathutil-port | 98.5 | 96.5 | 92.9 | 100 | 100 | 100 | 100 | 100 | FIRST separation: V3/V4=100 pin arbitrary null semantics; no-spec ~97 misses a few; PROSE MISLEADS opus (92.9). |
+| mathutil-port (full 980) | 98.5 | 96.5 | 92.9 | 100 | 100 | 100 | 100 | 100 | V3/V4=100 reliably; no-spec ~97; prose misleads opus. |
+| mathutil-port (HARD 287) | 94.8 | 88.2 | 86.1 | 100 | 100 | 100 | 100 | 100 | **STRONGEST POSITIVE**: structured=100 both; no-spec 88-95 (weaker model worse); prose erratic 86-100. |
 | allocation-reversal | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | saturated — reverse-order was inferable. |
 
 ## The honest one-line summary per finding
