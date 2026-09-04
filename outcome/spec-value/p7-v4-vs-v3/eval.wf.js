@@ -15,14 +15,17 @@ class Store:
     def __init__(self, data=None): ...
     def read(self, key): ...       # fetch from the slow store (this counts as a store read)
     def write(self, key, value): ...
-# The implementation under test exposes:  class Cache: __init__(self, store); get(self, key); put(self, key, value)`
+# The Cache OWNS the store: ALL access goes through the Cache. The store is never written out-of-band —
+# only Cache.put writes it. The implementation under test exposes:
+#   class Cache: __init__(self, store); get(self, key); put(self, key, value)`
 
 // The V4 plan's obligations for the cache (from \`allium plan cache.allium\`), including the objective.
-const V4_OBLIGATIONS = `- SAFETY: invariant never_stale holds — a served value is consistent with the store (never stale).
-- OBJECTIVE (anti-vacuity): served_from_cache is REACHED — a value that was put is actually served FROM the cache, not fetched from the store on every get. An implementation that always misses to the store satisfies never_stale but fails this.`
+// Tightened: correctness is stated only in terms of the cache's own operations (no out-of-band store writes).
+const V4_OBLIGATIONS = `- SAFETY (never_stale): after Cache.put(k, v), Cache.get(k) returns v — a get never serves a value older than the most recent put for that key. (All writes go through the cache; the store is not mutated out-of-band.)
+- OBJECTIVE (anti-vacuity): served_from_cache is REACHED — a value already loaded or put is actually served FROM the cache, so a repeated get for an unchanged key does NOT read the store again. An always-miss implementation satisfies never_stale but fails this.`
 
 // What a V3 spec of the same cache can express: the safety constraint only (V3 has no objective construct).
-const V3_OBLIGATIONS = `- SAFETY: invariant never_stale holds — a served value is consistent with the store (never stale).`
+const V3_OBLIGATIONS = `- SAFETY (never_stale): after Cache.put(k, v), Cache.get(k) returns v — a get never serves a value older than the most recent put for that key. (All writes go through the cache; the store is not mutated out-of-band.)`
 
 function genPrompt(obligations) {
   return `You are generating a pytest test suite for a cache implementation. Here is the interface:
