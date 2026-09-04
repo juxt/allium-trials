@@ -1,6 +1,16 @@
-# Benchmark conclusion — the honest picture (retire reconstruction-fidelity)
+# Benchmark conclusion — the honest picture
 
-Six real data points. The verdict is clear and I am stating it straight.
+> UPDATE (matrix phase, 4 arms x 2 models). The picture below (written after 9 single-model data points)
+> stands for its claims, but the MATRIX added a genuine positive that changes the headline. On real code
+> with NON-INFERABLE conventions (mathutil-port HARD, 287 cases), a **structured spec (V3/V4) reliably
+> yields 100% correct code on both Opus and Sonnet, while no-spec drops to 88% (Sonnet) / 95% (Opus) and
+> prose is erratic (86-100%, can mislead)**. So among spec forms, code production is NOT flat where the
+> behaviour is non-inferable: structured > prose (reliability) > no-spec (correctness margin), and the
+> margin is LARGER for the weaker model. V3 ≈ V4 throughout (both structured). The rest of this document
+> (single-model, mostly inferable tasks) explains why earlier tasks tied: they were inferable or
+> transcription-favouring. The matrix isolates where the spec actually moves code quality.
+
+Nine single-model data points, then the matrix. The verdict, stated straight.
 
 ## What does NOT hold
 
