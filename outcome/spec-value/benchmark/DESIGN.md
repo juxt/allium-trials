@@ -90,6 +90,25 @@ No single task shows the whole ladder; the suite does.
 - **Distillation** shows **V3 < V4**: V4 `analyse` catches an inconsistent or vacuous distilled spec that
   V3 accepts unchecked.
 
+## Legacy modernisation — the domain where the spec is essential, not ceremony
+
+The `acct-fee` slice saturated: a strong model guards a fee by instinct, so V4's check had nothing to
+catch. The lesson generalised — V4's verification catches, for a capable model, mostly bugs it was not
+going to write. The task type that escapes this is **legacy modernisation**: refactor or rewrite a piece
+of legacy code that carries a *load-bearing but surprising* behaviour — a quirk downstream depends on
+precisely because it looks like an accident (Hyrum's Law). A clean rewrite drops it; prose and instinct
+fail by construction, because the behaviour reads as cruft. This is real, abundant, and commercially
+live. The requirements say "modernise / clean up this code, preserving behaviour"; the hidden oracle tests
+that the surprising behaviour survived.
+
+**Where V3 and V4 actually diverge, applied here.** Capturing a *safety* quirk in a spec is something V3
+does too, so a safety-quirk modernisation lands at **prose < V3 ≈ V4** (the spec, either version, carries
+the quirk that prose omits). The clean **V3 < V4** appears only where the preserved behaviour is a
+**liveness / objective** property — "this loop always terminates", "this worker always drains its queue",
+"this retry always gives up within N" — because the objective is the one construct V3 structurally lacks,
+and V4 can now *verify* it (the discharge pass). So legacy modernisation splits cleanly by quirk kind:
+safety quirks demonstrate prose < V3; objective quirks demonstrate V3 < V4.
+
 ## Scoring: a fixed hidden oracle per task
 
 Each task ships a fixed, hidden, executable oracle — a test suite grouped by obligation, the way the p6
