@@ -10,7 +10,7 @@ export const meta = {
 const DIR = '/Users/hgarner/code/allium-trials/outcome/spec-value/benchmark/tasks/loop-guard'
 const JAVA = `${DIR}/original/LoopGuard.java`
 const ALLIUM = '/Users/hgarner/code/allium-tools/target/release/allium'
-const N = 4
+const N = 10
 
 const IFACE = `Python port under test exposes:
   run_safe_while_loop(max_iterations, condition, body)   # condition() -> bool, body() -> None
