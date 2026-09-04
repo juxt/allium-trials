@@ -5,6 +5,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 
 | slug | type | domain | gotcha (authentic failure mode) | status |
 |---|---|---|---|---|
+| `fineract-amortization` | reconstruct/real | Fineract TVM math | fidelity of a spec-reconstructed `rate()` solver vs real Fineract golden values (differential) | target pinned (TvmFunctions 169 LOC); build next |
 | `legacy-terminate` | legacy/objective | worklist drain | termination via max_ops budget | **SATURATED** (all arms 100%) — max_ops was a required signature parameter, too legible; every arm kept and used it |
 | `acct-fee` | feature | account / money | overdraft on an unguarded fee | **SATURATED** (all arms 100%; gotcha too obvious, base code telegraphs the guard) — harden or replace |
 
