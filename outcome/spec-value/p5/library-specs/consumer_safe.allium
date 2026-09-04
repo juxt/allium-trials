@@ -1,8 +1,8 @@
 -- allium: 4
 -- A CORRECT consumer (the Achronic Warden shape): it dedups before applying, so it honours the
 -- at-least-once obligation. Must SATISFY the Kafka library contract.
-use "kafka_at_least_once.allium"
-component WardenConsumer satisfies (k : KafkaAtLeastOnce)
+use "kafka_at_least_once.allium" as kafka
+component WardenConsumer satisfies (k : kafka/KafkaAtLeastOnce)
   entity Event
   observable state applied(Event) : bool
   observable state deduped(Event) : bool

@@ -1,7 +1,7 @@
 -- allium: 4
 -- A reporting client that RELIES on the store enforcing non-negative balances (so it need not re-check).
 -- An ARITHMETIC rely, discharged by the store's numeric guarantee.
-use "fineract_store_guarantees.allium"
+use "fineract_store_guarantees.allium" as store
 component BalanceReporter
   entity U
   observable state committed(U) : bool

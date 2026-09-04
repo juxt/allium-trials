@@ -2,8 +2,8 @@
 -- A NAIVE client that commits writes without a fencing token — the classic stale-lock-holder bug: after its
 -- lock silently expires, its writes still land and corrupt shared state. Referencing the lock library spec
 -- catches it: it does NOT satisfy the fencing obligation.
-use "distributed_lock.allium"
-component UnfencedWriter satisfies (l : DistributedLock)
+use "distributed_lock.allium" as lock
+component UnfencedWriter satisfies (l : lock/DistributedLock)
   entity Write
   observable state committed(Write) : bool
   observable state fenced(Write) : bool

@@ -1,6 +1,6 @@
 -- allium: 4
 -- Relies on the lock's mutual exclusion — which the lock guarantees. DISCHARGED.
-use "lock_guarantees.allium"
+use "lock_guarantees.allium" as lock
 component ExclusiveClient
   entity Client
   observable state granted(Client) : bool

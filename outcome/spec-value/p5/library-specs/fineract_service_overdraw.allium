@@ -1,8 +1,8 @@
 -- allium: 4
 -- A client that commits a post without guarding the balance — it can drive an account negative, which the
 -- store's CHECK constraint rejects at runtime. Fails obligation 2.
-use "fineract_loan_store.allium"
-component OverdrawService satisfies (db : LoanAccountStore)
+use "fineract_loan_store.allium" as store
+component OverdrawService satisfies (db : store/LoanAccountStore)
   entity Post
   observable state committed(Post) : bool
   observable state version_checked(Post) : bool

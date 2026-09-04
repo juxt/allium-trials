@@ -1,8 +1,8 @@
 -- allium: 4
 -- A NAIVE consumer that applies events without deduping — it silently assumes exactly-once delivery.
 -- Referencing the Kafka library spec CATCHES this: it does NOT satisfy the at-least-once obligation.
-use "kafka_at_least_once.allium"
-component NaiveConsumer satisfies (k : KafkaAtLeastOnce)
+use "kafka_at_least_once.allium" as kafka
+component NaiveConsumer satisfies (k : kafka/KafkaAtLeastOnce)
   entity Event
   observable state applied(Event) : bool
   observable state deduped(Event) : bool

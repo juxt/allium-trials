@@ -1,7 +1,7 @@
 -- allium: 4
 -- Relies on EXACTLY-ONCE (no duplicates) — which Kafka does NOT guarantee. The rely is NOT discharged:
 -- the consumer assumes a property its dependency never promises. The latent bug the dual direction catches.
-use "kafka_guarantees.allium"
+use "kafka_guarantees.allium" as kafka
 component ExactlyOnceConsumer
   entity Msg
   observable state consumed(Msg) : bool

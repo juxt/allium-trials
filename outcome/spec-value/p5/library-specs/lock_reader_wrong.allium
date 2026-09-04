@@ -2,7 +2,7 @@
 -- Relies on the lock ALONE keeping its writes fresh — the classic wrong assumption. The lock guarantees
 -- exclusivity of the grant, NOT that a stale holder never writes; that is what fencing tokens are for. The
 -- rely is NOT discharged: the deep distributed-locking bug, caught from the reliance side.
-use "lock_guarantees.allium"
+use "lock_guarantees.allium" as lock
 component AssumesFreshness
   entity Client
   observable state granted(Client) : bool
