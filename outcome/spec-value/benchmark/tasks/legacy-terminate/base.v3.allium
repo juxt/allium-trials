@@ -1,0 +1,10 @@
+-- allium: 3
+spec Drainer {
+  entity Drain { remaining: Integer }
+  invariant NonNegative { for d in Drains: d.remaining >= 0 }
+  rule Drain {
+    when: DrainStep(drain, size)
+    requires: drain.remaining >= 1
+    ensures: drain.remaining = drain.remaining - size
+  }
+}

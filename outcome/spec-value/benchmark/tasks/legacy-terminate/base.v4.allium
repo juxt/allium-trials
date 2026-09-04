@@ -1,0 +1,13 @@
+-- allium: 4
+component Drainer
+  entity D
+  observable state remaining : Number
+  observable state drained : bool
+  invariant nn means remaining >= 0
+  -- each step takes a batch and reduces the work left; the batch is floored at 1 so progress is real.
+  action drain
+    requires remaining >= 1
+    ensures remaining = old(remaining) - 1
+  objective drained within done
+    measure remaining decreasing
+end
