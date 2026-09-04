@@ -1,0 +1,15 @@
+-- allium: 4
+-- A write-through cache. Safety: never serve a stale value. Objective (the anti-vacuity floor):
+-- a value that was put is actually served FROM the cache, not fetched from the store every time.
+component Cache
+  entity Key
+  observable state served(Key) : bool
+  observable state consistent_with_store(Key) : bool
+  observable state served_from_cache(Key) : bool
+  invariant never_stale means served(k) implies consistent_with_store(k)
+  action get
+    ensures served(k)
+  action put
+    ensures consistent_with_store(k)
+  objective served_from_cache(k) within one_access
+end
