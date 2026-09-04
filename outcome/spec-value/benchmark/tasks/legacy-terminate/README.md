@@ -11,3 +11,16 @@ drains all items. Requirements state "modernise this", never the termination rol
 The V4 spec records this as an `objective ... measure remaining decreasing` — a first-class, checkable
 must-hold property. V3 has no construct for it, so the termination requirement is not recorded at all;
 prose omits it because it is non-obvious. Tests whether that difference shows up as V3 < V4.
+
+## Result (N=4 per arm) — SATURATED
+
+| arm | coverage | hang (non-termination) |
+|---|---|---|
+| prose | 100% | 0% |
+| V3 | 100% | 0% |
+| V4 | 100% | 0% |
+
+Saturated. Every agent preserved the floor guard when modernising, because it is a VISIBLE line in the
+source and a strong model preserves visible logic faithfully. The trap only works if the termination
+guarantee is invisible in the code (an emergent property), which is very hard to construct credibly.
+Same lesson as acct-fee, one level up: a strong model does not drop code it can see.
