@@ -1,0 +1,11 @@
+-- allium: 3
+spec Reversal {
+  entity Allocation { bucket: Bucket, amount: Integer }
+  -- Priority order (highest first): PAST_DUE {PENALTY,FEE,PRINCIPAL,INTEREST}, then DUE {...}, then IN_ADVANCE {...}.
+  rule Reverse {
+    when: ReverseRequested(allocations, amount)
+    ensures: allocations are unwound in REVERSE priority order (lowest priority first);
+             each bucket reversed by at most its allocated amount;
+             total reversed = min(amount, sum of allocated amounts)
+  }
+}

@@ -1,0 +1,11 @@
+-- allium: 4
+component Reversal
+  entity Bucket
+  observable state allocated(Bucket) : Money
+  observable state reversed(Bucket) : Money
+  -- Priority (highest first): PAST_DUE{PENALTY,FEE,PRINCIPAL,INTEREST} > DUE{...} > IN_ADVANCE{...}.
+  invariant no_over_reverse means reversed(b) <= allocated(b)
+  invariant reverse_order means a reversal fills buckets in REVERSE priority order (lowest priority first)
+  objective refund_applied within one_pass
+    -- total reversed reaches min(amount, total allocated); the refund is fully applied while allocations remain
+end
