@@ -28,7 +28,7 @@ const DISTIL = {
 
 const SPEC_SCHEMA = { type: 'object', properties: { spec: { type: 'string' } }, required: ['spec'] }
 const CODE_SCHEMA = { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] }
-const SCORE_SCHEMA = { type: 'object', properties: { matched: { type: 'integer' }, total: { type: 'integer' } }, required: ['matched', 'total'] }
+const SCORE_SCHEMA = { type: 'object', properties: { matched: { type: 'integer' }, total: { type: 'integer' }, matched_hard: { type: 'integer' }, total_hard: { type: 'integer' } }, required: ['matched', 'total', 'matched_hard', 'total_hard'] }
 
 function portPrompt(arm, spec) {
   const guidance = arm === 'none'
@@ -39,10 +39,11 @@ function portPrompt(arm, spec) {
 
 function scorePrompt(code) {
   return `Score a Python port against real golden values. Mechanical.
-1. D=$(mktemp -d); cp ${DIR}/golden.json ${DIR}/score.py "$D"/
+1. D=$(mktemp -d); cp ${DIR}/golden.json ${DIR}/golden_hard.json ${DIR}/score.py ${DIR}/score_hard.py "$D"/
 2. Write the module below to "$D"/solution.py exactly as given.
-3. cd "$D" && SOLUTION=solution python3 score.py   -> prints "matched/total".
-Report matched and total. If it errors on import, matched=0.
+3. cd "$D" && SOLUTION=solution python3 score.py       -> "matched/total" (full 980)
+4. cd "$D" && SOLUTION=solution python3 score_hard.py  -> "matched_hard/total_hard" (287 null-handling)
+Report all four numbers. If it errors on import, all zero.
 
 Module:
 \`\`\`python
@@ -75,7 +76,11 @@ const summary = {}
 for (const arm of ['none', 'prose', 'v3', 'v4']) for (const model of MODELS) {
   const rs = results.filter(Boolean).filter(r => r.arm === arm && r.model === model)
   const n = rs.length || 1
-  summary[`${arm}/${model}`] = { n: rs.length, score_pct: Number((rs.reduce((a, r) => a + (r.total ? r.matched / r.total : 0), 0) / n * 100).toFixed(1)) }
+  summary[`${arm}/${model}`] = {
+    n: rs.length,
+    score_pct: Number((rs.reduce((a, r) => a + (r.total ? r.matched / r.total : 0), 0) / n * 100).toFixed(1)),
+    hard_pct: Number((rs.reduce((a, r) => a + (r.total_hard ? r.matched_hard / r.total_hard : 0), 0) / n * 100).toFixed(1)),
+  }
 }
-log(`mathutil-port  opus[none ${summary['none/opus'].score_pct} prose ${summary['prose/opus'].score_pct} v3 ${summary['v3/opus'].score_pct} v4 ${summary['v4/opus'].score_pct}]  sonnet[none ${summary['none/sonnet'].score_pct} prose ${summary['prose/sonnet'].score_pct} v3 ${summary['v3/sonnet'].score_pct} v4 ${summary['v4/sonnet'].score_pct}]`)
+log(`mathutil-port HARD  opus[none ${summary['none/opus'].hard_pct} prose ${summary['prose/opus'].hard_pct} v3 ${summary['v3/opus'].hard_pct} v4 ${summary['v4/opus'].hard_pct}]  sonnet[none ${summary['none/sonnet'].hard_pct} prose ${summary['prose/sonnet'].hard_pct} v3 ${summary['v3/sonnet'].hard_pct} v4 ${summary['v4/sonnet'].hard_pct}]`)
 return { task: 'mathutil-port', N, summary, specs, raw: results.filter(Boolean) }
