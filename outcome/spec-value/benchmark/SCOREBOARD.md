@@ -14,6 +14,14 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | `payment-allocation` | gate | Fineract alloc order (REAL) | catches vacuous impl | 100 | **100** | 100 | p7 does NOT replicate: V3's order obligation already forces the anti-vacuity test. V4 adds nothing. |
 | p6 (bespoke stores) | greenfield | sorted/metric store | obligation coverage | 20 (no-spec) | → 100 (spec) | 100 | writing the obligation down (any form) is the win; elicitation. |
 
+
+## Matrix results (4 arms x 2 models) — code quality %
+
+| task | none/opus | none/son | prose/opus | prose/son | v3/opus | v3/son | v4/opus | v4/son | reads as |
+|---|---|---|---|---|---|---|---|---|---|
+| mathutil-port | 98.5 | 96.5 | 92.9 | 100 | 100 | 100 | 100 | 100 | FIRST separation: V3/V4=100 pin arbitrary null semantics; no-spec ~97 misses a few; PROSE MISLEADS opus (92.9). |
+| allocation-reversal | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | saturated — reverse-order was inferable. |
+
 ## The honest one-line summary per finding
 
 - **On real code, first-draft/reconstruction quality is FLAT** across the three for a strong model — a
