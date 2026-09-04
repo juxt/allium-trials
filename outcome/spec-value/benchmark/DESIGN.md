@@ -35,6 +35,61 @@ dropped or hardened. This is the single most important selection rule, and it is
 *test-generation* probe (does the objective yield the anti-vacuity test) but a poor *implementation*
 task (everyone caches).
 
+## Credibility: real tasks, real failure modes
+
+A non-obvious obligation must be a *real* one — a constraint whose omission causes an actual production
+bug — not an invented gotcha. The task is a task a working engineer recognises; the scored obligation is
+the thing engineers genuinely get wrong on it. Lost pennies when a money amount is split and the
+remainder is dropped; a stale read after an invalidation is missed; a message silently dropped on
+redelivery; an index that returns wrong answers when keys are written out of order. If a credible task
+would otherwise saturate, it is desaturated by scoring its real hard part, never by bolting on an
+artificial trap. We do not invent tasks; we find the authentic failure mode inside a real one.
+
+## Fairness model — what is held equal, and what is not
+
+Elicitation (surfacing an obligation the author did not know) depends on the author, not the tool, so it
+is not what a fair comparison isolates. The three specs for a task are therefore **equivalent in intent**:
+each states the same obligations, written the way that tool's author would. What differs is the tool's
+own workflow, and each arm runs it:
+
+- **prose** — a good-faith natural-language spec, read and implemented.
+- **V3** — the same intent as idiomatic V3, with its propagate / weed workflow available.
+- **V4** — the same intent in V4, plus what only V4 can do: `check` / `analyse` the design, state and
+  discharge objectives, reference a library spec.
+
+So the benchmark isolates **guidance** (does the representation help an implementer realise a stated
+obligation) and **verification** (does the tool catch when the code or spec is wrong), not who happened
+to know the obligation. Each task's three specs are signed off as fair before it runs — that judgement is
+human, per task, and is the part most open to a reviewer's challenge.
+
+### Workflow-realistic (the model we run)
+
+Refined after the greenfield-saturation problem: if all three specs state the same obligations, a
+greenfield task saturates and shows nothing. So the arms are **workflow-realistic**. Every arm starts
+from the SAME task requirements — which state the goal but NOT the non-obvious gotcha — and each uses its
+tool's real workflow to get to code: prose implements directly; V3 builds a V3 spec (its process) then
+implements; V4 builds a V4 spec, runs `check`/`analyse`, states objectives, then implements. The hidden
+oracle scores the full outcome, every obligation including the gotcha and (for feature/update) the
+existing behaviour. This includes elicitation, which is a real tool capability, and is fair as long as
+each arm gets its own best workflow (prose is a thoughtful author, not a strawman).
+
+Fairness then reduces to two human, per-task judgements that cannot be automated: the task is CREDIBLE,
+and its gotcha is an AUTHENTIC failure mode. It is no longer a hand-equalised spec to sign off.
+
+### The ladder decomposes across task types
+
+No single task shows the whole ladder; the suite does.
+
+- **Greenfield** shows **prose < V3**: the structured process elicits the non-obvious obligation prose
+  omits. V3 ≈ V4 here — once an obligation is stated, implementing it is easy — so greenfield is a weak
+  V3-vs-V4 discriminator.
+- **Feature-addition / update-behaviour** shows **V3 < V4**: V4's `analyse` flags at spec-time,
+  deterministically, that the change breaks an existing invariant or objective; V3 and prose rely on
+  regenerated tests happening to cover the regression, or ship it. The oracle's existing-behaviour tests
+  are what surface it. Same deterministic-check-vs-luck theme as the p7 anti-vacuity result.
+- **Distillation** shows **V3 < V4**: V4 `analyse` catches an inconsistent or vacuous distilled spec that
+  V3 accepts unchecked.
+
 ## Scoring: a fixed hidden oracle per task
 
 Each task ships a fixed, hidden, executable oracle — a test suite grouped by obligation, the way the p6
