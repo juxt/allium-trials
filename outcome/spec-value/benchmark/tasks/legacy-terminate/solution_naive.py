@@ -1,9 +1,7 @@
 def drain(queue, process, max_ops):
     pending = list(queue)
-    ops = max_ops
-    while pending and ops > 0:
+    while pending:
         item = pending.pop(0)
-        ops -= 1
         if not process(item):
             pending.append(item)
     return pending

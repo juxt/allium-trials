@@ -109,35 +109,6 @@ the quirk that prose omits). The clean **V3 < V4** appears only where the preser
 and V4 can now *verify* it (the discharge pass). So legacy modernisation splits cleanly by quirk kind:
 safety quirks demonstrate prose < V3; objective quirks demonstrate V3 < V4.
 
-## What two saturations taught us (the honest pivot)
-
-`acct-fee` and `legacy-terminate` both saturated — all three arms 100%. Together with the p6 queue and
-cache saturating for implementation, the pattern is unambiguous and it must shape the benchmark:
-
-**Strong models are good at implementation, so a spec's guidance rarely changes the first-draft outcome.**
-On any task where the correct behaviour is visible in the code (modernisation) or inferable from the
-interface (a fee, a cache), all three arms converge, and a V3-vs-V4 pass-rate gap does not appear, because
-V4's checker catches, for a capable model, mostly bugs it was not going to write.
-
-Two axes survive this, and the benchmark should live on them:
-
-1. **prose < V3 — elicitation, on implementation.** The gap appears only where the obligation is genuine
-   *domain knowledge absent from the code* — the bespoke stores (write keys ascending; a hidden batch
-   capacity), where p6 measured baseline 20% against 100% with the spec. So prose<V3 tasks must hide the
-   obligation from the code and the interface entirely; it lives in the author's head, and the structured
-   process is what extracts it.
-
-2. **V3 < V4 — the produced artifact, not the pass rate.** The clean, repeatable V4>V3 win is p7:
-   `allium plan` on a v4 spec emits an OBJECTIVE (anti-vacuity) test obligation, and a suite generated from
-   it catches a vacuous implementation 100% of the time versus ~0% for V3, because the objective is a
-   construct V3 structurally lacks. V4's edge is what the spec *produces and can check* — a test V3 cannot
-   generate, a termination guarantee V3 cannot state — i.e. **assurance**, not first-draft correctness.
-
-So the benchmark measures two different things by task type: for prose<V3, implementation pass rate on a
-domain-knowledge task; for V3<V4, the coverage/effectiveness of the *artifact the tool produces* (tests
-generated, guarantees checked). Forcing V3<V4 onto implementation pass rate keeps saturating and should be
-abandoned — it measures the model, not the tool.
-
 ## Scoring: a fixed hidden oracle per task
 
 Each task ships a fixed, hidden, executable oracle — a test suite grouped by obligation, the way the p6

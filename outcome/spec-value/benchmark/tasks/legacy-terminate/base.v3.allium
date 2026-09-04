@@ -1,10 +1,6 @@
 -- allium: 3
-spec Drainer {
-  entity Drain { remaining: Integer }
-  invariant NonNegative { for d in Drains: d.remaining >= 0 }
-  rule Drain {
-    when: DrainStep(drain, size)
-    requires: drain.remaining >= 1
-    ensures: drain.remaining = drain.remaining - size
-  }
+spec Drain {
+  entity Drain { ops: Integer }
+  invariant OpsNonNegative { for d in Drains: d.ops >= 0 }
+  rule Step { when: StepRequested(drain) requires: drain.ops >= 1 ensures: drain.ops = drain.ops - 1 }
 }

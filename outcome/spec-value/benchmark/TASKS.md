@@ -5,6 +5,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 
 | slug | type | domain | gotcha (authentic failure mode) | status |
 |---|---|---|---|---|
+| `legacy-terminate` | legacy/objective | worklist drain | a max_ops budget is a non-obvious TERMINATION guarantee (bounds retries); a 'drain until empty' rewrite loops forever on a poison item | running |
 | `acct-fee` | feature | account / money | overdraft on an unguarded fee | **SATURATED** (all arms 100%; gotcha too obvious, base code telegraphs the guard) — harden or replace |
 
 Planned (design in DESIGN.md): a second of each type across domains — greenfield (sorted-segment store,
