@@ -8,7 +8,6 @@ const SEG = '/Users/hgarner/code/allium-trials/outcome/spec-value/benchmark/task
 const ALLIUM = '/Users/hgarner/code/allium-tools/target/release/allium'
 const N = 3
 const MODELS = ['opus', 'sonnet']
-const fs = require ? null : null
 // the buggy source is read by an agent from disk (kept out of the JS)
 const SYMPTOM = `A bug report: the address "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4" is a valid Bitcoin SegWit address, but decode('bc', <it>) returns (None, None), and encode('bc', 0, bytes.fromhex('751e76e8199196d454941c45d1b3a323f1433bd6')) returns the wrong address (a wrong checksum). The checksum math is off.`
 const DISTIL = {
