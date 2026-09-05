@@ -10,6 +10,7 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | `loan-status` | reconstruct | Fineract LoanStatus state machine | fidelity vs 168 golden | 100 | 100 | 100 | tie — simple enum behaviour transcribes losslessly into any form. |
 | `loop-guard` | gate | Fineract LoopGuard (termination guard) | catches guard-removed regression | 100 | 100 | 100 | tie on catch (guard too obvious); precision differs → next row |
 | `loop-guard` | gate | Fineract LoopGuard | passes correct (precision), N=10 | **80** | 50 | 40 | INVERTED at N=10 — prose MOST precise; structured specs over-specify → more false alarms. Precision thread dead. |
+| iban-validate (3rd codebase, N=3 partial) | 96.4 | 96.4 | 98.2 | 100 | 96.4 | 64.3* | 98.8 | fail** | small gap: mod-97 inferable (~96 all); only the BE national-check case separates, specs catch it sometimes. *broken run **v4/sonnet prompt-too-long |
 | p7 (cache) | gate | cache anti-vacuity (SYNTHETIC) | catches vacuous impl | — | ~0 | 100 | V4>V3 — but ONLY because V3's spec was pure safety (no positive obligation). |
 | `payment-allocation` | gate | Fineract alloc order (REAL) | catches vacuous impl | 100 | **100** | 100 | p7 does NOT replicate: V3's order obligation already forces the anti-vacuity test. V4 adds nothing. |
 | p6 (bespoke stores) | greenfield | sorted/metric store | obligation coverage | 20 (no-spec) | → 100 (spec) | 100 | writing the obligation down (any form) is the win; elicitation. |
