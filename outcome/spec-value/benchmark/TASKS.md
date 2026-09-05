@@ -13,6 +13,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 | `charge-calc` | reconstruct/MATRIX | Fineract ChargeCalculationType | savings-allow rule | specs=100, no-spec ~98 (mostly inferable). Confirms pattern |
 | `isin-validate` | validate/MATRIX/3rd-codebase | python-stdnum | ISIN check-digit (Luhn-over-expanded-letters) non-inferable; 21 graded; 4 arms x 2 models | queued |
 | `iban-validate` | validate/MATRIX/3rd-codebase | python-stdnum | IBAN validator; mod-97 inferable but per-country length/format + national checks non-inferable; 28 graded; 4 arms x 2 models | running |
+| `bech32-segwit` | port/MATRIX/4th-codebase/CRYPTO | bech32 reference | SegWit encode/decode; charset+polymod highly non-inferable; BIG-GAP anchor; 26 graded; 4 arms x 2 models | queued |
 | `npf-annuity` | port/MATRIX/2nd-codebase | numpy-financial | port 5 annuity fns; non-inferable sign+when conventions vs inferable formula; 162 graded; 4 arms x 2 models | running |
 | `mathutil-port` | port/MATRIX | Fineract MathUtil | reconstruct 20 numeric utils; arbitrary null semantics | **FIRST SIGNAL**: V3/V4=100 > none ~97 > prose/opus 92.9 (prose misleads). Small gap, diluted by inferable cases |
 | `fineract-amortization` | reconstruct/real | Fineract TVM math | fidelity of a spec-reconstructed `rate()` solver vs real Fineract golden values (differential) | **DONE — INVERTED**: prose 100 / V3 97 / V4 86. Numerical algorithm = wrong code for a declarative language; reconstruction-fidelity favours transcription. Boundary case: where Allium does NOT help |
