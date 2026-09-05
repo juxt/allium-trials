@@ -13,7 +13,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 | `charge-calc` | reconstruct/MATRIX | Fineract ChargeCalculationType | savings-allow rule | specs=100, no-spec ~98 (mostly inferable). Confirms pattern |
 | `isin-validate` | validate/MATRIX/3rd-codebase | python-stdnum | ISIN check-digit (Luhn-over-expanded-letters) non-inferable; 21 graded; 4 arms x 2 models | queued |
 | `iban-validate` | validate/MATRIX/3rd-codebase | python-stdnum | IBAN validator; mod-97 inferable but per-country length/format + national checks non-inferable; 28 graded; 4 arms x 2 models | running |
-| `bech32-bugfix` | bugfix/MATRIX/crypto | bech32 | fix a corrupted polymod constant; correct value non-inferable; does BUGFIX separate? 26 graded; 4 arms x 2 models | queued |
+| `bech32-bugfix` | bugfix/MATRIX/crypto | bech32 | fix a corrupted polymod constant | **SATURATED** (all arms 100%) — bugfix does NOT separate: buggy code is PRESENT so no spec needed. Key: spec-as-input helps only when intent is ABSENT (reconstruct); editing visible code collapses the gap |
 | `us-workday` | reconstruct/MATRIX/5th-codebase | workalendar | US business-day calendar; floating federal holidays non-inferable; 366 full + 10-holiday hard; 4 arms x 2 models | queued |
 | `bech32-segwit` | port/MATRIX/4th-codebase/CRYPTO | bech32 reference | SegWit encode/decode; charset+polymod highly non-inferable; BIG-GAP anchor; 26 graded; 4 arms x 2 models | queued |
 | `npf-annuity` | port/MATRIX/2nd-codebase | numpy-financial | port 5 annuity fns; non-inferable sign+when conventions vs inferable formula; 162 graded; 4 arms x 2 models | running |
