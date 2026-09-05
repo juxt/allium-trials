@@ -23,7 +23,8 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | mathutil-port (full 980) | 98.5 | 96.5 | 92.9 | 100 | 100 | 100 | 100 | 100 | V3/V4=100 reliably; no-spec ~97; prose misleads opus. |
 | mathutil-port (HARD 287) | 94.8 | 88.2 | 86.1 | 100 | 100 | 100 | 100 | 100 | **STRONGEST POSITIVE**: structured=100 both; no-spec 88-95 (weaker model worse); prose erratic 86-100. |
 | loan-status-matrix | 98.8 | 98.0 | 100 | 100 | 100 | 100 | 100 | 100 | all specs=100; no-spec ~98 (isClosed quirk). Small gap = mostly-inferable. |
-| charge-calc | 98.8 | 98.1 | 100 | 100 | 100 | 100 | 100 | 100 | all specs=100; no-spec ~98 (savings-allow rule mostly inferable). Confirms pattern, 2nd domain. |
+| charge-calc | 98.8 | 98.1 | 100 | 100 | 100 | 100 | 100 | 100 | all specs=100; no-spec ~98. |
+| charge-time (357 golden) | 99.5 | 98.2 | 100 | 100 | 100 | 100 | 100 | 100 | 3rd enum confirm: specs=100; no-spec ~98-99 (misses allow-groupings); sonnet worse. |
 | allocation-reversal | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | saturated — reverse-order was inferable. |
 
 ## The honest one-line summary per finding
