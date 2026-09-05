@@ -16,7 +16,7 @@ const MODELS = ['opus', 'sonnet']
 
 const API = `Expose exactly these pure-Python functions:
   encode(hrp: str, witver: int, witprog: bytes) -> str | None   # a bech32 SegWit address, or None if inputs invalid
-  decode(hrp: str, addr: str) -> tuple                          # (witver, witprog_bytes) or (None, None) if invalid`when\` is 0 or 1.`
+  decode(hrp: str, addr: str) -> tuple                          # (witver, witprog_bytes) or (None, None) if invalid`
 
 const DISTIL = {
   prose: `Read the real source at ${SRC} (bech32 reference). Write a PRECISE prose spec of bech32 SegWit encode/decode: the charset, the polymod checksum (generator constants), HRP expansion, the 8-to-5-bit conversion, and the witness-version rules. A reimplementer must reproduce the exact algorithm. Return it in \`spec\`.`,
