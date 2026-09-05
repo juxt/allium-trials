@@ -19,9 +19,9 @@ const API = `Expose exactly these pure-Python functions:
   decode(hrp: str, addr: str) -> tuple                          # (witver, witprog_bytes) or (None, None) if invalid`
 
 const DISTIL = {
-  prose: `Read the real source at ${SRC} (bech32 reference). Write a PRECISE prose spec of bech32 SegWit encode/decode: the charset, the polymod checksum (generator constants), HRP expansion, the 8-to-5-bit conversion, and the witness-version rules. A reimplementer must reproduce the exact algorithm. Return it in \`spec\`.`,
-  v3: `Read the real source at ${SRC} (bech32 reference). Distil an Allium v3 spec of bech32 SegWit encode/decode capturing the charset, polymod, HRP expansion and conversion. Return the v3 spec in \`spec\`.`,
-  v4: `Read the real source at ${SRC} (bech32 reference). Distil an Allium v4 spec of bech32 SegWit encode/decode capturing the charset, polymod, HRP expansion, conversion and invariants. You may run \`${ALLIUM} analyse\`. Return the v4 spec in \`spec\`.`,
+  prose: `Read the real source at ${SRC} (bech32 reference). Write a PRECISE prose spec of bech32 SegWit encode/decode: the charset, the polymod checksum (generator constants), HRP expansion, the 8-to-5-bit conversion, and the witness-version rules. A reimplementer must reproduce the exact algorithm. Keep it CONCISE (under ~200 lines, no verbatim code dumps). Return it in \`spec\`.`,
+  v3: `Read the real source at ${SRC} (bech32 reference). Distil an Allium v3 spec of bech32 SegWit encode/decode capturing the charset, polymod, HRP expansion and conversion. Keep it CONCISE (under ~200 lines). Return the v3 spec in \`spec\`.`,
+  v4: `Read the real source at ${SRC} (bech32 reference). Distil an Allium v4 spec of bech32 SegWit encode/decode capturing the charset, polymod, HRP expansion, conversion and invariants. Keep it CONCISE (under ~200 lines). You may run \`${ALLIUM} analyse\`. Return the v4 spec in \`spec\`.`,
 }
 const SPEC_SCHEMA = { type: 'object', properties: { spec: { type: 'string' } }, required: ['spec'] }
 const CODE_SCHEMA = { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] }
