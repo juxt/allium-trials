@@ -11,6 +11,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 | `allocation-reversal` | feature-add/MATRIX | Fineract alloc domain | add reverse(); reverse-order unwind | **SATURATED** (all arms 100% both models) — the order WAS inferable; models guess the natural intent |
 | `charge-time` | reconstruct/MATRIX | Fineract ChargeTimeType | 21 predicates x 17 types; non-inferable allow-groupings (loan/savings/client); 357 graded; 4 arms x 2 models | queued |
 | `charge-calc` | reconstruct/MATRIX | Fineract ChargeCalculationType | savings-allow rule | specs=100, no-spec ~98 (mostly inferable). Confirms pattern |
+| `isin-validate` | validate/MATRIX/3rd-codebase | python-stdnum | ISIN check-digit (Luhn-over-expanded-letters) non-inferable; 21 graded; 4 arms x 2 models | queued |
 | `iban-validate` | validate/MATRIX/3rd-codebase | python-stdnum | IBAN validator; mod-97 inferable but per-country length/format + national checks non-inferable; 28 graded; 4 arms x 2 models | running |
 | `npf-annuity` | port/MATRIX/2nd-codebase | numpy-financial | port 5 annuity fns; non-inferable sign+when conventions vs inferable formula; 162 graded; 4 arms x 2 models | running |
 | `mathutil-port` | port/MATRIX | Fineract MathUtil | reconstruct 20 numeric utils; arbitrary null semantics | **FIRST SIGNAL**: V3/V4=100 > none ~97 > prose/opus 92.9 (prose misleads). Small gap, diluted by inferable cases |
