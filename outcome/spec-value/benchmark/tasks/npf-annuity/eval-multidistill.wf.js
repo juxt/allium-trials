@@ -26,7 +26,7 @@ where \`when\` is 0 or 1.`
 function distilPrompt(arm, k) {
   const lens = ['Focus on completeness of every formula and edge case.', 'Focus on the conventions a reimplementer would otherwise get wrong.', 'Write it as you naturally would for a colleague porting the code.'][k % 3]
   const which = arm === 'v3' ? 'Allium v3' : 'Allium v4'
-  return `Read the real source at ${SRC} (numpy-financial). Distil a ${which} specification of pmt, fv, pv, ppmt, ipmt capturing the formulas and the sign/when conventions. ${lens}${arm === 'v4' ? ` You may run \`${ALLIUM} analyse\`.` : ''} Return the spec in \`spec\`.`
+  return `Read the real source at ${SRC} (numpy-financial). Distil a ${which} specification of pmt, fv, pv, ppmt, ipmt capturing the formulas and the sign/when conventions. ${lens} Keep the spec CONCISE — under ~250 lines, no verbatim code dumps.${arm === 'v4' ? ` You may run \`${ALLIUM} analyse\`.` : ''} Return the spec in \`spec\`.`
 }
 function portPrompt(arm, spec) {
   return `Implement the cash-flow/annuity functions in pure Python, guided by this ${arm} specification. Follow it exactly, including the sign convention and the when flag.\n\nSpecification:\n"""\n${spec}\n"""\n\n${API}\n\nReturn the COMPLETE pure-Python module in \`code\` (no numpy).`
