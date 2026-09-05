@@ -11,7 +11,7 @@ export const meta = {
 const DIR = '/Users/hgarner/code/allium-trials/outcome/spec-value/benchmark/tasks/npf-annuity'
 const SRC = `${DIR}/original/_financial.py`
 const ALLIUM = '/Users/hgarner/code/allium-tools/target/release/allium'
-const N = 8
+const N = 5
 const MODELS = ['opus', 'sonnet']
 
 const API = `Expose exactly these pure-Python functions (plain floats, NO numpy):
