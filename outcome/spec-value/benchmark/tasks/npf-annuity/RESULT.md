@@ -1,24 +1,32 @@
-# npf-annuity result — 2nd codebase; bigger, noisier gap; first v4>v3 hint
+# npf-annuity result (N=5, clean) — richest data point + a methodological caveat
 
-Port pmt/fv/pv/ppmt/ipmt from spec (hidden numpy-financial source). 162 real golden. N=3.
+Port pmt/fv/pv/ppmt/ipmt from spec (hidden numpy-financial source). 162 golden. Bimodal: each run scored
+162 (got the pmt sign/when convention) or 108 (missed it, all 54 pmt cases wrong).
 
-| arm | opus | sonnet |
-|---|---|---|
-| none | 88.9 | 77.8 |
-| prose | 100 | 77.8 |
-| v3 | 88.9 | 100 |
-| v4 | 100 | 100 |
+## Reliability — fraction of runs that got the convention (10 runs/arm across both models)
 
-**Bimodal**: every run scored either 162/162 or 108/162. 108 = missing the entire `pmt` block (54 cases),
-i.e. the non-inferable pmt SIGN/WHEN convention is a wholesale right-or-wrong. Reliability across all 6 runs
-(both models) per arm:
-- **v4: 6/6** (never missed the convention)
-- v3: 5/6
-- prose: 4/6
-- none: 4/6
+| arm | opus | sonnet | combined |
+|---|---|---|---|
+| none | 3/5 | **0/5** | 3/10 |
+| prose | 5/5 | 1/5 | 6/10 |
+| v3 | 3/5 | 1/5 | 4/10 |
+| v4 | 5/5 | 4/5 | **9/10** |
 
-**Findings:** (1) The recipe generalises to a 2nd codebase — a non-inferable convention creates a real gap,
-BIGGER than the Fineract enums (67% floor when missed) but NOISIER. (2) **First hint of v4 > v3** (v4 6/6
-vs v3 5/6) — but N=3 and bimodal, so this needs a higher-N rerun to confirm vs noise. (3) Prose again
-unreliable (prose/sonnet 4/6... actually 1/3 hits on sonnet). Structured > prose on reliability holds.
-Re-running at higher N to de-noise the v4>v3 hint.
+## Findings
+
+1. **No-spec clearly fails on a non-inferable convention.** Sonnet with no spec got the pmt sign/when
+   convention right in 0 of 5 runs. This is the strongest no-spec-fails signal in the suite: the convention
+   is genuinely not inferable for a mid-tier model, and a spec is needed.
+2. **v4 was the most reliable spec form (9/10)** — confirming the N=3 v4>v3 hint. v4's structure appears to
+   force the sign/when convention to be stated explicitly.
+3. **CAVEAT (real, must flag): the v3<prose<v4 ordering is confounded by SINGLE-DISTILLATION quality.**
+   Specs are distilled ONCE per arm (fixed fair artifacts). So a v3 spec that happened to bury the
+   convention hurts every v3 run — I am partly measuring that one distillation, not the language. The v3
+   result (4/10, barely above no-spec) most likely reflects a weak v3 distillation of the convention, not a
+   language limitation. To attribute a v3-vs-v4 difference to the LANGUAGE, need MULTIPLE distillations per
+   arm (distill-variance). This is the key methodological upgrade for a fair v3-vs-v4 claim.
+
+## Honest read
+Strong: spec >> no-spec here (esp. sonnet 0/5 unaided). Suggestive: v4 most reliable. Unproven: v4 > v3 as
+a LANGUAGE property (single-distillation confound). Next: multi-distillation to separate language from
+artifact.
