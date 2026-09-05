@@ -1,0 +1,12 @@
+-- allium: 4
+component Account
+  entity A
+  observable state balance : Money
+  invariant nn means balance >= 0
+  action withdraw
+    requires balance >= 1
+    ensures balance = old(balance) - 1
+  action charge
+    requires balance >= 10
+    ensures balance = old(balance) - 15
+end

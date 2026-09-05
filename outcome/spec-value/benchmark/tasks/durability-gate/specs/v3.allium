@@ -1,0 +1,6 @@
+-- allium: 3
+spec Account {
+  entity Account { balance: Integer }
+  invariant NonNegative { for a in Accounts: a.balance >= 0 }
+  rule Withdraw { when: WithdrawRequested(account, amount) requires: account.balance >= amount ensures: account.balance = account.balance - amount }
+}
