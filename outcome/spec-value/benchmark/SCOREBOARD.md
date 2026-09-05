@@ -40,6 +40,11 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
   examples), and provenance / a durable checkable artefact. Yes/no per tool, not a code-quality percentage.
   A code-level differential benchmark is the wrong instrument to measure it.
 
+## npf multi-distillation (settles v3-vs-v4)
+
+3 independent distillations/arm (sonnet). Reliability: **v3 5/6, v4 6/6** — the single-distillation v4>v3
+gap was ARTIFACT; v3≈v4 confirmed once distillation variance is controlled.
+
 This scoreboard is deliberately unflattering where the truth is unflattering. Nine data points in, there is NO demonstrated code-level V4>V3 on real code. The one apparent win (p7)
 was an artifact of a synthetic spec with no positive obligation; on real Fineract logic (payment-allocation)
 V3's positive obligations already force the anti-vacuity test, so V4's objective adds nothing. First-draft
