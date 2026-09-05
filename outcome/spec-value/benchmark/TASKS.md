@@ -9,6 +9,7 @@ The gotcha is the authentic failure mode the oracle scores; it is NOT stated in 
 | `loop-guard` | gate/liveness | Fineract LoopGuard | the max-iterations termination guard is load-bearing; does each arm's generated test suite CATCH a version with the guard removed? (V4 objective = liveness test; V3 no construct) | running |
 | `loan-status` | reconstruct/behavioural | Fineract loan lifecycle | isClosed quirk | **SATURATED** (prose=V3=V4=100%, all got the quirk). 6th data point: reconstruction-fidelity retired — cannot favour a declarative language |
 | `allocation-reversal` | feature-add/MATRIX | Fineract alloc domain | add reverse(); reverse-order unwind | **SATURATED** (all arms 100% both models) — the order WAS inferable; models guess the natural intent |
+| `charge-time` | reconstruct/MATRIX | Fineract ChargeTimeType | 21 predicates x 17 types; non-inferable allow-groupings (loan/savings/client); 357 graded; 4 arms x 2 models | queued |
 | `charge-calc` | reconstruct/MATRIX | Fineract ChargeCalculationType | savings-allow rule | specs=100, no-spec ~98 (mostly inferable). Confirms pattern |
 | `iban-validate` | validate/MATRIX/3rd-codebase | python-stdnum | IBAN validator; mod-97 inferable but per-country length/format + national checks non-inferable; 28 graded; 4 arms x 2 models | running |
 | `npf-annuity` | port/MATRIX/2nd-codebase | numpy-financial | port 5 annuity fns; non-inferable sign+when conventions vs inferable formula; 162 graded; 4 arms x 2 models | running |
