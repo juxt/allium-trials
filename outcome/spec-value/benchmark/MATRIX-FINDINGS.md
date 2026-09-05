@@ -13,7 +13,19 @@ feature-add) on real codebases (Fineract; numpy-financial). Spec quality is a di
 | loan-status-matrix | state machine | 98.8 / 98.0 | 100 / 100 | 100 / 100 | 100 / 100 |
 | charge-calc | business rules | 98.8 / 98.1 | 100 / 100 | 100 / 100 | 100 / 100 |
 | allocation-reversal | feature-add | 100 / 100 | 100 / 100 | 100 / 100 | 100 / 100 (saturated) |
-| npf-annuity | annuity math (2nd codebase) | (pending) | | | |
+| **npf-annuity (N=5)** | **annuity math (2nd codebase)** | **86.7 / 66.7** | **100 / 73.3** | **86.7 / 73.3** | **100 / 93.3** |
+| iban-validate (3rd codebase) | regulated number validation | 96.4 / 96.4 | 98.2 / 100 | 96.4 / 64.3* | 98.8 / fail* |
+
+Three codebases now: Fineract (Java), numpy-financial (Python), python-stdnum (Python). *iban had data-quality
+failures (v4/sonnet prompt-too-long, one broken v3 run) — partial.
+
+### npf-annuity is bimodal — read it as RELIABILITY
+
+Each npf run scored either 162 (got the non-inferable pmt sign/when convention) or 108 (missed it wholesale).
+Reliability = fraction that got it, /10 runs across both models: **v4 9/10, prose 6/10, v3 4/10, none 3/10**,
+and no-spec Sonnet got it **0/5**. Strongest no-spec-fails signal in the suite. BUT the v3<prose<v4 ordering
+is confounded by SINGLE-distillation quality (each spec distilled once); a multi-distillation study is running
+to attribute v4-vs-v3 to the language vs the artifact.
 
 ## What the matrix shows
 
