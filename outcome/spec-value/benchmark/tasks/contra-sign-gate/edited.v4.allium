@@ -1,0 +1,14 @@
+-- allium: 4
+component Account
+  entity A
+  observable state normal_side : { debit | credit }
+  observable state is_contra : bool
+  observable state debits : Money
+  observable state credits : Money
+  observable state balance : Money
+  -- effective normal side is flipped for a contra account
+  invariant contra_debit means (normal_side = credit and is_contra = true) implies balance = debits - credits
+  invariant contra_credit means (normal_side = debit and is_contra = true) implies balance = credits - debits
+  action post_contra_asset_wrong
+    ensures normal_side = debit and is_contra = true and balance = debits - credits
+end
