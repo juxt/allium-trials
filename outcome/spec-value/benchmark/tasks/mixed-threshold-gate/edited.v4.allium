@@ -1,0 +1,9 @@
+-- allium: 4
+component TxnReport
+  entity T
+  observable state notional : Money
+  observable state has_lei : bool
+  invariant large_needs_lei means notional > 1000000 implies has_lei = true
+  action book_large_no_lei
+    ensures notional = 2000000 and has_lei = false
+end
