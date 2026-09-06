@@ -1,0 +1,5 @@
+-- allium: 3
+spec BalanceSheet {
+  entity Sheet { assets: Integer, liabilities: Integer, equity: Integer }
+  invariant Balanced { for s in Sheets: s.assets == s.liabilities + s.equity }
+}

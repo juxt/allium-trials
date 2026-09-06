@@ -1,0 +1,10 @@
+-- allium: 4
+component BalanceSheet
+  entity A
+  observable state assets : Money
+  observable state liabilities : Money
+  observable state equity : Money
+  invariant balanced means assets = liabilities + equity
+  action accrue
+    ensures assets = old(assets) + 2 and equity = old(equity) + 1
+end
