@@ -1,0 +1,9 @@
+-- allium: 4
+component Account
+  entity A
+  observable state balance : Money
+  invariant reserve means balance >= 5
+  action charge
+    requires balance >= 20
+    ensures balance = old(balance) - 15
+end

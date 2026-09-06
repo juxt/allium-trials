@@ -1,0 +1,10 @@
+-- allium: 3
+spec Account {
+  entity Account { balance: Integer }
+  invariant Reserve { for a in Accounts: a.balance >= 5 }
+  rule Charge {
+    when: ChargeRequested(account)
+    requires: account.balance >= 20
+    ensures: account.balance = account.balance - 15
+  }
+}

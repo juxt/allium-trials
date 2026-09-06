@@ -1,0 +1,13 @@
+-- allium: 3
+spec Account {
+  entity Account { balance: Integer }
+  rule Charge {
+    when: ChargeRequested(account)
+    ensures: account.balance = account.balance - 15
+    @guidance
+      -- A $5 operating reserve must ALWAYS remain on the account. A charge is
+      -- therefore only permitted when the balance is at least 20 (the $15 fee
+      -- plus the $5 reserve) — never merely 15. If the balance is below 20 the
+      -- charge must be REJECTED and the balance left unchanged.
+  }
+}
