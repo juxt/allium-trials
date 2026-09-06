@@ -29,7 +29,7 @@ phase('Gate')
 const v4runs = []
 for (const model of MODELS) for (let i=0;i<N;i++) v4runs.push({model,i})
 const v4 = await parallel(v4runs.map(r => () =>
-  agent(`Run this exact command and report whether analyse flagged a broken invariant:\n\n${ALLIUM} analyse ${DIR}/edited.v4.allium\n\nSet flagged=true iff the output says action \`accrue\` can break arithmetic invariant \`balanced\`.`,
+  agent(`Run this exact command and report whether analyse flagged a broken invariant:\n\n${ALLIUM} analyse ${DIR}/edited.v4.allium\n\nSet flagged=true iff the output says action \`post\` can break arithmetic invariant \`balanced\`.`,
     { label:`v4-gate/${r.model}#${r.i}`, phase:'Gate', model:r.model, schema:V4_SCHEMA }).then(x => ({ arm:'v4', model:r.model, verdict: x&&x.flagged?'CATCH':'MISS' }))))
 const items = []
 for (const arm of ['none','prose','v3']) for (const model of MODELS) for (let i=0;i<N;i++) items.push({arm,model,i})
