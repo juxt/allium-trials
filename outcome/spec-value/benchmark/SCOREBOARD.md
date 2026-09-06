@@ -14,6 +14,7 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 | iban-validate (3rd codebase, N=3 partial) | 96.4 | 96.4 | 98.2 | 100 | 96.4 | 64.3* | 98.8 | fail** | small gap: mod-97 inferable (~96 all); only the BE national-check case separates, specs catch it sometimes. *broken run **v4/sonnet prompt-too-long |
 | us-workday (5th codebase) | 66.7* | 100 | 100 | 100 | 100 | 100 | 100 | 100 | SATURATED (holiday hard-subset): US holidays fully famous, both models recall all no-spec. *1 broken opus run. Fully-inferable-via-fame end. |
 | bech32-segwit (4th codebase, CRYPTO) | 82.1 | 82.1 | 100 | 100 | 100 | 100 | 100 | 100 | 18-pt gap: no-spec BIMODAL (famous algo half-memorised); ANY spec=reliable 100. Spec makes flaky memory reliable. |
+| report-balance-gate (REPORTING) | v4 100/100 · none 100/67 · prose 67/50 · v3 100/0 | | | | | | | | analyse=only reliable pre-submission check; test-checks FALSE-ALARM (block valid reports) on sonnet. Accounting-balancing slice |
 | p7 (cache) | gate | cache anti-vacuity (SYNTHETIC) | catches vacuous impl | — | ~0 | 100 | V4>V3 — but ONLY because V3's spec was pure safety (no positive obligation). |
 | `payment-allocation` | gate | Fineract alloc order (REAL) | catches vacuous impl | 100 | **100** | 100 | p7 does NOT replicate: V3's order obligation already forces the anti-vacuity test. V4 adds nothing. |
 | p6 (bespoke stores) | greenfield | sorted/metric store | obligation coverage | 20 (no-spec) | → 100 (spec) | 100 | writing the obligation down (any form) is the win; elicitation. |
