@@ -17,7 +17,11 @@ whether V4 analyse can express AND check them. Deterministic CLI probes (allium 
 - Threshold-triggered mandatory fields ("notional over X requires LEI/UTI/collateral flag") are a core
   reg-reporting rule class, so this is a real gap, not an edge case.
 
-## SOUNDNESS/TRANSPARENCY BUG (more serious than the capability gap)
+## SOUNDNESS/TRANSPARENCY BUG — FIXED (2026-09-06, merged to v4)
+> RESOLVED: classify() now detects the arith-guards-bool seam and reports it as NOT statically checked
+> instead of listing it under a tier. The mixed rule no longer over-claims coverage. Capability gap (SMT
+> rung) remains, backlog #3. Original bug description below.
+
 For the mixed rule, analyse's COVERAGE NOTE claims `large_needs_lei` is on the "linear-arithmetic tier" —
 implying it was checked — YET its violation is not caught. This is a SILENT FALSE-NEGATIVE dressed as
 coverage. It violates the tool's own discipline ("never over-claim coverage; make unchecked invariants
