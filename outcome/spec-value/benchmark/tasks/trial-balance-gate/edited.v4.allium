@@ -1,0 +1,9 @@
+-- allium: 4
+component TrialBalance
+  entity A
+  observable state debits : Money
+  observable state credits : Money
+  invariant balanced means debits = credits
+  action post
+    ensures debits = old(debits) + 2 and credits = old(credits) + 1
+end
