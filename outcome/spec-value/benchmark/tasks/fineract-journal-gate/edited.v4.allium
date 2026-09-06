@@ -1,0 +1,9 @@
+-- allium: 4
+component JournalEntry
+  entity E
+  observable state total_debits : Money
+  observable state total_credits : Money
+  invariant balanced means total_debits = total_credits
+  action post_split
+    ensures total_debits = old(total_debits) + 2 and total_credits = old(total_credits) + 1
+end
