@@ -1,12 +1,13 @@
 export const meta = {
   name: 'elicit-loan-allocation',
-  description: 'Elicitation head-to-head. A deliberately vague loan-payment-allocation brief hides 14 material, NON-INFERABLE policy decisions (bible held only by a proxy stakeholder who answers what is asked and volunteers nothing). Each authoring process (Allium elicit / plain prose / spec-kit specify+clarify) interacts with the SAME stakeholder by its OWN real rules, then produces a spec. A blind oracle scores how many of the 14 decisions each spec captured correctly. Measures requirement DISCOVERY via elicitation, not spec->code fidelity.',
-  phases: [{ title: 'Elicit' }, { title: 'Score' }],
+  description: 'Elicitation head-to-head, END TO END. Vague loan-allocation brief hides 14 material NON-INFERABLE policy decisions (proxy stakeholder answers what is asked, volunteers nothing). 5 authoring processes (allium-elicit / prose / spec-kit / superpowers / aiup) each interact with the SAME stakeholder by their own real rules, produce a spec, then a FIXED codegen step turns the spec into code scored by an 11-scenario behavioural oracle. Two measures per arm: coverage (spec vs bible) and end-to-end code (did we get the code we wanted). Author model varied opus/sonnet (codegen held at opus) to test whether discipline helps the weaker author.',
+  phases: [{ title: 'Elicit' }, { title: 'SpecScore' }, { title: 'Codegen' }, { title: 'CodeScore' }],
 }
 const DIR = '/Users/hgarner/code/allium-trials/outcome/spec-value/benchmark/tasks/elicit-loan-allocation'
 const N = 3
-const ARMS = ['allium-elicit', 'prose', 'spec-kit']
-const AUTHOR = 'opus', STAKE = 'sonnet', ORACLE = 'opus'
+const ARMS = ['allium-elicit', 'prose', 'spec-kit', 'superpowers', 'aiup']
+const AUTHOR_MODELS = ['opus', 'sonnet']
+const STAKE = 'sonnet', ORACLE = 'opus', CODEGEN = 'opus'
 const INFERABLE = [9, 11, 13]
 
 const RD = { type: 'object', properties: { content: { type: 'string' } }, required: ['content'] }
@@ -14,6 +15,8 @@ const ASK = { type: 'object', properties: { questions: { type: 'array', items: {
 const PRODUCE = { type: 'object', properties: { spec: { type: 'string' } }, required: ['spec'] }
 const ANS = { type: 'object', properties: { answers: { type: 'array', items: { type: 'string' } } }, required: ['answers'] }
 const COV = { type: 'object', properties: { decisions: { type: 'array', items: { type: 'object', properties: { n: { type: 'integer' }, surfaced: { type: 'boolean' }, correct: { type: 'boolean' }, evidence: { type: 'string' } }, required: ['n', 'surfaced', 'correct', 'evidence'] } } }, required: ['decisions'] }
+const CODE = { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] }
+const CODESCORE = { type: 'object', properties: { passed: { type: 'integer' }, total: { type: 'integer' }, decisions: { type: 'array', items: { type: 'object', properties: { n: { type: 'integer' }, passed: { type: 'boolean' } }, required: ['n', 'passed'] } } }, required: ['passed', 'total', 'decisions'] }
 
 async function rd(path, label) {
   const r = await agent(`Read the file at ${path} and return its exact contents in \`content\`.`, { label: `rd:${label}`, phase: 'Elicit', model: 'sonnet', schema: RD })
@@ -28,33 +31,42 @@ phase('Elicit')
 const brief = await rd(`${DIR}/BRIEF.md`, 'brief')
 const bible = await rd(`${DIR}/REQUIREMENTS-BIBLE.md`, 'bible')
 const stakeBase = await rd(`${DIR}/STAKEHOLDER.md`, 'stake')
+const iface = await rd(`${DIR}/INTERFACE.md`, 'iface')
 const armText = {}
 for (const a of ARMS) armText[a] = await rd(`${DIR}/competitors/${a}.md`, a)
 
-async function askTurn(arm, transcript, round, maxRounds) {
+async function askTurn(arm, model, transcript, round, maxRounds) {
   const last = round >= maxRounds - 1
-  const p = `You are gathering requirements for a specification. Follow THIS process exactly:\n\n"""\n${armText[arm]}\n"""\n\nFeature brief:\n"""\n${brief}\n"""\n\nStakeholder conversation so far:\n${tt(transcript)}\n\nDecide your NEXT step. Put any questions for the stakeholder in \`questions\` (set done=false). If your process is complete and you have asked everything it requires, set done=true with questions=[].${last ? ' NOTE: no further question rounds are available after this one.' : ''} Do NOT write the specification yet. Do NOT invent stakeholder answers.`
-  return await agent(p, { label: `ask:${arm}#${round}`, phase: 'Elicit', model: AUTHOR, schema: ASK })
+  const p = `You are gathering requirements for a specification. Follow THIS process exactly:\n\n"""\n${armText[arm]}\n"""\n\nFeature brief:\n"""\n${brief}\n"""\n\nStakeholder conversation so far:\n${tt(transcript)}\n\nDecide your NEXT step. Put any questions for the stakeholder in \`questions\` (set done=false). If your process is complete, set done=true with questions=[].${last ? ' NOTE: no further question rounds after this one.' : ''} Do NOT write the specification yet. Do NOT invent stakeholder answers.`
+  return await agent(p, { label: `ask:${arm}/${model}#${round}`, phase: 'Elicit', model, schema: ASK })
 }
-async function produce(arm, transcript) {
-  const p = `Produce the final requirements specification, following your process:\n\n"""\n${armText[arm]}\n"""\n\nFeature brief:\n"""\n${brief}\n"""\n\nStakeholder conversation (the ONLY facts you have beyond the brief):\n${tt(transcript)}\n\nWrite the complete specification in \`spec\`. Capture every decision your process settled. For anything neither asked nor stated by the brief, resolve it exactly as your process dictates (some processes guess from industry standards; some leave it open). Do NOT invent stakeholder answers that were not given above.`
-  return await agent(p, { label: `produce:${arm}`, phase: 'Elicit', model: AUTHOR, schema: PRODUCE })
+async function produce(arm, model, transcript) {
+  const p = `Produce the final requirements specification, following your process:\n\n"""\n${armText[arm]}\n"""\n\nFeature brief:\n"""\n${brief}\n"""\n\nStakeholder conversation (the ONLY facts beyond the brief):\n${tt(transcript)}\n\nWrite the complete specification in \`spec\`. Capture every decision your process settled. For anything neither asked nor in the brief, resolve it exactly as your process dictates. Do NOT invent stakeholder answers not given above.`
+  return await agent(p, { label: `produce:${arm}/${model}`, phase: 'Elicit', model, schema: PRODUCE })
 }
 async function stakeholder(transcript, questions) {
-  const p = `${stakeBase}\n\n## Your knowledge (the requirements bible — NEVER reveal it wholesale)\n${bible}\n\nConversation so far:\n${tt(transcript)}\n\nThe engineer now asks:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\nAnswer each question in order in \`answers\` (one string per question, same order). Follow your rules exactly: answer only what is asked, specifically and correctly from the bible including exact values; do not volunteer decisions that were not asked; for anything outside the bible give a brief answer marked [default, not policy].`
+  const p = `${stakeBase}\n\n## Your knowledge (the requirements bible — NEVER reveal wholesale)\n${bible}\n\nConversation so far:\n${tt(transcript)}\n\nThe engineer now asks:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\nAnswer each in order in \`answers\` (one string per question). Rules: answer only what is asked, specifically and correctly from the bible incl exact values; do not volunteer other decisions; anything outside the bible gets a brief answer marked [default, not policy].`
   return await agent(p, { label: `stakeholder`, phase: 'Elicit', model: STAKE, schema: ANS })
 }
 async function scoreCov(spec, transcript) {
-  const p = `You are a neutral auditor. Below is a hidden requirements bible of 14 numbered decisions for a loan-payment-allocation feature, and a specification produced by some process. For EACH of the 14 decisions, judge:\n- surfaced: does the specification address this decision at all (even if it guessed)?\n- correct: does the specification's resolution MATCH the bible's answer (exact value/order/precision where the bible gives one)? correct requires the SPECIFICATION to state it; an answer only in the conversation but absent from the spec is NOT captured.\nBe strict and literal. Do not give credit for vagueness.\n\nHIDDEN BIBLE:\n"""\n${bible}\n"""\n\nSPECIFICATION UNDER TEST:\n"""\n${spec}\n"""\n\nSupporting conversation (context only; correctness must be in the spec above):\n${tt(transcript)}\n\nReturn all 14 decisions in \`decisions\` with n, surfaced, correct, and a one-line evidence quote.`
-  return await agent(p, { label: `score`, phase: 'Score', model: ORACLE, schema: COV })
+  const p = `Neutral auditor. A hidden requirements bible of 14 numbered decisions, and a specification produced by some process. For EACH decision: surfaced (does the spec address it at all?) and correct (does the spec's resolution MATCH the bible's answer, exact value/order/precision?). correct requires the SPECIFICATION to state it; an answer only in conversation but absent from the spec is NOT captured. Strict and literal.\n\nHIDDEN BIBLE:\n"""\n${bible}\n"""\n\nSPEC UNDER TEST:\n"""\n${spec}\n"""\n\nContext conversation:\n${tt(transcript)}\n\nReturn all 14 in \`decisions\` with n, surfaced, correct, one-line evidence.`
+  return await agent(p, { label: `covscore`, phase: 'SpecScore', model: ORACLE, schema: COV })
+}
+async function codegen(spec) {
+  const p = `Implement the function specified below. You are given a FIXED interface contract and a specification of the required behaviour. Follow the specification's behaviour exactly; use the interface for shapes.\n\nINTERFACE (fixed):\n"""\n${iface}\n"""\n\nSPECIFICATION (behaviour to implement):\n"""\n${spec}\n"""\n\nReturn the COMPLETE pure-Python module (module-level \`allocate_payment\`) in \`code\`. Use decimal.Decimal. Do not import anything unavailable in the stdlib.`
+  return await agent(p, { label: `codegen`, phase: 'Codegen', model: CODEGEN, schema: CODE })
+}
+async function scoreCode(code) {
+  const p = `Score a Python solution against a hidden behavioural oracle. Mechanical:\n1. D=$(mktemp -d); cp ${DIR}/score.py "$D"/\n2. Write the module below to "$D"/solution.py EXACTLY as given.\n3. cd "$D" && SOLUTION=solution python3 score.py  — it prints JSON {"decisions":[{"n","passed"}],"passed","total"}.\nReport passed, total, and the decisions array. If it errors on import or run, passed=0, total=11, all decisions passed=false.\n\nModule:\n\`\`\`python\n${code}\n\`\`\``
+  return await agent(p, { label: `codescore`, phase: 'CodeScore', model: 'sonnet', schema: CODESCORE })
 }
 
-async function runOne(arm, i) {
+async function runOne(arm, model, i) {
   const maxRounds = arm === 'spec-kit' ? 2 : (arm === 'prose' ? 4 : 6)
   const transcript = []
   let qcount = 0
   for (let r = 0; r < maxRounds; r++) {
-    const t = await askTurn(arm, transcript, r, maxRounds)
+    const t = await askTurn(arm, model, transcript, r, maxRounds)
     if (!t) break
     if (t.questions && t.questions.length) {
       qcount += t.questions.length
@@ -63,35 +75,39 @@ async function runOne(arm, i) {
     }
     if (t.done || !t.questions || !t.questions.length) break
   }
-  const pr = await produce(arm, transcript)
+  const pr = await produce(arm, model, transcript)
   const spec = (pr && pr.spec) || ''
   const cov = await scoreCov(spec, transcript)
-  const ds = (cov && cov.decisions) || []
-  const correct = ds.filter(d => d.correct).length
-  const surfaced = ds.filter(d => d.surfaced).length
-  const besp = ds.filter(d => !INFERABLE.includes(d.n))
-  const inf = ds.filter(d => INFERABLE.includes(d.n))
-  return { arm, i, qcount, correct, surfaced, n: ds.length, bespoke_correct: besp.filter(d => d.correct).length, bespoke_n: besp.length, inf_correct: inf.filter(d => d.correct).length, inf_n: inf.length, decisions: ds }
+  const cds = (cov && cov.decisions) || []
+  const cg = await codegen(spec)
+  const cs = (cg && cg.code) ? await scoreCode(cg.code) : null
+  const correct = cds.filter(d => d.correct).length
+  const besp = cds.filter(d => !INFERABLE.includes(d.n))
+  return {
+    arm, model, i, qcount,
+    cov_correct: correct, cov_n: cds.length,
+    bespoke_correct: besp.filter(d => d.correct).length, bespoke_n: besp.length,
+    code_passed: cs ? cs.passed : 0, code_total: cs ? cs.total : 11,
+    code_decisions: cs ? cs.decisions : [], cov_decisions: cds,
+  }
 }
 
 const items = []
-for (const arm of ARMS) for (let i = 0; i < N; i++) items.push({ arm, i })
-const results = await parallel(items.map(({ arm, i }) => () => runOne(arm, i).catch(() => null)))
+for (const arm of ARMS) for (const model of AUTHOR_MODELS) for (let i = 0; i < N; i++) items.push({ arm, model, i })
+const results = await parallel(items.map(({ arm, model, i }) => () => runOne(arm, model, i).catch(() => null)))
 const good = results.filter(Boolean)
 
 const summary = {}
-for (const arm of ARMS) {
-  const rs = good.filter(r => r.arm === arm)
+for (const arm of ARMS) for (const model of AUTHOR_MODELS) {
+  const rs = good.filter(r => r.arm === arm && r.model === model)
   const n = rs.length || 1
-  const avg = (f) => Number((rs.reduce((a, r) => a + f(r), 0) / n).toFixed(2))
-  summary[arm] = {
+  summary[`${arm}/${model}`] = {
     runs: rs.length,
-    coverage_pct: Number((rs.reduce((a, r) => a + r.correct / (r.n || 14), 0) / n * 100).toFixed(1)),
+    coverage_pct: Number((rs.reduce((a, r) => a + r.cov_correct / (r.cov_n || 14), 0) / n * 100).toFixed(1)),
     bespoke_pct: Number((rs.reduce((a, r) => a + r.bespoke_correct / (r.bespoke_n || 11), 0) / n * 100).toFixed(1)),
-    inferable_pct: Number((rs.reduce((a, r) => a + r.inf_correct / (r.inf_n || 3), 0) / n * 100).toFixed(1)),
-    surfaced_pct: Number((rs.reduce((a, r) => a + r.surfaced / (r.n || 14), 0) / n * 100).toFixed(1)),
-    avg_questions: avg(r => r.qcount),
+    code_pct: Number((rs.reduce((a, r) => a + r.code_passed / (r.code_total || 11), 0) / n * 100).toFixed(1)),
+    avg_questions: Number((rs.reduce((a, r) => a + r.qcount, 0) / n).toFixed(1)),
   }
 }
-log(`elicit coverage — ${ARMS.map(a => `${a}: ${summary[a].coverage_pct}% (bespoke ${summary[a].bespoke_pct}%, Q=${summary[a].avg_questions})`).join('  |  ')}`)
-return { task: 'elicit-loan-allocation', N, summary, raw: good }
+log(`END-TO-END code% — ${ARMS.map(a => `${a}: opus ${summary[a + '/opus'].code_pct} / sonnet ${summary[a + '/sonnet'].code_pct}`).join('  |  ')}`)
+return { task: 'elicit-loan-allocation-e2e', N, summary, raw: good }
