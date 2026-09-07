@@ -1,0 +1,18 @@
+-- allium: 3
+spec Settlement {
+  entity Record { reference, amount, currency, value_date, direction, account, priority, method, resident, purpose, counterparty }
+  -- NATURAL fields (default encodings):
+  given reference = plain string; amount_decimal = amount as 2dp decimal; currency_alpha = alpha code as-is;
+        booking_date = ISO date as-is; direction = "C"/"D"; resident = "Y"/"N"; account = as-is;
+        description = purpose as-is; urgent = "true" if priority==1 else "false"; counterparty = plain string
+  -- BESPOKE fields (fixed conventions):
+  given record_type = "SI2"
+  given amount_wire = minor units, 12-char zero-padded; CREDIT last digit overpunch (0->{,1->A,..,9->I)
+  given currency_num = ISO 4217 numeric (USD=840,EUR=978,GBP=826,JPY=392,CHF=756)
+  given value_date_julian = Julian "YYYYDDD"
+  given account_padded = right-justified zero-padded to 10, keep rightmost 10
+  given priority_code = the digit, or "5" if absent
+  given method_code = wire->01, book->07, net->13
+  given purpose_code = uppercased, left-justified, exactly 4 chars
+  given check = (sum of digits in amount_wire+currency_num+value_date_julian) mod 10
+}

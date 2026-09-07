@@ -1,0 +1,25 @@
+-- allium: 4
+component Settlement
+  entity R
+  -- NATURAL fields (default encodings):
+  given reference means plain string
+  given amount_decimal means amount as 2dp decimal string
+  given currency_alpha means the alpha code as-is
+  given booking_date means the ISO date as-is
+  given direction means "C" for credit, "D" for debit
+  given resident means "Y" if true else "N"
+  given account means the account as-is
+  given description means the purpose as-is
+  given urgent means "true" if priority = 1 else "false"
+  given counterparty means plain string
+  -- BESPOKE fields (fixed conventions):
+  given record_type means "SI2"
+  given amount_wire means minor units, 12-char zero-padded; CREDIT last digit signed overpunch (0->{,1->A,2->B,3->C,4->D,5->E,6->F,7->G,8->H,9->I)
+  given currency_num means ISO 4217 numeric code (USD=840,EUR=978,GBP=826,JPY=392,CHF=756)
+  given value_date_julian means Julian "YYYYDDD"
+  given account_padded means right-justified, zero-padded to 10, keep rightmost 10
+  given priority_code means the priority digit, or "5" if absent
+  given method_code means wire->01, book->07, net->13
+  given purpose_code means uppercased, left-justified, exactly 4 chars
+  given check means (sum of digits in amount_wire + currency_num + value_date_julian) mod 10
+end
