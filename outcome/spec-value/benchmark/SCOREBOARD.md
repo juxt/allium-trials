@@ -25,6 +25,7 @@ discriminates is named per row. Read `CONCLUSION.md` for what it all means.
 
 ## Matrix results (4 arms x 2 models) — code quality %
 
+| settlement-mixed (MODERATE) | 45.3 | 41.8 | 100 | 100 | 98.9 | 96.1 | 100 | 97.4 | spectrum middle: ~55pt gap, no-spec mid-range. v3=v4=prose. |
 | **settlement-format (HARD, bespoke encoder)** | **24.6** | **16.7** | 100 | 100 | 99.2 | 99.2 | 99.2 | 99.2 | CLUSTER BROKEN: ~75pt no-spec-vs-spec gap. Many non-inferable conventions. v3=v4=prose (no format penalty). |
 
 | task | none/opus | none/son | prose/opus | prose/son | v3/opus | v3/son | v4/opus | v4/son | reads as |
