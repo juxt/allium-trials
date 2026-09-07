@@ -1,0 +1,18 @@
+-- allium: 3
+spec SettlementRecord {
+  entity Record { amount, currency, value_date, direction, account, priority, method, resident, purpose }
+  -- Each field encodes by a FIXED convention (not the natural default):
+  given record_type = "SI2"
+  given amount = minor units (amount*100, rounded), 12-char zero-padded; for a CREDIT the last digit is a
+        signed overpunch (0->{, 1->A, 2->B, 3->C, 4->D, 5->E, 6->F, 7->G, 8->H, 9->I)
+  given currency = ISO 4217 NUMERIC code (USD=840, EUR=978, GBP=826, JPY=392, CHF=756)
+  given value_date = Julian "YYYYDDD" (year + zero-padded day-of-year)
+  given direction = "C" for credit, "D" for debit
+  given account = right-justified, ZERO-padded to 10, keep rightmost 10
+  given priority = the digit, or "5" if absent
+  given method = wire->01, book->07, net->13
+  given resident = "Y" if true else "N"
+  given purpose = uppercased, left-justified, exactly 4 chars
+  given filler = 6 spaces
+  given check = (sum of digits in amount+currency+value_date) mod 10
+}
