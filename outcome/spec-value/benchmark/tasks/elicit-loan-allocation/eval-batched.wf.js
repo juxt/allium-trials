@@ -62,7 +62,9 @@ async function scoreCode(code) {
 }
 
 async function runOne(arm, model, i) {
-  const maxRounds = arm === 'spec-kit' ? 2 : (arm === 'prose' ? 4 : 6)
+  // superpowers asks ONE question per round by its own discipline, so it needs many more rounds
+  // to cover the decision space fairly; spec-kit is hard-capped at its real 2 phases; aiup/prose/elicit batch.
+  const maxRounds = arm === 'spec-kit' ? 2 : arm === 'prose' ? 4 : arm === 'superpowers' ? 20 : 6
   const transcript = []
   let qcount = 0
   for (let r = 0; r < maxRounds; r++) {
