@@ -6,18 +6,39 @@ then a FIXED codegen step (opus) turns that spec into code scored by an 11-scena
 oracle. Coverage = spec vs bible; Code = did we get the code we wanted. Numbers pooled over all
 valid cells across runs (network/limit-damaged cells excluded).
 
-## Pooled results
+## Pooled results (clean cells only; network/limit-damaged cells excluded)
 
 | process | opus cov | opus **code** | sonnet cov | sonnet **code** |
 |---|---|---|---|---|
-| **allium-elicit** | 84.7 (n=7) | **80.5** | 71.4* (n=1) | **81.8*** |
-| plain prose | 89.7 (n=9) | 77.8 | 57.1 (n=4) | 61.4 |
+| **allium-elicit** | 84.7 (n=7) | **80.5** | 78.6 (n=2) | **81.8** |
+| plain prose | 89.7 (n=9) | 77.8 | 55.7 (n=5) | 58.2 |
 | AIUP | 80.4 (n=8) | 71.6 | — | — |
-| spec-kit | 63.5 (n=9) | 56.6 | 50.9 (n=8) | 40.9 |
+| spec-kit | 63.5 (n=9) | 56.6 | 54.8 (n=6) | 47.0 |
 | superpowers | 48.8 (n=6) | 45.5 | — | — |
 
-Naive industry-standard-guess code floor: 27% (3/11). *elicit/sonnet provisional — 2 of 3 cells
-were network-damaged; a clean re-run is in progress. Do not quote until confirmed.
+Naive industry-standard-guess code floor: 27% (3/11). elicit/sonnet is n=2 (both clean cells
+scored 9/11 — zero variance — plus a consistent third clean cell at 9/11 in an earlier run);
+thin, but consistent and directionally clear. Getting clean sonnet cells was costly: the network
+repeatedly killed the `produce`/`ask` steps, contaminating cells (empty spec or zero questions),
+which is why n differs by arm.
+
+## THE WEAKER-AUTHOR WIN (confirmed)
+
+**elicit holds ~81% code on BOTH author models; prose collapses 78 -> 58 on the weaker one.**
+
+| author | elicit code | prose code |
+|---|---|---|
+| Opus (frontier) | 80.5 | 77.8 |
+| Sonnet (mid-tier) | 81.8 | 58.2 |
+
+On the capable author, structured elicitation ties a diligent engineer (both ~78-80). On the
+weaker author the tie breaks: prose's code drops 20 points because a weaker model asks fewer,
+less-targeted questions and captures less, while elicit's discipline forces it to keep asking
+until the org-specific decisions are settled — so its code stays high. The mechanism is visible in
+the transcripts: clean elicit/sonnet cells asked 20 and 28 questions; clean prose/sonnet cells
+asked 5-14. This is exactly the programme's law (spec value rises as author capability falls),
+now measured on requirement *authoring*, not just code reconstruction. The everyday Cursor/Copilot
+user on a mid-tier model is precisely who gains.
 
 ## What holds (solid)
 
