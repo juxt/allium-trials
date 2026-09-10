@@ -10,35 +10,34 @@ valid cells across runs (network/limit-damaged cells excluded).
 
 | process | opus cov | opus **code** | sonnet cov | sonnet **code** |
 |---|---|---|---|---|
-| **allium-elicit** | 84.7 (n=7) | **80.5** | 78.6 (n=2) | **81.8** |
-| plain prose | 89.7 (n=9) | 77.8 | 55.7 (n=5) | 58.2 |
+| **allium-elicit** | 84.7 (n=7) | **80.5** | ~62 (n=5) | **70.9** |
+| plain prose | 89.7 (n=9) | 77.8 | ~53 (n=8) | 58.0 |
 | AIUP | 80.4 (n=8) | 71.6 | — | — |
-| spec-kit | 63.5 (n=9) | 56.6 | 54.8 (n=6) | 47.0 |
+| spec-kit | 63.5 (n=9) | 56.6 | ~49 (n=14) | 43.5 |
 | superpowers | 48.8 (n=6) | 45.5 | — | — |
 
-Naive industry-standard-guess code floor: 27% (3/11). elicit/sonnet is n=2 (both clean cells
-scored 9/11 — zero variance — plus a consistent third clean cell at 9/11 in an earlier run);
-thin, but consistent and directionally clear. Getting clean sonnet cells was costly: the network
-repeatedly killed the `produce`/`ask` steps, contaminating cells (empty spec or zero questions),
-which is why n differs by arm.
+Naive industry-standard-guess code floor: 27% (3/11). Getting clean sonnet cells was costly: the
+network repeatedly killed `produce`/`ask` steps, contaminating cells (empty spec or zero
+questions), which is why n differs by arm — but the code numbers now pool 5-14 clean cells per arm.
 
-## THE WEAKER-AUTHOR WIN (confirmed)
+## THE WEAKER-AUTHOR WIN (holds; corrected from a thin early estimate)
 
-**elicit holds ~81% code on BOTH author models; prose collapses 78 -> 58 on the weaker one.**
+**As the author weakens, elicit degrades gracefully where prose falls harder — the gap widens.**
 
-| author | elicit code | prose code |
-|---|---|---|
-| Opus (frontier) | 80.5 | 77.8 |
-| Sonnet (mid-tier) | 81.8 | 58.2 |
+| author | elicit code | prose code | gap |
+|---|---|---|---|
+| Opus (frontier) | 80.5 | 77.8 | +2.7 |
+| Sonnet (mid-tier) | 70.9 | 58.0 | +12.9 |
 
-On the capable author, structured elicitation ties a diligent engineer (both ~78-80). On the
-weaker author the tie breaks: prose's code drops 20 points because a weaker model asks fewer,
-less-targeted questions and captures less, while elicit's discipline forces it to keep asking
-until the org-specific decisions are settled — so its code stays high. The mechanism is visible in
-the transcripts: clean elicit/sonnet cells asked 20 and 28 questions; clean prose/sonnet cells
-asked 5-14. This is exactly the programme's law (spec value rises as author capability falls),
-now measured on requirement *authoring*, not just code reconstruction. The everyday Cursor/Copilot
-user on a mid-tier model is precisely who gains.
+An earlier n=2 estimate put elicit/sonnet at 81.8 (both cells happened to score 9/11); with n=5 it
+settles at 70.9 — still clearly above prose (58.0), and the elicit-vs-prose gap widens ~5x from
+Opus to Sonnet. On the capable author, structured elicitation ties a diligent engineer (~78-80).
+On the weaker author the tie breaks: prose drops ~20 points because a weaker model asks fewer,
+less-targeted questions and captures less, while elicit's loop forces it to keep asking until the
+org-specific decisions are settled, so it degrades less. The mechanism is visible in the
+transcripts: elicit/sonnet cells asked 17-20 questions; prose/sonnet asked 5-14. This is the
+programme's law (spec value rises as author capability falls), measured on requirement *authoring*.
+The everyday mid-tier user gains most.
 
 ## What holds (solid)
 
