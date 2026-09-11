@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // CHECKABILITY experiment (v4 vs prose), executable. Distillation drifts; v4 specs can be MECHANICALLY
-// validated (allium check + monitor-schedule vs reference traces) and fixed; prose cannot. Pipeline:
+// validated (allium check + monitor vs reference traces) and fixed; prose cannot. Pipeline:
 //   distill spec from reference -> [v4: check+monitor-vs-traces -> fix loop] / [prose: self-review vs
 //   shown traces] -> fresh model rebuilds from the spec -> oracle-grade the rebuild.
 // Tests whether v4's checkability delivers build-correctness over prose. No LLM judge; validation is the
@@ -43,7 +43,7 @@ function monitorV4(spec) { // returns list of {id, failing:[invariant...], resid
   const fails = [];
   for (const s of SAMPLE) {
     writeFileSync("/tmp/vtrace.trace", s.text);
-    const r = spawnSync(ALLIUM, ["monitor-schedule", "/tmp/vspec.allium", "/tmp/vtrace.trace", "--tol", "0.02"], { encoding: "utf8" });
+    const r = spawnSync(ALLIUM, ["monitor", "/tmp/vspec.allium", "/tmp/vtrace.trace", "--tol", "0.02"], { encoding: "utf8" });
     try { const d = JSON.parse(r.stdout || "{}"); const bad = (d.results || []).filter((x) => !x.holds).map((x) => `${x.invariant} (residual ${x.max_residual}, ${x.witness})`); if (bad.length || d.monitored === 0) fails.push({ id: s.id, monitored: d.monitored, bad }); }
     catch { fails.push({ id: s.id, bad: ["monitor error"] }); }
   }
@@ -63,7 +63,7 @@ function completenessV4(spec) {
         return ln.replace(new RegExp(`(\\b${fld}=)([-0-9.]+)`), (m, k, v) => k + (parseFloat(v) + 5).toFixed(2));
       }).join("\n");
       writeFileSync("/tmp/vtrace.trace", mutated);
-      const r = spawnSync(ALLIUM, ["monitor-schedule", "/tmp/vspec.allium", "/tmp/vtrace.trace", "--tol", "0.02"], { encoding: "utf8" });
+      const r = spawnSync(ALLIUM, ["monitor", "/tmp/vspec.allium", "/tmp/vtrace.trace", "--tol", "0.02"], { encoding: "utf8" });
       try { const d = JSON.parse(r.stdout || "{}"); const caught = (d.results || []).some((x) => !x.holds); if (!caught) gaps.push(`${fld} on ${s.id}`); }
       catch { /* ignore */ }
     }

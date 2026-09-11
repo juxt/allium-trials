@@ -27,7 +27,7 @@ echo "gradle exit=$gexit; mutant traces: $(find /tmp/je_mut -name '*.trace' | wc
 catch=0; checked=0
 for f in /tmp/je_mut/*.trace; do
   [ -f "$f" ] || continue
-  h=$($ALLIUM monitor-schedule "$DE" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);r=[x for x in d['results'] if x['invariant']=='double_entry_balances'];print(0 if (r and r[0]['holds']) else 1)" 2>/dev/null || echo 0)
+  h=$($ALLIUM monitor "$DE" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);r=[x for x in d['results'] if x['invariant']=='double_entry_balances'];print(0 if (r and r[0]['holds']) else 1)" 2>/dev/null || echo 0)
   checked=$((checked+1)); catch=$((catch+${h:-0}))
 done
 echo "double-entry spec: FLAGGED $catch/$checked mutant traces as unbalanced (catch>0 => spec CATCHES the real omit-leg bug)" | tee -a "$OUT"

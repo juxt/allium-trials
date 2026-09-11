@@ -24,7 +24,7 @@ const hardFails = [];
 for (const f of files) {
   let out;
   try {
-    out = execFileSync(ALLIUM, ["monitor-schedule", SPEC, join(TRACES, f), "--tol", String(ROUNDING_TOL)], {
+    out = execFileSync(ALLIUM, ["monitor", SPEC, join(TRACES, f), "--tol", String(ROUNDING_TOL)], {
       encoding: "utf8",
     });
   } catch (e) {

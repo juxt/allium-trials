@@ -56,7 +56,7 @@ for m in "${MUTS[@]}"; do
   nt=$(ls "$ROOT/traces"/*.trace 2>/dev/null | wc -l | tr -d ' ')
   spec=hold; changed=no
   for f in "$ROOT/traces"/*.trace; do
-    r=$($ALLIUM monitor-schedule "$SPEC" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);print(0 if all(x['holds'] for x in d['results']) else 1)" 2>/dev/null || echo 0)
+    r=$($ALLIUM monitor "$SPEC" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);print(0 if all(x['holds'] for x in d['results']) else 1)" 2>/dev/null || echo 0)
     [ "${r:-0}" = "1" ] && { spec=catch; break; }
   done
   # behaviour changed vs baseline?

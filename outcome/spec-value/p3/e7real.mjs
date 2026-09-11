@@ -18,7 +18,7 @@ function rateFromName(f){const m=f.match(/_r([0-9.]+)_/);return m?Number(m[1]):n
 function augment(text,rf){ // add rate_factor=rf to each period= line
   return text.split("\n").map(l=>l.trim().startsWith("period=")?`${l.trim()} rate_factor=${rf.toFixed(6)}`:l).join("\n")+"\n";
 }
-function interestHolds(text){writeFileSync(join(HERE,"_e7r.trace"),text);let o="";try{o=execFileSync(ALLIUM,["monitor-schedule",GOLD,join(HERE,"_e7r.trace"),"--tol",TOL],{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="interest_on_outstanding");return r?{eval:true,holds:r.holds,resid:r.max_residual}:{eval:false};}catch{return{eval:false};}}
+function interestHolds(text){writeFileSync(join(HERE,"_e7r.trace"),text);let o="";try{o=execFileSync(ALLIUM,["monitor",GOLD,join(HERE,"_e7r.trace"),"--tol",TOL],{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="interest_on_outstanding");return r?{eval:true,holds:r.holds,resid:r.max_residual}:{eval:false};}catch{return{eval:false};}}
 
 function run(dir,label){
   const files=readdirSync(dir).filter(f=>f.endsWith(".trace"));

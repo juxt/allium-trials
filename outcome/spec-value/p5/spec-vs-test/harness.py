@@ -6,7 +6,7 @@ rows as the rest of the programme. We compare THREE regression mechanisms agains
 
   A. property tests   — assert the structural laws (conservation, closes-to-zero, principal split, roll)
   B. oracle test      — re-implement schedule() and assert the buggy build matches it
-  C. v4 spec-gate     — `allium monitor-schedule` of LoanSchedule_improved.allium against emitted traces
+  C. v4 spec-gate     — `allium monitor` of LoanSchedule_improved.allium against emitted traces
 
 Each mutation is a DEVELOPER EDIT to a correct build. A mechanism "catches" it if it flags the buggy
 build. A benign refactor must be caught by NONE (false-positive guard). Then a fourth experiment isolates
@@ -137,7 +137,7 @@ def oracle_test(sched, d, r, m, oracle=None):
             if abs(e[k] - g[k]) > 0.01: return False
     return True
 
-# ---- C. v4 spec-gate: emit trace, run allium monitor-schedule --------------------------------------
+# ---- C. v4 spec-gate: emit trace, run allium monitor --------------------------------------
 def emit_trace(sched, d, r, m, path):
     f = r/1200.0
     with open(path, "w") as fh:
@@ -151,7 +151,7 @@ def spec_gate(sched, d, r, m):
     """Return True if the v4 spec HOLDS (build looks OK to the gate); False if any invariant fires."""
     tf = os.path.join(HERE, "_t.trace")
     emit_trace(sched, d, r, m, tf)
-    out = subprocess.run([ALLIUM, "monitor-schedule", SPEC, tf, "--tol", "0.01"],
+    out = subprocess.run([ALLIUM, "monitor", SPEC, tf, "--tol", "0.01"],
                          capture_output=True, text=True).stdout
     try:
         res = json.loads(out)
@@ -206,7 +206,7 @@ def faithfulness_check():
     held = 0; total = 0
     for fn in sorted(os.listdir(TRACES_REAL)):
         total += 1
-        out = subprocess.run([ALLIUM, "monitor-schedule", SPEC, os.path.join(TRACES_REAL, fn), "--tol", "0.01"],
+        out = subprocess.run([ALLIUM, "monitor", SPEC, os.path.join(TRACES_REAL, fn), "--tol", "0.01"],
                              capture_output=True, text=True).stdout
         try:
             res = json.loads(out)

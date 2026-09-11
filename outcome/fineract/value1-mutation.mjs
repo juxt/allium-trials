@@ -116,7 +116,7 @@ const files = readdirSync(TRACES).filter((f) => f.endsWith(".trace"));
 function monitor(path) {
   let out;
   try {
-    out = execFileSync(ALLIUM, ["monitor-schedule", SPEC, path, "--tol", "0.005"], { encoding: "utf8" });
+    out = execFileSync(ALLIUM, ["monitor", SPEC, path, "--tol", "0.005"], { encoding: "utf8" });
   } catch (e) {
     out = e.stdout || "";
   }

@@ -52,7 +52,7 @@ const MUT = {
 function monitor(spec, traceText) {
   const tmp = join(HERE, "_m.trace"); writeFileSync(tmp, traceText);
   let out = "";
-  try { out = execFileSync(ALLIUM, ["monitor-schedule", spec, tmp], { encoding: "utf8" }); }
+  try { out = execFileSync(ALLIUM, ["monitor", spec, tmp], { encoding: "utf8" }); }
   catch (e) { out = (e.stdout || "").toString(); } // non-zero exit when invariants fail; stdout still has JSON
   try { const d = JSON.parse(out); const m = {}; for (const r of d.results) m[r.invariant] = r.holds; return m; }
   catch { return {}; }

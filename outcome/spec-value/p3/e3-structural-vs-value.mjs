@@ -17,7 +17,7 @@ const TRACES = "/Users/hgarner/code/allium-trials/outcome/fineract/traces_baseli
 function parse(t){const periods=[];let given={};for(const line of t.split("\n")){const s=line.trim();if(!s)continue;const k=s.split(/\s+/);if(k[0]==="given"){for(const x of k.slice(1)){const[a,b]=x.split("=");given[a]=b;}}else if(k[0].startsWith("period=")){const p={};for(const x of k){const[a,b]=x.split("=");p[a]=b;}periods.push(p);}}return{periods,given};}
 function render({periods,given}){const L=periods.map(p=>["period","emi","interest","principal","outstanding_start","is_last"].filter(k=>k in p).map(k=>`${k}=${p[k]}`).join(" "));L.push(`given disbursed=${given.disbursed}`);return L.join("\n")+"\n";}
 const N=x=>Number(x),M=x=>x.toFixed(2);
-function monitorHolds(text){writeFileSync(join(HERE,"_e3.trace"),text);let out="";try{out=execFileSync(ALLIUM,["monitor-schedule",SPEC,join(HERE,"_e3.trace")],{encoding:"utf8"});}catch(e){out=(e.stdout||"").toString();}try{const d=JSON.parse(out);return d.results.every(r=>r.holds);}catch{return true;}}
+function monitorHolds(text){writeFileSync(join(HERE,"_e3.trace"),text);let out="";try{out=execFileSync(ALLIUM,["monitor",SPEC,join(HERE,"_e3.trace")],{encoding:"utf8"});}catch(e){out=(e.stdout||"").toString();}try{const d=JSON.parse(out);return d.results.every(r=>r.holds);}catch{return true;}}
 
 // STRUCTURAL breaks (should be caught): perturb one field of one interior period
 const STRUCT={

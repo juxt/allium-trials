@@ -45,7 +45,7 @@ def annuity(disbursed, rate, months, emi_delta=0.0):
     return out
 
 def gate(spec, path):
-    d=json.loads(subprocess.run([ALLIUM,"monitor-schedule",spec,path,"--tol","0.01"],capture_output=True,text=True).stdout)
+    d=json.loads(subprocess.run([ALLIUM,"monitor",spec,path,"--tol","0.01"],capture_output=True,text=True).stdout)
     return all(x["holds"] for x in d["results"]), [x["invariant"] for x in d["results"] if not x["holds"]]
 
 def main():

@@ -16,7 +16,7 @@ const CORPUS = "/Users/hgarner/code/allium-trials/outcome/fineract/scale-test/je
 function parse(t){const legs=[];for(const line of t.split("\n")){const s=line.trim();if(!s||!s.startsWith("period="))continue;const o={};for(const tok of s.split(/\s+/)){const[k,v]=tok.split("=");o[k]=v;}legs.push(o);}return legs;}
 function render(legs){return legs.map((l,i)=>`period=${i} account=${l.account||"GL"} debit=${l.debit} credit=${l.credit}`).join("\n")+"\n";}
 const N=x=>Number(x),M=x=>x.toFixed(2);
-function holds(legs){writeFileSync(join(HERE,"_e5.trace"),render(legs));let o="";try{o=execFileSync(ALLIUM,["monitor-schedule",DE,join(HERE,"_e5.trace")],{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="double_entry_balances");return r?r.holds:true;}catch{return true;}}
+function holds(legs){writeFileSync(join(HERE,"_e5.trace"),render(legs));let o="";try{o=execFileSync(ALLIUM,["monitor",DE,join(HERE,"_e5.trace")],{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="double_entry_balances");return r?r.holds:true;}catch{return true;}}
 const clone=legs=>legs.map(l=>({...l}));
 
 const DESYNC={

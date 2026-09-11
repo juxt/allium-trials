@@ -79,7 +79,7 @@ def mutate_structural(periods):
     return out
 
 def gate(spec, trace):
-    d = json.loads(subprocess.run([ALLIUM, "monitor-schedule", spec, trace, "--tol", "0.01"],
+    d = json.loads(subprocess.run([ALLIUM, "monitor", spec, trace, "--tol", "0.01"],
                                   capture_output=True, text=True).stdout)
     holds = all(x["holds"] for x in d["results"])
     fired = [x["invariant"] for x in d["results"] if not x["holds"]]

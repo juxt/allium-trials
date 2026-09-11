@@ -32,7 +32,7 @@ def emit(rows, disbursed, rate, path):
         fh.write(f"given disbursed={disbursed:.2f}\n")
 
 def gate(path):
-    d=json.loads(subprocess.run([ALLIUM,"monitor-schedule",FULL,path,"--tol","0.01"],capture_output=True,text=True).stdout)
+    d=json.loads(subprocess.run([ALLIUM,"monitor",FULL,path,"--tol","0.01"],capture_output=True,text=True).stdout)
     return [x["invariant"] for x in d["results"] if not x["holds"]]
 
 if __name__ == "__main__":

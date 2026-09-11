@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ALLIUM = "/Users/hgarner/code/allium-tools/target/debug/allium"
 
 def monitor(spec, trace, schedule=False):
-    cmd = [ALLIUM, "monitor-schedule" if schedule else "monitor", spec, trace]
+    cmd = [ALLIUM, "monitor" if schedule else "monitor", spec, trace]
     if schedule: cmd += ["--tol", "0.01"]
     d = json.loads(subprocess.run(cmd, capture_output=True, text=True).stdout)
     if schedule:

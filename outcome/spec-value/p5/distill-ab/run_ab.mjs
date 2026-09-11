@@ -18,7 +18,7 @@ function catchRate(specPath){ // over a sample of oracle traces: faithful holds?
   const ids=["d5000_r18_m24","d1000_r9.99_m12","d12345.67_r24_m12","d100_r5_m6"];
   let faithful=0, caught=0, n=0;
   for(const id of ids){const t=readFileSync(`${ORACLE}/${id}.trace`,"utf8");
-    const h=(txt)=>{writeFileSync("/tmp/ab.trace",txt);const r=spawnSync(ALLIUM,["monitor-schedule",specPath,"/tmp/ab.trace","--tol","0.02"],{encoding:"utf8"});try{const d=JSON.parse(r.stdout);return {ok:d.ok,mon:d.monitored}}catch{return{ok:true,mon:0}}};
+    const h=(txt)=>{writeFileSync("/tmp/ab.trace",txt);const r=spawnSync(ALLIUM,["monitor",specPath,"/tmp/ab.trace","--tol","0.02"],{encoding:"utf8"});try{const d=JSON.parse(r.stdout);return {ok:d.ok,mon:d.monitored}}catch{return{ok:true,mon:0}}};
     const base=h(t); const mut=h(mutate(t)); n++;
     if(base.ok && base.mon>0) faithful++;
     if(!mut.ok) caught++;

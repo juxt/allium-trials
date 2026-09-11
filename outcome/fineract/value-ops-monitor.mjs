@@ -29,7 +29,7 @@ const hard = [];
 for (const f of files) {
   let out;
   try {
-    out = execFileSync(ALLIUM, ["monitor-schedule", SPEC, join(TRACES, f), "--tol", String(TOL)], { encoding: "utf8" });
+    out = execFileSync(ALLIUM, ["monitor", SPEC, join(TRACES, f), "--tol", String(TOL)], { encoding: "utf8" });
   } catch (e) {
     out = e.stdout || "";
   }

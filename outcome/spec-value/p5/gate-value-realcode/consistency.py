@@ -42,7 +42,7 @@ def annuity(disbursed, rate, months):
         bal=r2(bal-principal)
     return out
 def gate(spec, path):
-    d=json.loads(subprocess.run([ALLIUM,"monitor-schedule",spec,path,"--tol","0.01"],capture_output=True,text=True).stdout)
+    d=json.loads(subprocess.run([ALLIUM,"monitor",spec,path,"--tol","0.01"],capture_output=True,text=True).stdout)
     return not all(x["holds"] for x in d["results"])
 
 # --- mutation battery. Each returns (mutated periods, kind) or None to skip this schedule. ---

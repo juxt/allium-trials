@@ -7,7 +7,7 @@ import sys, subprocess, json, re
 ALLIUM="/Users/hgarner/code/allium-tools/target/debug/allium"
 def monitor(spec, txt):
     open("/tmp/cp.trace","w").write(txt)
-    r=subprocess.run([ALLIUM,"monitor-schedule",spec,"/tmp/cp.trace","--tol","0.02"],capture_output=True,text=True)
+    r=subprocess.run([ALLIUM,"monitor",spec,"/tmp/cp.trace","--tol","0.02"],capture_output=True,text=True)
     try: d=json.loads(r.stdout); return d.get("ok",True), d.get("monitored",0)
     except: return True,0
 def fields(txt):

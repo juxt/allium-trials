@@ -4,7 +4,7 @@
 // to look. The honest test avoids leading the witness: the model reviews a FEATURE-framed PR and is NOT
 // told to check double-entry. Does it spontaneously catch a seeded balance break, and how variably?
 //
-// Gate arm: `allium monitor-schedule` on the postings the changed code produces (broken trace). Run 3x:
+// Gate arm: `allium monitor` on the postings the changed code produces (broken trace). Run 3x:
 // deterministic FALSE, named invariant `double_entry_balances`, exact residual, zero variance. (Shown
 // separately; near-zero cost.)
 // Model arm: review the PR diff for merge, N reps, feature-framed. Catch = spontaneously flags that a
@@ -80,7 +80,7 @@ const nCaught = catches.filter((c) => c.caught).length;
 const nBlock = catches.filter((c) => c.decision === "BLOCK").length;
 const flips = !(nCaught === REPS || nCaught === 0);
 console.log(`\n== B5 drift gate: deterministic monitor vs feature-framed model review (${REPS} reps) ==\n`);
-console.log(`GATE (allium monitor-schedule on the resulting postings):`);
+console.log(`GATE (allium monitor on the resulting postings):`);
 console.log(`  double_entry_balances = FALSE, residual 50.00, named invariant, exit nonzero — IDENTICAL every run (variance 0), ~0 cost, fires without being asked.`);
 console.log(`MODEL (feature-framed PR review, NOT told to check double-entry):`);
 console.log(`  spontaneously caught the imbalance ${nCaught}/${REPS}  | blocked ${nBlock}/${REPS} | flips across reps: ${flips}`);

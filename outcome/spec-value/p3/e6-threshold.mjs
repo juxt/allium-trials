@@ -14,7 +14,7 @@ const CORPUS = "/Users/hgarner/code/allium-trials/outcome/fineract/scale-test/je
 function parse(t){const legs=[];for(const line of t.split("\n")){const s=line.trim();if(!s||!s.startsWith("period="))continue;const o={};for(const tok of s.split(/\s+/)){const[k,v]=tok.split("=");o[k]=v;}legs.push(o);}return legs;}
 function render(legs){return legs.map((l,i)=>`period=${i} account=${l.account||"GL"} debit=${l.debit} credit=${l.credit}`).join("\n")+"\n";}
 const N=x=>Number(x);
-function holds(legs,tol){writeFileSync(join(HERE,"_e6.trace"),render(legs));const args=["monitor-schedule",DE,join(HERE,"_e6.trace")];if(tol!==undefined)args.push("--tol",String(tol));let o="";try{o=execFileSync(ALLIUM,args,{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="double_entry_balances");return r?r.holds:true;}catch{return true;}}
+function holds(legs,tol){writeFileSync(join(HERE,"_e6.trace"),render(legs));const args=["monitor",DE,join(HERE,"_e6.trace")];if(tol!==undefined)args.push("--tol",String(tol));let o="";try{o=execFileSync(ALLIUM,args,{encoding:"utf8"});}catch(e){o=(e.stdout||"").toString();}try{const d=JSON.parse(o);const r=d.results.find(x=>x.invariant==="double_entry_balances");return r?r.holds:true;}catch{return true;}}
 function mismatch(legs,delta){const i=legs.findIndex(l=>N(l.credit)>0);if(i<0)return null;const c=legs.map(l=>({...l}));c[i].credit=(N(c[i].credit)+delta).toFixed(3);return c;}
 
 const files=readdirSync(CORPUS).filter(f=>f.endsWith(".trace"));

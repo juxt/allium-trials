@@ -31,7 +31,7 @@ for i in $(seq 1 $((NRUN<NSITES?NRUN:NSITES))); do
     [ -f "$f" ] || continue
     bn=$(basename "$f"); checked=$((checked+1))
     diff -q "$f" "$BASE/$bn" >/dev/null 2>&1 || changed=yes
-    v=$($ALLIUM monitor-schedule "$DE" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);r=[x for x in d['results'] if x['invariant']=='double_entry_balances'];print(1 if (r and not r[0]['holds']) else 0)" 2>/dev/null || echo 0)
+    v=$($ALLIUM monitor "$DE" "$f" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);r=[x for x in d['results'] if x['invariant']=='double_entry_balances'];print(1 if (r and not r[0]['holds']) else 0)" 2>/dev/null || echo 0)
     caught=$((caught+${v:-0}))
   done
   echo "{\"site\":$i,\"compile\":true,\"changed\":\"$changed\",\"caught_traces\":$caught,\"cash_traces\":$checked}" | tee -a "$OUT"
