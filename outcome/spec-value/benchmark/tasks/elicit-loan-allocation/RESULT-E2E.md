@@ -12,9 +12,14 @@ valid cells across runs (network/limit-damaged cells excluded).
 |---|---|---|---|---|
 | **allium-elicit** | 84.7 (n=7) | **80.5** | ~62 (n=5) | **70.9** |
 | plain prose | 89.7 (n=9) | 77.8 | ~53 (n=8) | 58.0 |
-| AIUP | 80.4 (n=8) | 71.6 | — | — |
+| AIUP | 80.4 (n=8) | 63.6 (n=11) | 71 | 27 (n=1†) |
 | spec-kit | 63.5 (n=9) | 56.6 | ~49 (n=14) | 43.5 |
-| superpowers | 48.8 (n=6) | 45.5 | — | — |
+| superpowers | ~55 | 42.9 (n=7) | 29 | 46 (n=1†) |
+
+† aiup/sonnet and superpowers/sonnet are n=1 (network killed the rest); directional only, not
+headlined. Superpowers was re-run with 20 question-rounds (vs the earlier 6 that starved its
+one-question-at-a-time discipline) — it still lands ~43 on Opus, asking ~12 questions before its
+process declares done. So its low score is genuine under-asking, not a harness artifact.
 
 Naive industry-standard-guess code floor: 27% (3/11). Getting clean sonnet cells was costly: the
 network repeatedly killed `produce`/`ask` steps, contaminating cells (empty spec or zero
