@@ -13,7 +13,7 @@ component AmortisingLoan
   invariant interest_on_balance means every p :: interest(p) = rate * outstanding_start(p)
   invariant principal_reduces_balance means every p :: principal(p) = emi(p) - interest(p)
   invariant full_repayment means sum p :: principal(p) = disbursed
-  invariant ends_at_zero means every p :: is_last(p) => outstanding_start(p) = principal(p)
+  invariant ends_at_zero means every p :: is_last(p) implies outstanding_start(p) = principal(p)
   invariant nonneg_balance means every p :: outstanding_start(p) >= 0
   invariant nonneg_principal means every p :: principal(p) >= 0
 end

@@ -15,8 +15,8 @@ component ReportEngine
   invariant amend_carries_prior means action_amend(t) implies has_prior_uti(t)
   -- B3: a cleared trade must carry the CCP LEI (else it is rejected).
   invariant cleared_needs_lei means cleared(t) implies has_ccp_lei(t)
-  -- B4: a below-threshold trade is still SUBMITTED, flagged non-reportable — never dropped.
-  invariant below_threshold_submitted means submitted(t) and (not reportable(t) allowed)
+  -- B4 (not formalised: this spec models no `submitted` or `below_threshold` state): a
+  -- below-threshold trade is still submitted, flagged non-reportable, never dropped.
   -- B5: an amendment issued before the prior is acknowledged is QUEUED, not sent.
   invariant amend_before_ack_queued means true
   -- B6: re-booking a still-live trade is IDEMPOTENT — it returns the existing UTI, not a new one.
