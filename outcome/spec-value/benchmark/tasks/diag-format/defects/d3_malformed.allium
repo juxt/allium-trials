@@ -1,0 +1,91 @@
+-- allium: 4
+--
+-- Distilled from Apache Fineract ProgressiveEMICalculator.java
+--   fineract-progressive-loan/.../loanproduct/calc/ProgressiveEMICalculator.java
+-- Subject: the progressive (declining-balance) repayment schedule it computes.
+--
+-- SCOPE. Captured: the load-bearing per-period arithmetic of a single-disbursement,
+-- declining-balance, monthly, SAME_AS_REPAYMENT schedule with no in-life events.
+-- Each period p exposes emi, interest, principal, outstanding_start, rate_factor,
+-- is_last. Deliberately EXCLUDED: in-life mutations (extra disbursement, capitalized
+-- income, interest-rate change, balance/overdue correction, re-age, prepayment), day-
+-- count conventions other than the monthly SAME_AS_REPAYMENT factor, EMI rounding to
+-- multiplesOf, credited/paid/unrecognized-interest amounts, moratoria, and the FLAT
+-- interest method. Those are machinery around the core schedule, not the schedule law.
+--
+-- Grounding in code:
+--   rate_factor monthly = annualRate/100/12 = annual_rate_pct/1200
+--       (calculateRateFactorPerPeriod -> rateFactorByRepaymentPeriod, /12)
+--   interest = outstanding_start * rate_factor
+--       (InterestPeriod.getCalculatedDueInterest: balance * rateFactor * length, length=1)
+--   principal = emi - interest         (RepaymentPeriod.getDuePrincipal, line 345-348)
+--   next outstanding = outstanding - principal (RepaymentPeriod.getOutstandingLoanBalance)
+--   emi constant on non-final periods; last carries the remainder
+--       (calculateEMIOnActualModelWithDecliningBalanceInterestMethod + getEmiAdjustment)
+--   sum of principal = disbursed; final period closes balance to zero.
+--
+-- This spec is a PARTIAL FLOOR. A change that satisfies every invariant here is NOT thereby
+-- proven safe. It constrains only the behaviours listed; anything outside them (idempotency,
+-- account correctness, negative/edge inputs, concurrency, absolute values) is unconstrained and
+-- must be judged independently. Known blind spots from validation: in-life events, rounding to
+-- multiplesOf, day-count conventions other than monthly, and the emi VALUE itself (the annuity
+-- formula that fixes emi from disbursed/rate/months is not pinned; emi is taken as observed).
+--
+-- Monitor trace must carry, per period: emi, interest, principal, outstanding_start, rate_factor,
+-- is_last; and a trailing given line with disbursed, annual_rate_pct, months. The absolute
+-- invariants below reference `rate_factor` and `disbursed`; a trace missing them is silently skipped.
+
+component ProgressiveLoanSchedule
+  entity Period
+
+  observable state emi(Period) : Money
+  observable state interest(Period) : Money
+  observable state principal(Period) : Money
+  observable state outstanding_start(Period) : Money
+  observable state rate_factor(Period) : Number
+  observable state is_last(Period) : bool
+
+  given disbursed : Money
+  given annual_rate_pct : Number
+  given months : Number
+
+  -- rate_factor is an input-anchored constant: annual/1200 (monthly, SAME_AS_REPAYMENT).
+  given monthly_factor means annual_rate_pct / 1200
+
+  -- 1. emi_constant: every non-final period shares one emi. Pin it to the emi of any other
+  --    non-final period (declining-balance sets one equalMonthlyInstallment on all periods;
+  --    the last carries the rounding remainder, so it is exempt).
+  invariant emi_constant means
+    every p :: every q :: (not is_last(p)) and (not is_last(q)) implies emi(p) = = emi(q)
+
+  -- 2. interest_on_outstanding (ABSOLUTE): interest = rate_factor * outstanding_start.
+  invariant interest_on_outstanding means
+    every p :: interest(p) = rate_factor(p) * outstanding_start(p)
+
+  -- 2b. rate_factor itself is the input-anchored monthly factor (ties value to the rate input).
+  invariant rate_factor_is_monthly means
+    every p :: rate_factor(p) = monthly_factor
+
+  -- 3. principal_split (ABSOLUTE): principal = emi - interest.
+  invariant principal_split means
+    every p :: principal(p) = emi(p) - interest(p)
+
+  -- 4. balance_rolls (ABSOLUTE, ordered): the next period opens at this period's opening
+  --    balance minus this period's principal. Uses the successor guard, not a free pair.
+  invariant balance_rolls means
+    every p :: every q :: follows(q, p) implies
+      outstanding_start(q) = outstanding_start(p) - principal(p)
+
+  -- 5. balance_monotonic (ordered): outstanding never increases period to period.
+  invariant balance_monotonic means
+    every p :: every q :: follows(q, p) implies
+      outstanding_start(q) <= outstanding_start(p)
+
+  -- 6. conservation (ABSOLUTE aggregate): total principal repaid equals the disbursed amount.
+  invariant conservation means
+    (sum p :: principal(p)) = disbursed
+
+  -- 7. closes_to_zero (ABSOLUTE): the final period's principal clears its opening balance.
+  invariant closes_to_zero means
+    every p :: is_last(p) implies outstanding_start(p) - principal(p) = 0
+end
