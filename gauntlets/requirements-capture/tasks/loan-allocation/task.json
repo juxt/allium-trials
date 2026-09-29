@@ -1,0 +1,12 @@
+{
+  "id": "loan-allocation",
+  "display": "Loan payment allocation",
+  "summary": "A deliberately under-specified brief for allocate_payment(payment, loan). Every material policy decision is omitted; each has several plausible answers and this institution has picked one. The only way to get them right is to ask the stakeholder.",
+  "brief_file": "brief.md",
+  "stakeholder_file": "stakeholder.md",
+  "answer_key_file": "answer-key.md",
+  "reference_file": "reference.md",
+  "decisions_total": 14,
+  "bespoke_decisions": [1, 4, 6, 7, 10, 12, 13, 14],
+  "bespoke_rationale": "Empirically non-inferable: a capable model told to guess (no stakeholder) got these <=3/10. See findings/RESULT-BIAS-CHECK.md. The complement [2,5,8,9] is inferable from standard practice and asking does not distinguish the arms there."
+}

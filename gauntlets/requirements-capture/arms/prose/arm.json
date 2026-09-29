@@ -1,0 +1,17 @@
+{
+  "id": "prose",
+  "display": "Plain prose (baseline)",
+  "process_file": "process.md",
+  "provenance": {
+    "fidelity": "baseline",
+    "source": "none — this is the control arm, a capable engineer with no tool or discipline",
+    "note": "Not a product. The reference point every other arm is measured against. process.md is a minimal, neutral instruction that neither pushes the model to ask nor to assume; whatever it does is the no-tool baseline."
+  },
+  "tools": false,
+  "limits": {
+    "max_rounds": 20,
+    "max_questions": null,
+    "questions_per_round": null,
+    "finalize": "faithful"
+  }
+}

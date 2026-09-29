@@ -1,0 +1,23 @@
+{
+  "id": "kiro",
+  "display": "Kiro (feature spec, EARS)",
+  "process_file": "process.md",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "Kiro Spec agent system prompt, the '### 1. Requirement Gathering' block, extracted from the shipped Kiro agent bundle (AWS does not publish it). Corroborated character-for-character by two independent extractions.",
+    "sources": [
+      "github.com/ghuntley/amazon-kiro.kiro-agent-source-code-analysis — prompts/spec-requirements-clarification.md",
+      "github.com/x1xhlol/system-prompts-and-models-of-ai-tools — Kiro/Spec_Prompt.txt (### 1. Requirement Gathering)"
+    ],
+    "accessed": "2026-09-28",
+    "sha256": "cd304719957d7846f8410412debda2b7a1fe328cb99bfd6990feeff73c17cd20",
+    "note": "The authentic instruction text Kiro runs for the requirements phase, not documentation prose. Provenance is bundle-extraction, not an official AWS publication; flagged rather than hidden. Behaviour is draft-first: Kiro MUST generate an initial requirements draft WITHOUT asking sequential questions first, then iterate, so questions are demoted to SHOULD/MAY. There is no separate 'Analyze Requirements' step (that is a later, separate Kiro feature, not part of this prompt). The approval gate uses an IDE 'userInput' tool that is inert here; the runner's interview loop stands in for the review iterations."
+  },
+  "tools": false,
+  "limits": {
+    "max_rounds": 8,
+    "max_questions": null,
+    "questions_per_round": null,
+    "finalize": "faithful"
+  }
+}

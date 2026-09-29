@@ -1,2 +1,13 @@
-results/
+# Trials harness output (machine-specific). Gauntlet results under
+# gauntlets/*/results/ are NOT ignored, so official runs can be committed.
+/results/
 results-*.log
+
+# Local experiment scratch for the gauntlets, not part of the published harness
+gauntlets/*/_experimental/
+
+# Local secrets / endpoint config
+.env
+
+# Research scratch from the working branches; not part of the published harness
+outcome/
