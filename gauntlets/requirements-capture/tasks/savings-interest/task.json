@@ -1,0 +1,12 @@
+{
+  "id": "savings-interest",
+  "display": "Savings interest posting",
+  "summary": "A deliberately under-specified brief for post_interest(account, period). Every material policy decision (calculation method, compounding, posting period, day-count, minimum balance, rounding, withholding tax, dormancy, closure, escheatment, disclosure) is omitted; each is a real Fineract savings configuration class set off both the textbook and Fineract defaults. The only way to get them right is to ask the stakeholder.",
+  "brief_file": "brief.md",
+  "stakeholder_file": "stakeholder.md",
+  "answer_key_file": "answer-key.md",
+  "reference_file": "reference.md",
+  "decisions_total": 14,
+  "bespoke_decisions": [1, 2, 3, 4, 5, 6, 7, 8, 10, 14],
+  "bespoke_rationale": "Empirically non-inferable (a capable model guessing with no stakeholder scored <=3/10 on these). The most off-distribution of the three tasks (guess-only coverage ~13-16%). #1,2,3 (method) and #8,10 (lifecycle) are the in-focus subset, testing whether method and lifecycle coverage generalises beyond the loan tasks. Verified by the bias check (guess-only mode)."
+}

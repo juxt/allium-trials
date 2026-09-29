@@ -17,6 +17,56 @@ The harness lives here, separate from the plugin, on purpose:
 - **Anyone can point it at any checkout.** The plugin under test is a
   parameter (`--plugin-dir`), so any member can trial their own fork or branch.
 
+## Gauntlets
+
+Alongside the trial harness, [`gauntlets/`](gauntlets/) holds head-to-head evaluations that put
+several tools or processes through an identical task and produce a neutral, auditable leaderboard.
+Each gauntlet is self-contained: its arms, tasks, config and answer keys are all files you can read,
+and the runner carries no task content and no per-arm special-casing. Gauntlets run via a
+provider-agnostic CLI against any OpenAI-compatible endpoint, so the same eval can be driven by
+Claude, GPT, Gemini or anything else.
+
+### The requirements-capture gauntlet
+
+[requirements-capture](gauntlets/requirements-capture/) asks one question: when a stakeholder holds
+requirements they will only reveal if asked, how many does each requirements process capture, and
+how many questions does it spend? Eight processes run the identical loop against the same task,
+Allium's `elicit` skill, GitHub Spec Kit, Superpowers, Tessl, Kiro, BMAD-METHOD, the AI Unified
+Process, and plain prose as the baseline. A proxy stakeholder answers only what it is asked, a
+hidden set of material,
+non-inferable decisions is the answer key, and a neutral auditor scores which of them each produced
+spec captured and records why.
+
+#### Running it
+
+The runner needs an OpenAI-compatible `/chat/completions` endpoint; it does not care where that
+lives. The quickest self-contained setup is the bundled litellm proxy, which serves Claude from your
+`ANTHROPIC_API_KEY`:
+
+```bash
+cp .env.example .env      # endpoint and model ids; run.mjs auto-loads it (real shell env wins)
+# start the bundled proxy: see gauntlets/litellm-config.example.yaml for the one-line docker command
+
+node gauntlets/run.mjs requirements-capture --dry-run   # validate config and print the plan, no API calls
+node gauntlets/run.mjs requirements-capture             # run the full 5 arms x 3 tasks x 3 iterations
+```
+
+Point `GAUNTLET_BASE_URL` at any other OpenAI-compatible endpoint to drive the same eval with a
+different model. Useful flags: `--mode sequential` (one cell at a time, gentler on spend and rate
+limits), `--iterations N`, `--arms a,b` and `--tasks x,y` to run a subset, and `--model ID` to change
+who drives each process. Inside Claude Code, `/gauntlet requirements-capture` wraps the same CLI.
+
+To reproduce the result as a user actually experiences the skill, run each cell as a real agent with
+the checker live: set `GAUNTLET_ENGINE=claude` (or pass `--engine claude`). Every cell then runs
+through the `claude` CLI on your Claude subscription, and the author writes its spec with the
+`allium check` hook firing on each save, the same whiteboard loop an Allium user has configured. This
+path needs the `claude` and `allium` CLIs on PATH; the default provider-agnostic path needs neither.
+
+Results land in `results/<run-label>/`: a `report.csv` and `report.md` leaderboard, a
+`metadata.json` with per-decision scoring and the auditor's reasoning, and a full transcript per cell
+under `logs/`. See the [gauntlet's README](gauntlets/requirements-capture/README.md) for every
+option, the output format, and how to add your own task or arm.
+
 Trials are pluggable: each lives in `trials/<name>/` with a `trial.mjs`
 definition (prompt, workspace setup, artifact discovery, scorer, guardrails)
 that the shared runner and comparer load via `--trial`. Two trials exist

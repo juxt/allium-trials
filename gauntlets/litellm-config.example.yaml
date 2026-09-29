@@ -1,0 +1,43 @@
+# Self-contained litellm proxy config, so the gauntlet needs nothing outside this
+# repo. It serves the two model ids the default .env expects (claude-sonnet,
+# claude-opus) straight from Anthropic, keyed by $ANTHROPIC_API_KEY.
+#
+# Run it (needs Docker and $ANTHROPIC_API_KEY in your shell):
+#
+#   docker run --rm -p 4000:4000 \
+#     -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+#     -v "$PWD/gauntlets/litellm-config.example.yaml:/app/config.yaml" \
+#     ghcr.io/berriai/litellm:main-latest --config /app/config.yaml --port 4000
+#
+# Then the default endpoint (http://localhost:4000/v1) just works.
+#
+# You do not have to use litellm at all: point GAUNTLET_BASE_URL at any
+# OpenAI-compatible endpoint (OpenAI, an Anthropic-compatible gateway, etc.) and
+# set the model ids to whatever it serves.
+
+model_list:
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      # Sonnet 4.6 and Opus 4.8 both reject an explicit temperature; strip it.
+      drop_params: true
+      additional_drop_params:
+        - temperature
+      num_retries: 5
+      timeout: 120
+
+  - model_name: claude-opus
+    litellm_params:
+      model: anthropic/claude-opus-4-8
+      api_key: os.environ/ANTHROPIC_API_KEY
+      drop_params: true
+      additional_drop_params:
+        - temperature
+      num_retries: 5
+      timeout: 120
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 120
+  num_retries: 5
