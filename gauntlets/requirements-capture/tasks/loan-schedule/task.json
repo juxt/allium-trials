@@ -1,0 +1,12 @@
+{
+  "id": "loan-schedule",
+  "display": "Loan repayment schedule",
+  "summary": "A deliberately under-specified brief for generate_schedule(loan). Every material policy decision (interest method, amortisation, day-count, rounding, rebate, re-amortisation, disclosure) is omitted; each is a real Fineract configuration class set off both the textbook and Fineract defaults. The only way to get them right is to ask the stakeholder.",
+  "brief_file": "brief.md",
+  "stakeholder_file": "stakeholder.md",
+  "answer_key_file": "answer-key.md",
+  "reference_file": "reference.md",
+  "decisions_total": 14,
+  "bespoke_decisions": [2, 5, 7, 10, 11, 14],
+  "bespoke_rationale": "Empirically non-inferable (a capable model guessing with no stakeholder scored <=3/10 on these). #3 is borderline (4/10) and excluded. Decisions 2, 10, 11 are core-method choices a generic decision-class checklist would not name explicitly, which is what this task probes. Verified by the bias check (guess-only mode)."
+}

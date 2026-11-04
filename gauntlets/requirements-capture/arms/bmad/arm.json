@@ -1,0 +1,18 @@
+{
+  "id": "bmad",
+  "display": "BMAD-METHOD (analyst + PRD)",
+  "execution": "agent",
+  "workspace": "workspace",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/bmad-code-org/BMAD-METHOD — skills/bmad-agent-analyst, skills/bmad-prd, skills/bmad-advanced-elicitation, vendored verbatim (nothing added).",
+    "source_repo_commit": "5e33d3c03ba53187a40ab679d5479cdd4b6ac2fb",
+    "source_date": "2026-09-25",
+    "overlay_manifest_sha256": "49f33380269018f74747425ae5b0a7d3d4a048dcba555aa0721e10fa8cad0278",
+    "verify": "the three skill dirs under workspace/.claude/skills/ are copied verbatim from the pinned commit; diff against `git show 5e33d3c0:skills/<name>`.",
+    "note": "Runs as a real Claude agent with BMAD's own skills installed (workspace/.claude/skills/), interviewing the harness stakeholder in a live session and writing its PRD. The `uv`-script calls (memlog, resolve_customization) are absent in the scratch workspace, so each skill takes the documented 'if the script is not found, do it yourself' fallback, exactly as BMAD specifies for an un-set-up project. Replaces the earlier paraphrase."
+  },
+  "limits": {
+    "max_rounds": 16
+  }
+}

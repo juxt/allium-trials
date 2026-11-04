@@ -1,0 +1,22 @@
+{
+  "id": "superpowers",
+  "display": "Superpowers (brainstorming)",
+  "process_file": "process.md",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/obra/superpowers — skills/brainstorming/SKILL.md, verbatim (nothing added).",
+    "source_path": "skills/brainstorming/SKILL.md",
+    "source_ref": "v6.4.2",
+    "source_repo_commit": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+    "sha256": "a32d2255354775aa124855aa7100cf276bea096fff4ebb3a0edf57be216e6c72",
+    "verify": "shasum -a 256 arms/superpowers/process.md  # must equal sha256 above; source: git show v6.4.2:skills/brainstorming/SKILL.md",
+    "note": "process.md is the brainstorming SKILL.md exactly as shipped, no header or framing added. Its one-question-at-a-time discipline is instructional prose inside the file itself (not a hook or always-apply rule), so it is left to govern the model rather than enforced mechanically: questions_per_round is null. Downstream handoffs (writing-plans, the visual-companion server, the spec-reviewer subagent) fire only after the design spec is produced and are out of scope."
+  },
+  "tools": false,
+  "limits": {
+    "max_rounds": 20,
+    "max_questions": null,
+    "questions_per_round": null,
+    "finalize": "faithful"
+  }
+}

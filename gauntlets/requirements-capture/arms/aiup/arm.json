@@ -1,0 +1,19 @@
+{
+  "id": "aiup",
+  "display": "AI Unified Process (use-case)",
+  "execution": "agent",
+  "workspace": "workspace",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/AI-Unified-Process/marketplace — aiup-core/skills/requirements, entity-model, use-case-diagram, use-case-spec (+ docs/templates/vision.md), vendored verbatim (nothing added).",
+    "source_repo_commit": "6238961196907c0a373dccea4a65a7fad37804ec",
+    "source_ref": "v1",
+    "source_date": "2026-09-28",
+    "overlay_manifest_sha256": "e0caff01ed6494c989f936fa3af6514d55acac4ef95f126a5704d2497f14137e",
+    "verify": "skills under workspace/.claude/skills/ and the vision template are copied verbatim from the pinned commit; diff against `git show 6238961:aiup-core/skills/<name>`.",
+    "note": "Runs as a real Claude agent with AIUP's own skills installed. AIUP is vision-driven: it authors requirements and use cases from the brief and interviews only on ambiguity or missing input, by design. Given the same vague brief as every arm, it will mostly author rather than ask; that is authentic AIUP behaviour and is preserved, not compensated for. The use-case-spec skill's Python validator is inert here. Replaces the earlier paraphrase."
+  },
+  "limits": {
+    "max_rounds": 16
+  }
+}

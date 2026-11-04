@@ -1,0 +1,23 @@
+{
+  "id": "allium-elicit",
+  "display": "Allium elicit (v3.16.0)",
+  "process_file": "process.md",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "elicit skill, Allium 3.16.0 (official release), verbatim.",
+    "source_path": "skills/elicit/SKILL.md",
+    "source_ref": "v3.16.0",
+    "source_repo_commit": "7f7f008e0c6b0a17cc81f5cb1c05a4b923cd63c2",
+    "sha256": "cdafcd7f03606adcc990ae35ed5a97fe91a1e2bf00dde675c7f1d5f74dc9010f",
+    "verify": "shasum -a 256 arms/allium-elicit/process.md  # must equal sha256 above; and `git show v3.16.0:skills/elicit/SKILL.md` in the allium repo",
+    "note": "The exact text a user installs from the 3.16.0 release."
+  },
+  "tools": true,
+  "tools_note": "The shipped skill runs `allium check`/`allium analyse` when the CLI is available. The runner lets this arm use Bash so the checker can engage. On this ordering-heavy task the arithmetic checker does not fire (see RESULT-V3-CLEAN.md); the flag matters for arithmetic-heavy tasks a user may add.",
+  "limits": {
+    "max_rounds": 8,
+    "max_questions": null,
+    "questions_per_round": null,
+    "finalize": "faithful"
+  }
+}

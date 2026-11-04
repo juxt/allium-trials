@@ -1,0 +1,21 @@
+{
+  "id": "tessl",
+  "display": "Tessl (requirement-gathering)",
+  "process_file": "process.md",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/tesslio/spec-driven-development-tile — skills/requirement-gathering/SKILL.md, verbatim (nothing added).",
+    "source_path": "skills/requirement-gathering/SKILL.md",
+    "source_repo_commit": "b8fdff700a5df98386d82d29f1ef3dc783092daf",
+    "sha256": "8d6aaf57eb12e2f127f40bfaeb25b6c6e34fa721266d3c15aa9a99d5a8731fe0",
+    "verify": "shasum -a 256 arms/tessl/process.md  # must equal sha256 above; source: git show b8fdff70:skills/requirement-gathering/SKILL.md",
+    "note": "process.md is the requirement-gathering SKILL.md exactly as shipped, no header or framing added. Tessl's one-question-at-a-time discipline lives in a separate file, rules/one-question-at-a-time.md, whose frontmatter is `alwaysApply: true` — an always-on rule Tessl's framework injects into every interaction. That rule is reproduced mechanically by the runner (questions_per_round=1), the faithful equivalent of the hook, rather than pasted into process.md. The rest of the tile (spec-writer, spec-verification, work-review) is downstream of requirements capture and out of scope."
+  },
+  "tools": false,
+  "limits": {
+    "max_rounds": 20,
+    "max_questions": null,
+    "questions_per_round": 1,
+    "finalize": "faithful"
+  }
+}

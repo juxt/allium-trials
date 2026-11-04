@@ -1,0 +1,71 @@
+{
+  "_about": "Requirements-capture gauntlet — one place to see exactly what is being tested. Edit this file, then run it with: node gauntlets/run.mjs requirements-capture. Nothing about which arms, which tasks, how many iterations, or how fast is hidden in the runner. See README.md.",
+  "execution": {
+    "mode": "parallel",
+    "_mode": "'parallel' runs cells concurrently (faster, heavier on your API spend/rate limits). 'sequential' runs them one at a time (slower, gentler). Override with --mode.",
+    "concurrency": 2,
+    "_concurrency": "How many cells run at once when mode is 'parallel'. Lower = gentler on rate limits and spend. Ignored when mode is 'sequential'. Override with --concurrency.",
+    "iterations": 3,
+    "_iterations": "Repeats per (arm, task) cell. Higher = less noise, more spend. Override with --iterations.",
+    "author_model": "claude-opus-4-8",
+    "stakeholder_model": "claude-sonnet-4-6",
+    "auditor_model": "claude-opus-4-8",
+    "_models": "Model ids as your endpoint serves them (e.g. gpt-4o, gemini-1.5-pro, or via a litellm proxy). author drives each requirements process; stakeholder answers only what is asked; auditor scores which hidden decisions the spec captured and records why. To compare processes fairly, vary --author-model and keep stakeholder/auditor fixed."
+  },
+  "provider": {
+    "default_base_url": "http://localhost:4000/v1",
+    "_endpoint": "Any OpenAI-compatible /chat/completions endpoint. Set the URL here or via --base-url or $GAUNTLET_BASE_URL, and the key via $GAUNTLET_API_KEY (falls back to $OPENAI_API_KEY). Point it at OpenAI, Anthropic's OpenAI-compatible endpoint, Google, or a litellm proxy."
+  },
+  "run_label": "run-001",
+  "_run_label": "Output goes to results/<run_label>/. Change it per run so results are not overwritten. Override with --run-label.",
+  "arms": [
+    {
+      "id": "allium-elicit",
+      "enabled": true
+    },
+    {
+      "id": "spec-kit",
+      "enabled": true
+    },
+    {
+      "id": "superpowers",
+      "enabled": true
+    },
+    {
+      "id": "aiup",
+      "enabled": true
+    },
+    {
+      "id": "prose",
+      "enabled": true
+    },
+    {
+      "id": "tessl",
+      "enabled": true
+    },
+    {
+      "id": "kiro",
+      "enabled": true
+    },
+    {
+      "id": "bmad",
+      "enabled": true
+    }
+  ],
+  "_arms": "Each id maps to arms/<id>/arm.json (definition + provenance) and arms/<id>/process.md (the exact process text the author is given). Set enabled:false to skip an arm.",
+  "tasks": [
+    {
+      "id": "loan-allocation",
+      "enabled": true
+    },
+    {
+      "id": "loan-schedule",
+      "enabled": true
+    },
+    {
+      "id": "savings-interest",
+      "enabled": true
+    }
+  ],
+  "_tasks": "Each id maps to tasks/<id>/task.json. To add your own task with different hidden requirements, copy tasks/loan-allocation, edit the files, and add its id here. See README.md > Adding a task."
+}

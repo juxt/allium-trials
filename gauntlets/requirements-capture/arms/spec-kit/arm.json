@@ -1,0 +1,19 @@
+{
+  "id": "spec-kit",
+  "display": "GitHub Spec Kit (/specify + /clarify)",
+  "execution": "agent",
+  "workspace": "workspace",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/github/spec-kit — the authentic output of `specify init --integration claude` (its speckit-* Claude skills and .specify/ scripts + templates), vendored verbatim (nothing added).",
+    "source_ref": "v1.0.12",
+    "source_repo_commit": "e77daa9021d20db26b878f7dfa5640fe5a42d04e",
+    "source_date": "2026-09-25",
+    "overlay_manifest_sha256": "92779737e5628f28daa233a0a23d65ab827b99a46f9f87ab34d9a23c542ac1d2",
+    "verify": "reproduce with `uvx --from git+https://github.com/github/spec-kit@v1.0.12 specify init <dir> --integration claude`; the workspace overlay is that init output.",
+    "note": "Runs as a real Claude agent with Spec Kit installed exactly as `specify init` lays it down for Claude: the speckit-specify and speckit-clarify skills plus the .specify/ prerequisite scripts, so /clarify's script step actually runs against a real filesystem rather than aborting. Spec Kit's defining behaviour (5-question clarify cap, at most 3 [NEEDS CLARIFICATION] markers, informed guesses recorded as Assumptions) comes from the real templates, not from runner config. Replaces the earlier paraphrase; the runner no longer imposes artificial question caps."
+  },
+  "limits": {
+    "max_rounds": 16
+  }
+}
