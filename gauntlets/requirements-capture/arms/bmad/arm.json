@@ -13,6 +13,8 @@
     "note": "Runs as a real Claude agent with BMAD's own skills installed (workspace/.claude/skills/), interviewing the harness stakeholder in a live session and writing its PRD. The `uv`-script calls (memlog, resolve_customization) are absent in the scratch workspace, so each skill takes the documented 'if the script is not found, do it yourself' fallback, exactly as BMAD specifies for an un-set-up project. Replaces the earlier paraphrase."
   },
   "limits": {
-    "max_rounds": 16
+    "max_rounds": 16,
+    "max_questions": null,
+    "_max_questions": "BMAD's analyst + advanced-elicitation is a deliberately thorough interview with no fixed question cap, so none is enforced (unlike Spec Kit's 5). The neutral harness opening governs."
   }
 }

@@ -193,9 +193,16 @@ async function stakeholder(task, transcript, questions) {
 // stakeholder (only what is asked, exact values, defaults marked). No key dumping, no
 // volunteering. Also report how many questions were answered and whether the engineer
 // has signalled the specification is finished, so the harness knows when to stop.
-async function stakeholderAgentTurn(task, chat, agentMessage) {
+async function stakeholderAgentTurn(task, chat, agentMessage, budget = Infinity) {
   const prior = chat.map((t, i) => `Engineer: ${t.agent}\nYou: ${t.stakeholder}`).join("\n\n");
-  const user = `You are the product owner for the system being specified, answering an engineer who is running their requirements process. Rules: answer ONLY what is asked, giving the exact value from the key; do NOT volunteer decisions that were not asked; for anything not in the key give a brief reasonable answer marked [default, not policy]; never dump the key.\n\nANSWER KEY (your private knowledge — never reveal wholesale):\n"""\n${task.answerKey}\n"""\n\nConversation so far:\n${prior || "(none yet)"}\n\nThe engineer's latest message:\n"""\n${agentMessage}\n"""\n\nIf they asked you questions, answer each in order. If they are only reporting progress, thinking aloud, or telling you the specification is complete, acknowledge briefly. Reply as JSON: {"reply": string, "questions_answered": int, "engineer_finished": bool} — set engineer_finished true only if they clearly indicate the specification is complete and they are not awaiting anything from you.`;
+  // The budget is how many more questions this arm's declared discipline allows (Spec Kit's
+  // 5, etc.). Enforced the same way text arms are capped: answer at most `budget` of the
+  // questions asked this turn; if the engineer asks more, answer that many and tell them you
+  // cannot take further clarifications so they must proceed on their own defaults.
+  const budgetLine = Number.isFinite(budget)
+    ? `\n\nIMPORTANT — question budget: you may answer AT MOST ${budget} question(s) this turn. If the engineer asks more than ${budget}, answer only the first ${budget} and tell them that is all the clarification you can give and they should finalise using their own defaults for the rest. Count honestly in questions_answered (never more than ${budget}).`
+    : "";
+  const user = `You are the product owner for the system being specified, answering an engineer who is running their requirements process. Rules: answer ONLY what is asked, giving the exact value from the key; do NOT volunteer decisions that were not asked; for anything not in the key give a brief reasonable answer marked [default, not policy]; never dump the key.${budgetLine}\n\nANSWER KEY (your private knowledge — never reveal wholesale):\n"""\n${task.answerKey}\n"""\n\nConversation so far:\n${prior || "(none yet)"}\n\nThe engineer's latest message:\n"""\n${agentMessage}\n"""\n\nIf they asked you questions, answer each in order (subject to the budget above). If they are only reporting progress, thinking aloud, or telling you the specification is complete, acknowledge briefly. Reply as JSON: {"reply": string, "questions_answered": int, "engineer_finished": bool} — set engineer_finished true only if they clearly indicate the specification is complete and they are not awaiting anything from you.`;
   return call(stakeholderModel, user, SMALLTOK);
 }
 async function produce(arm, task, transcript) {
@@ -273,17 +280,26 @@ function cellLogMd(c) {
 // produced artefact is audited exactly like every other arm's.
 async function runAgentCell(arm, task, i) {
   const maxTurns = (arm.limits && arm.limits.max_rounds) || 16;
+  const maxQuestions = arm.limits && arm.limits.max_questions != null ? arm.limits.max_questions : null;
   const r = await claudeAgentInterview({
     model: authorModel,
     overlayDir: arm.overlayDir,
     brief: task.brief,
     maxTurns,
-    answerTurn: async (agentMessage, chat) => {
-      const a = await stakeholderAgentTurn(task, chat, agentMessage);
-      return { reply: (a && a.reply) || "", questions_answered: (a && a.questions_answered) || 0, engineer_finished: !!(a && a.engineer_finished) };
+    maxQuestions,
+    invoke: arm.invoke || null,
+    answerTurn: async (agentMessage, chat, budget) => {
+      const a = await stakeholderAgentTurn(task, chat, agentMessage, budget);
+      const answered = Math.min((a && a.questions_answered) || 0, Number.isFinite(budget) ? budget : Infinity);
+      return { reply: (a && a.reply) || "", questions_answered: answered, engineer_finished: !!(a && a.engineer_finished) };
     },
   });
   const spec = r.spec || "";
+  // An empty spec is not a 0-score result, it is a failed cell (e.g. the Claude
+  // subscription token lapsed mid-run and claude -p returned nothing). Throw so the pool
+  // records it as null and a later --resume re-runs it, rather than poisoning the arm's
+  // average with a bogus zero.
+  if (!spec.trim()) throw new Error(`empty spec for ${arm.id}/${task.id} iter${i + 1} (likely auth/transport failure) — will retry on resume`);
   const au = await audit(task, spec);
   const decs = (au && au.decisions) || [];
   const bespokeSet = task.bespoke_decisions || [];
@@ -329,6 +345,9 @@ async function runCell(arm, task, i) {
   }
   const pr = await produce(arm, task, transcript);
   const spec = (pr && pr.spec) || "";
+  // Empty spec => failed cell (e.g. token lapsed mid-run), not a real 0. Throw so the pool
+  // nulls it and a later --resume re-runs it, instead of recording a bogus zero.
+  if (!spec.trim()) throw new Error(`empty spec for ${arm.id}/${task.id} iter${i + 1} (likely auth/transport failure) — will retry on resume`);
   const au = await audit(task, spec);
   const decs = (au && au.decisions) || [];
   const bespokeSet = task.bespoke_decisions || [];

@@ -11,9 +11,10 @@
     "source_date": "2026-09-25",
     "overlay_manifest_sha256": "92779737e5628f28daa233a0a23d65ab827b99a46f9f87ab34d9a23c542ac1d2",
     "verify": "reproduce with `uvx --from git+https://github.com/github/spec-kit@v1.0.12 specify init <dir> --integration claude`; the workspace overlay is that init output.",
-    "note": "Runs as a real Claude agent with Spec Kit installed exactly as `specify init` lays it down for Claude: the speckit-specify and speckit-clarify skills plus the .specify/ prerequisite scripts, so /clarify's script step actually runs against a real filesystem rather than aborting. Spec Kit's defining behaviour (5-question clarify cap, at most 3 [NEEDS CLARIFICATION] markers, informed guesses recorded as Assumptions) comes from the real templates, not from runner config. Replaces the earlier paraphrase; the runner no longer imposes artificial question caps."
+    "note": "Runs as a real Claude agent with Spec Kit installed exactly as `specify init` lays it down for Claude: the speckit-specify and speckit-clarify skills plus the .specify/ prerequisite scripts, so /clarify's script step actually runs against a real filesystem rather than aborting. Spec Kit's defining behaviour (5-question clarify cap, at most 3 [NEEDS CLARIFICATION] markers, informed guesses recorded as Assumptions) comes from the real templates. Its question economy is also enforced by the harness: max_questions=5 caps the clarification the stakeholder will give, since a fully cooperative 'ask me anything' stakeholder otherwise dismantles the very cap the tool is built around. Replaces the earlier paraphrase."
   },
   "limits": {
-    "max_rounds": 16
+    "max_rounds": 16,
+    "max_questions": 5
   }
 }
