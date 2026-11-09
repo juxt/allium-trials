@@ -48,13 +48,24 @@ const CLAUDE_ENV = (() => { const e = { ...process.env }; delete e.ANTHROPIC_API
 // litellm model aliases like "claude-opus" -> claude CLI --model alias "opus"
 const mapModel = (m) => String(m || "opus").replace(/^claude-/, "");
 
+// Hermetic isolation for every `claude -p` call. Without this the subprocess
+// inherits the operator's user-level config — personal skills, enabled plugins,
+// and MCP servers — and a tool-using agent will reach for the best-matching skill
+// in that environment regardless of which arm is under test. That is a scoring
+// contamination: with the Allium plugin installed, agent arms (spec-kit, bmad,
+// openspec) were observed invoking `allium:elicit` instead of their own installed
+// skill. `--setting-sources project,local` loads ONLY the arm's vendored workspace
+// `.claude/` (its authentic skills) and drops user + plugin settings; auth and
+// model selection still apply. `--strict-mcp-config` drops inherited MCP servers.
+const ISOLATE = ["--setting-sources", "project,local", "--strict-mcp-config"];
+
 // A plain claude -p call that returns parsed JSON (for ask / stakeholder / audit).
 export async function claudeJSON({ model, system, user, timeout = 600000, retries = 3 }) {
   const prompt = (system ? system + "\n\n" : "") + user;
   let last;
   for (let a = 0; a < retries; a++) {
     try {
-      const { stdout } = await runClaude(["-p", prompt, "--model", mapModel(model), "--output-format", "json"], { timeout, env: CLAUDE_ENV });
+      const { stdout } = await runClaude(["-p", prompt, "--model", mapModel(model), "--output-format", "json", ...ISOLATE], { timeout, env: CLAUDE_ENV });
       let env;
       try { env = JSON.parse(stdout); } catch { return parseJSON(stdout); }
       const text = env.result ?? env.text ?? "";
@@ -94,7 +105,13 @@ export async function claudeProduceHooked({ model, prompt, timeout = 900000, ret
       writeFileSync(hookPath, HOOK); chmodSync(hookPath, 0o755);
       writeFileSync(path.join(ws, ".claude", "settings.json"), JSON.stringify({ hooks: { PostToolUse: [{ matcher: "Write|Edit", hooks: [{ type: "command", command: hookPath }] }] } }));
       try {
-        await runClaude(["-p", prompt, "--permission-mode", "acceptEdits", "--model", mapModel(model)], { cwd: ws, timeout, env: CLAUDE_ENV });
+        // bypassPermissions (not acceptEdits): the prompt tells the agent to READ its
+        // process.md and the brief by absolute path, outside this temp cwd. Under hermetic
+        // isolation (ISOLATE strips the user's permission allowlist) acceptEdits auto-approves
+        // writes but NOT those external reads, so in headless mode they were silently denied
+        // and the agent wrote a blind placeholder spec. bypassPermissions allows the reads,
+        // matching the agent-interview path, while the allium-check hook still fires on writes.
+        await runClaude(["-p", prompt, "--permission-mode", "bypassPermissions", "--model", mapModel(model), ...ISOLATE], { cwd: ws, timeout, env: CLAUDE_ENV });
       } catch { /* claude -p may exit non-zero; still try to read the file */ }
       let spec = "", hookLog = "";
       try { spec = readFileSync(path.join(ws, "spec.allium"), "utf8"); } catch {}
@@ -110,7 +127,7 @@ export async function claudeProduceHooked({ model, prompt, timeout = 900000, ret
 
 // One turn of a persistent claude session. Returns { result, sessionId }.
 async function claudeTurn({ ws, message, model, sessionId, timeout }) {
-  const base = ["--permission-mode", "bypassPermissions", "--model", mapModel(model), "--output-format", "json"];
+  const base = ["--permission-mode", "bypassPermissions", "--model", mapModel(model), "--output-format", "json", ...ISOLATE];
   const args = sessionId ? ["-p", "--resume", sessionId, message, ...base] : ["-p", message, ...base];
   const { stdout } = await runClaude(args, { cwd: ws, timeout, env: CLAUDE_ENV });
   let env; try { env = JSON.parse(stdout); } catch { return { result: stdout, sessionId }; }
@@ -156,23 +173,40 @@ function collectArtefact(ws, exclude = new Set()) {
 
 // Run an arm as a REAL Claude Code agent with its authentic skills installed, and let
 // the harness play the stakeholder in the chat. The tool runs exactly as its users run
-// it: it asks questions in plain language; `answerTurn(agentMessage)` returns the
-// stakeholder's reply (from the answer key) plus how many questions it answered and
-// whether the engineer signalled done. No protocol is imposed on the tool — the stop
-// decision lives with the stakeholder, as it does with a human. Returns
-// { spec, transcript, questions, turns }.
-export async function claudeAgentInterview({ model, overlayDir, brief, answerTurn, maxTurns = 16, timeout = 900000 }) {
+// it: it asks questions in plain language; `answerTurn(agentMessage, chat, budget)`
+// returns the stakeholder's reply (from the answer key) plus how many questions it
+// answered and whether the engineer signalled done.
+//
+// The opening is deliberately NEUTRAL: it does not invite the agent to "ask whatever you
+// need". That phrasing overrode the question-economy each tool is built around (Spec Kit's
+// 5-question /clarify cap, etc.), inflating both questions and coverage. The agent now
+// follows its own process and the stakeholder enforces the tool's declared discipline.
+//
+// `maxQuestions` is that discipline, enforced by the runner the same way it is for text
+// arms: the stakeholder answers at most the remaining budget each turn, and once the cap
+// is spent it stops answering and asks the agent to finalise using its own defaults. null
+// means no cap (a tool whose real process has none, e.g. a thorough interview).
+// Returns { spec, transcript, questions, turns }.
+export async function claudeAgentInterview({ model, overlayDir, brief, answerTurn, maxTurns = 16, maxQuestions = null, invoke = null, timeout = 900000 }) {
   const ws = mkdtempSync(path.join(os.tmpdir(), "gauntlet-agent-"));
   try {
     // lay the tool's authentic package into the workspace (skills, scripts, templates)
     let overlayFiles = new Set();
     if (overlayDir && existsSync(overlayDir)) { execFileSync("cp", ["-R", overlayDir + "/.", ws]); overlayFiles = listRel(ws); }
     writeFileSync(path.join(ws, "brief.md"), brief);
-    const opening =
-      `I need a requirements specification for a feature. Here is the brief:\n\n${brief}\n\n` +
-      `Please work through your normal process to produce a complete requirements specification, using your installed skills. ` +
-      `I am the product stakeholder for this system, so ask me whatever you need to pin down the requirements; ` +
-      `I will answer. When the specification is complete, save it as spec.md in this directory and tell me it is done.`;
+    // `invoke` is an arm's explicit entry point — the slash command a real user would
+    // type to start the tool (e.g. "/opsx:propose"). When set, the opening IS that
+    // command with the brief as its argument, so the tool's own workflow fires
+    // deterministically instead of relying on the model to pick the skill. Without it,
+    // the neutral opening lets the agent choose its process.
+    const stakeholderNote =
+      `I am the product stakeholder for this system and will answer the questions your process raises. ` +
+      `When the specification is complete, save it as spec.md in this directory and tell me it is done.`;
+    const opening = invoke
+      ? `${invoke} ${brief}\n\n---\n${stakeholderNote}`
+      : `I need a requirements specification for a feature. Here is the brief:\n\n${brief}\n\n` +
+        `Please work through your normal process to produce a complete requirements specification, using your installed skills, exactly as you normally would. ` +
+        stakeholderNote;
     const transcript = [];
     let sessionId = null, message = opening, questions = 0, turn = 0;
     for (; turn < maxTurns; turn++) {
@@ -181,7 +215,15 @@ export async function claudeAgentInterview({ model, overlayDir, brief, answerTur
       catch (e) { transcript.push({ agent: `(agent turn errored: ${String(e.message).slice(0, 200)})`, stakeholder: "" }); break; }
       sessionId = r.sessionId;
       const agentMsg = r.result || "";
-      const st = await answerTurn(agentMsg, transcript);
+      const budget = maxQuestions == null ? Infinity : Math.max(0, maxQuestions - questions);
+      let st;
+      if (budget <= 0) {
+        // cap spent: the stakeholder gives no further answers, exactly as the tool's own
+        // discipline would stop asking. The agent must finalise with its own defaults.
+        st = { reply: `I've answered the ${maxQuestions} clarifying question(s) your process is allotted; I can't take more. Please finalise the specification now — use your process's own defaults or reasonable assumptions for anything still open — save it as spec.md, and tell me when it's done.`, questions_answered: 0, engineer_finished: false };
+      } else {
+        st = await answerTurn(agentMsg, transcript, budget);
+      }
       const reply = (st && st.reply) || "";
       questions += (st && st.questions_answered) || 0;
       transcript.push({ agent: agentMsg, stakeholder: reply });

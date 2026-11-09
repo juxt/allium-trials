@@ -11,3 +11,7 @@ gauntlets/*/_experimental/
 
 # Research scratch from the working branches; not part of the published harness
 outcome/
+
+# gauntlet run artifacts (redundant with metadata.json)
+gauntlets/*/results/*/progress.jsonl
+gauntlets/*/results/*/overnight.log

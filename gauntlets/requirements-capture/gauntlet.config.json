@@ -50,6 +50,10 @@
     {
       "id": "bmad",
       "enabled": true
+    },
+    {
+      "id": "openspec",
+      "enabled": true
     }
   ],
   "_arms": "Each id maps to arms/<id>/arm.json (definition + provenance) and arms/<id>/process.md (the exact process text the author is given). Set enabled:false to skip an arm.",

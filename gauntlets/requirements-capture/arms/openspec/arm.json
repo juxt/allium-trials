@@ -1,0 +1,23 @@
+{
+  "id": "openspec",
+  "display": "OpenSpec (/opsx:propose)",
+  "execution": "agent",
+  "workspace": "workspace",
+  "elicitation_skill": "openspec-propose",
+  "invoke": "/opsx:propose",
+  "provenance": {
+    "fidelity": "verbatim",
+    "source": "github.com/Fission-AI/OpenSpec (npm @fission-ai/openspec) — the authentic output of `openspec init --tools claude`, vendored verbatim (nothing added): the six opsx skills and commands under .claude/, plus the initialized openspec/ root (config.yaml, spec-driven schema).",
+    "source_ref": "v1.16.1",
+    "source_npm": "@fission-ai/openspec@1.16.1",
+    "source_date": "2026-11-08",
+    "overlay_manifest_sha256": "3335372358dbb28ad99a49524b12372fd2c759b430c71f2c6caaa48ff7a1cbdb",
+    "verify": "reproduce with `npx -y @fission-ai/openspec@1.16.1 init <dir> --tools claude --no-animation --force`; the workspace overlay is that init output. Manifest sha is sha256 over the sorted `sha256  path` lines of every vendored file.",
+    "note": "Runs as a real Claude agent with OpenSpec installed exactly as `openspec init` lays it down for Claude. The elicitation skill under test is openspec-propose (slash command /opsx:propose): it clarifies material ambiguity with the stakeholder, then generates the change's artifacts in one step (proposal.md, specs/<capability>/spec.md deltas, design.md, tasks.md) under openspec/changes/<name>/. The requirements the auditor scores live in the specs/*/spec.md deltas that the agent writes; the other opsx skills (apply/archive/explore/sync/update) are downstream of requirements capture and out of scope, the same scoping used for spec-kit and bmad. openspec-propose drives the openspec CLI (Bash(openspec:*)) and refuses to run without an initialized root, so the root is vendored and the CLI must be on PATH at run time (install with `npm i -g @fission-ai/openspec@1.16.1`). The arm is started with its real entry point, the `/opsx:propose` slash command (see the `invoke` field), exactly as a user begins an OpenSpec change, so the propose workflow fires deterministically rather than depending on the model to select the skill unprompted."
+  },
+  "limits": {
+    "max_rounds": 16,
+    "max_questions": null,
+    "_max_questions": "OpenSpec's propose flow asks about material ambiguity and assumes minor details; it declares no fixed question cap, so none is enforced (unlike Spec Kit's 5). The neutral harness opening governs."
+  }
+}
